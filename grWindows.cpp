@@ -780,6 +780,7 @@ vector<EventLinc> grEngine::Windows::arr;*/
 LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	EventKeyboard *eventKey = new EventKeyboard();
 	EventMouse *eventMouse = new EventMouse();
+	EventMouseShape *eventMouseShape = new EventMouseShape();
 	EventWindow *eventWin = new EventWindow();
 	Windows *win = grEngine::root.window;
 	if (win->hWnd == hWnd) {
@@ -801,8 +802,13 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 				eventMouse->y = GET_Y_LPARAM(lParam);
 				eventMouse->ctrlKey = (wParam&MK_CONTROL);
 				eventMouse->shiftKey = (wParam&MK_SHIFT);
+				eventMouseShape->type = EventMouseShape::MOUSE_MOVE;
+				eventMouseShape->globalx = GET_X_LPARAM(lParam);
+				eventMouseShape->globaly = GET_Y_LPARAM(lParam);
+				eventMouseShape->ctrlKey = (wParam&MK_CONTROL);
+				eventMouseShape->shiftKey = (wParam&MK_SHIFT);
 				win->events.mouse.callEvent(eventMouse);
-				win->root->callEvent(eventMouse);
+				win->root->callEvent(eventMouseShape);
 				return 0;
 			case WM_MOUSEWHEEL://GET_KEYSTATE_WPARAM
 				eventMouse->type = EventMouse::MOUSE_WHEEL;
@@ -823,10 +829,20 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 				eventMouse->rightKey = (wParam&MK_RBUTTON);
 				eventMouse->firstX = (wParam&0x0020);//MK_XBUTTON1
 				eventMouse->secondX = (wParam&0x0040);//MK_XBUTTON2
-				eventMouse->x = GET_X_LPARAM(lParam); 
+				eventMouse->x = GET_X_LPARAM(lParam);
 				eventMouse->y = GET_Y_LPARAM(lParam);
+				eventMouseShape->type = EventMouseShape::MOUSE_DOWN;
+				eventMouseShape->ctrlKey = (wParam&MK_CONTROL);
+				eventMouseShape->shiftKey = (wParam&MK_SHIFT);
+				eventMouseShape->leftKey = (wParam&MK_LBUTTON);
+				eventMouseShape->middleKey = (wParam&MK_MBUTTON);
+				eventMouseShape->rightKey = (wParam&MK_RBUTTON);
+				eventMouseShape->firstX = (wParam&0x0020);
+				eventMouseShape->secondX = (wParam&0x0040);
+				eventMouseShape->globalx = GET_X_LPARAM(lParam);
+				eventMouseShape->globaly = GET_Y_LPARAM(lParam);
 				win->events.mouse.callEvent(eventMouse);
-				win->root->callEvent(eventMouse);
+				win->root->callEvent(eventMouseShape);
 				return 0;
 			case WM_LBUTTONUP:
 			case WM_MBUTTONUP:
@@ -842,8 +858,18 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 				eventMouse->secondX = (wParam&0x0040);//MK_XBUTTON2
 				eventMouse->x = GET_X_LPARAM(lParam); 
 				eventMouse->y = GET_Y_LPARAM(lParam);
+				eventMouseShape->type = EventMouseShape::MOUSE_UP;
+				eventMouseShape->ctrlKey = (wParam&MK_CONTROL);
+				eventMouseShape->shiftKey = (wParam&MK_SHIFT);
+				eventMouseShape->leftKey = (wParam&MK_LBUTTON);
+				eventMouseShape->middleKey = (wParam&MK_MBUTTON);
+				eventMouseShape->rightKey = (wParam&MK_RBUTTON);
+				eventMouseShape->firstX = (wParam&0x0020);
+				eventMouseShape->secondX = (wParam&0x0040);
+				eventMouseShape->globalx = GET_X_LPARAM(lParam);
+				eventMouseShape->globaly = GET_Y_LPARAM(lParam);
 				win->events.mouse.callEvent(eventMouse);
-				win->root->callEvent(eventMouse);
+				win->root->callEvent(eventMouseShape);
 				return 0;
 			case WM_PAINT:
 				if (win->visible) win->renderComplete = false;

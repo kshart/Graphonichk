@@ -79,6 +79,23 @@ namespace grEngine {
 		Windows *window;
 	};
 	
+	class Shape;
+	class EventMouseShape :public Event {
+	  public:
+		enum :int{
+			MOUSE_DOWN,
+			MOUSE_UP,
+			MOUSE_ROLL_OUT,
+			MOUSE_ROLL_OVER,
+			MOUSE_MOVE
+		};
+		EventMouseShape();
+		bool ctrlKey, shiftKey, leftKey, middleKey, rightKey, firstX, secondX;
+		char keyCode;
+		short localx, localy, globalx, globaly;
+		Shape *shape;
+	};
+	
 	template<class TEvent> class EventDispatcher {
 	  public:
 		vector<EventLinc> eventList;

@@ -17,6 +17,7 @@ using namespace grEngine;
 
 grEngine::Shape::Shape (int crc32) {
 	this->crc32 = crc32;
+	this->mouseEventActive = false;
 	this->parent = NULL;
 	this->globalx = 0;
 	this->x = 0;
@@ -26,7 +27,7 @@ grEngine::Shape::Shape (int crc32) {
 	this->offsetPos.x = this->offsetPos.y = 0;
 }
 void grEngine::Shape::trace() {
-	printf("Shape x=%i, y=%i, gx=%i, gy=%i, w=%i, h=%i\n", this->x, this->y, this->globalx, this->globaly, this->width, this->height);
+	printf("Shape a='%i' x=%i, y=%i, gx=%i, gy=%i, w=%i, h=%i\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->width, this->height);
 }
 void grEngine::Shape::drag(short x, short y) {
 	this->x = x;
@@ -58,12 +59,27 @@ Shape* grEngine::Shape::globalHitTest(short x, short y) {
 	}
 	return NULL;
 }
-int grEngine::Shape::callEvent(EventMouse* event) {
-	event->obj = this;
+int grEngine::Shape::callEvent(EventMouseShape* event) {
+	event->shape = this;
+	event->localx = event->globalx-this->globalx;
+	event->localy = event->globaly-this->globaly;
 	for(int i=0, s=this->eventList.size(); i<s; i++) {
 		if (this->eventList[i].type == event->type) {
 			this->eventList[i].fun(event);
 		}
+	}
+}
+int grEngine::Shape::addEventHandler( int type, void(*fun)(const EventMouseShape*)) {
+	EventLinc el;
+	el.obj = this;
+	el.type = type;
+	el.fun = (void(*)(const Event*))fun;
+	this->eventList.push_back( el );
+	this->mouseEventActive = true;
+	Shape *sh = this;
+	while (sh->parent != NULL) {
+		sh = sh->parent;
+		sh->mouseEventActive = true;
 	}
 }
 
@@ -77,7 +93,7 @@ grEngine::Bitmap::Bitmap(Texture *tex) :Shape(Bitmap::CRC32) {
 	}
 }
 void grEngine::Bitmap::trace() {
-	printf("<Bitmap x='%i' y='%i' gx='%i' gy='%i' w='%i' h='%i' texId='%i'/>\n", this->x, this->y, this->globalx, this->globaly, this->width, this->height, this->tex);
+	printf("<Bitmap a='%i' x='%i' y='%i' gx='%i' gy='%i' w='%i' h='%i' texId='%i'/>\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->width, this->height, this->tex);
 }
 int grEngine::Bitmap::renderGLComptAll() {
 	Texture *tex = this->tex;
@@ -197,7 +213,7 @@ grEngine::Directory::Directory() :Shape(Directory::CRC32), Buffer() {
 	this->parent = NULL;
 }
 void grEngine::Directory::trace() {
-	printf("<Directory pos='%i, %i' gpos='%i, %i' rect='%i, %i, %i, %i'>\n", this->x, this->y, this->globalx, this->globaly, this->offsetPos.x, this->offsetPos.y, this->width, this->height);
+	printf("<Directory mouseActive='%i' pos='%i, %i' gpos='%i, %i' rect='%i, %i, %i, %i'>\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->offsetPos.x, this->offsetPos.y, this->width, this->height);
 	for (int i=0; i<this->child.size(); i++) this->child[i]->trace(); 
 	printf("</Directory>\n");
 }
@@ -441,6 +457,14 @@ void grEngine::Directory::addChild(Shape *sh) {
 			dir->totalShape += ((Directory*)sh)->totalShape;
 			dir->totalDir += ((Directory*)sh)->totalDir+1;
 		}
+		if (sh->mouseEventActive) {
+			this->mouseEventActive = true;
+			Shape *shape = this;
+			while (shape->parent != NULL) {
+				shape = shape->parent;
+				shape->mouseEventActive = true;
+			}
+		}
 		dir->updateChPos();
 	}else{
 		this->totalShape++;
@@ -496,15 +520,23 @@ Shape* grEngine::Directory::globalHitTest(short x, short y) {
 	}
 	return NULL;
 }
-int grEngine::Directory::callEvent(EventMouse* event) {
-	event->obj = this;
+int grEngine::Directory::callEvent(EventMouseShape* event) {
+	event->shape = this;
+	event->localx = event->globalx - this->globalx;
+	event->localy = event->globaly - this->globaly;
+	Shape *sh;
 	for(int i=0, s=this->eventList.size(); i<s; i++) {
 		if (this->eventList[i].type == event->type) {
 			this->eventList[i].fun(event);
 		}
 	}
 	for(int i=0, s=this->child.size(); i<s; i++) {
-		this->child[i]->callEvent(event);
+		if (this->child[i]->mouseEventActive) {
+			sh = this->child[i];
+			if (event->globalx>sh->x+sh->offsetPos.x && event->globaly>sh->y+sh->offsetPos.y && event->globalx<sh->x+sh->offsetPos.x+sh->width && event->globaly<sh->x+sh->offsetPos.x+sh->height) {
+				sh->callEvent(event);
+			}
+		}
 	}
 }
 

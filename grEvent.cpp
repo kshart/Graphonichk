@@ -36,6 +36,9 @@ grEngine::EventKeyboard::EventKeyboard() {
 grEngine::EventMouse::EventMouse() {
 	
 }
+grEngine::EventMouseShape::EventMouseShape() {
+	
+}
 
 grEngine::EventWindow::EventWindow() {
 	this->visible = false;
@@ -44,5 +47,3 @@ grEngine::EventWindow::EventWindow() {
 grEngine::EventFileLoad::EventFileLoad() {
 	this->file = NULL;
 }
-
-//:Event(Event::EVENT_KEYBOARD)

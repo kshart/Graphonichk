@@ -17,6 +17,7 @@
 
 using namespace std;
 namespace grEngine {
+	template class EventDispatcher<EventMouseShape>;
 	class Shape;
 	class Directory;
 	class Bitmap;
@@ -25,8 +26,6 @@ namespace grEngine {
 	class FLines;
 	class FRect;
 	class FCircle;
-	
-	//vertex buffer coord
 	
 	class Buffer {
 	  public:
@@ -42,25 +41,37 @@ namespace grEngine {
 		vector<Buffer*> bufChild;
 		Texture *tex;
 	};
-	class Shape :public EventDispatcher<EventMouse> {
+	class Shape :public EventDispatcher<EventMouseShape> {
 	  public:
+		///Конструктор Shape (использовать только в классах наслнд) 
 		Shape(int crc32);
+		///Конструктор Shape (использовать только в классах наслнд) 
 		virtual void trace();
+		///Конструктор Shape (использовать только в классах наслнд) 
 		void drag(short x, short y);
 		
+		///Конструктор Shape (использовать только в классах наслнд) 
 		GLuint meshVAO;
+		///Ссылка на родительскую директорию
 		Directory* parent;
+		///
 		Point offsetPos;
+		///Уникальный индетификатор классов наследников
 		int crc32;
+		///Конструктор Shape (использовать только в классах наслнд) 
 		short globalx, globaly, x, y;
+		///Конструктор Shape (использовать только в классах наслнд) 
 		unsigned short width, height;
+		///
+		bool mouseEventActive;
 		
 		virtual int renderGLComptAll();
 		virtual int renderGL400();
 		virtual int renderGL330();
 		virtual int renderGL210();
 		
-		virtual int callEvent(EventMouse *e);
+		virtual int addEventHandler( int type, void(*)(const EventMouseShape*));
+		virtual int callEvent(EventMouseShape *e);
 		
 		virtual Shape* globalHitTest(short x, short y);
 	};
@@ -107,7 +118,7 @@ namespace grEngine {
 		virtual vector<Shape*>* getChildShape();
 		virtual void getChildShape(vector<Shape*>*);
 		virtual Shape* globalHitTest(short x, short y);
-		virtual int callEvent(EventMouse *e);
+		virtual int callEvent(EventMouseShape *e);
 		//vector<unsigned short> childEvent
 		
 		GLuint totalShapeVertexInit;

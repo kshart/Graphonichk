@@ -164,9 +164,6 @@ Image::Image(char* data, unsigned int size) {
 	if ( ((uint16_t*)data)[0] == 0x4D42L ) {// <editor-fold defaultstate="collapsed" desc="BMP">
 		bmpHead *bmph = ((bmpHead*)data);
 		unsigned short align;
-		printf("<Image sgn='%i', size='%i', offset='%i', sizeHead='%i', width='%i', height='%i', layers='%i'/>\n",
-				bmph->signature, bmph->sizeFile, bmph->offsetPixels, bmph->sizeHead, bmph->width, bmph->height, bmph->layers);
-		
 		if (bmph->null1!=0 || bmph->null2!=0 || bmph->sizeHead!=40 || bmph->layers!=1) {
 			printf("<ERROR text='FILE_BMP_INVALID'/>\n");
 			return;
