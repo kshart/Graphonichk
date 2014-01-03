@@ -153,6 +153,20 @@ namespace grEngine {
 		bool scrollStarted;
 	};
 	
+	class Button :public Shape {
+	public:
+		enum STATUS {
+			PRESS, NORMAL, ROLLOVER
+		};
+		Button(unsigned short w, unsigned short h);
+		int renderGLComptAll();
+		int renderGL400();
+		int renderGL330();
+		int renderGL210();
+		Shape *shapePressed, *shapeNormal, *shapeRollOver;
+		STATUS status;
+		bool press;
+	};
 }
 
 

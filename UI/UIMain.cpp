@@ -212,3 +212,89 @@ ScrollBarW::ScrollBarW(unsigned short w, unsigned short h) :Directory() {
 	root.window->renderComplete = false;
 }
 
+
+void ButtonMouseDown (const EventMouse *e) {
+	Button *sb = (Button*)(e->obj);
+	short mousex = e->x - sb->globalx, mousey = e->y - sb->globaly;
+	if (mousex>0 && mousey>0 && mousex<sb->width && mousey<sb->height) {
+		sb->press = true;
+		sb->status = Button::PRESS;
+		root.window->renderComplete = false;
+	}
+}
+void ButtonMouseUp (const EventMouse *e) {
+	Button *sb = (Button*)(e->obj);
+	sb->press = false;
+	sb->status = Button::NORMAL;
+	root.window->renderComplete = false;
+}
+void ButtonMouseMove (const EventMouse *e) {
+	Button *sb = (Button*)(e->obj);
+	short mousex, mousey;
+	//sb->scrollStarted = false;
+}
+
+Button::Button(unsigned short w, unsigned short h) :Shape(Shape::TYPE_NULL) {
+	this->width = w;
+	this->height = h;
+	this->press = false;
+	this->status = Button::NORMAL;
+	this->shapePressed = new FRect(w, h, 0xFFFF0000);
+	this->shapeNormal = new FRect(w, h, 0xFF00FF00);
+	this->shapeRollOver = new FRect(w, h, 0xFF0000FF);
+	this->addEventHandler(EventMouse::MOUSE_DOWN, ButtonMouseDown);
+	this->addEventHandler(EventMouse::MOUSE_MOVE, ButtonMouseMove);
+	this->addEventHandler(EventMouse::MOUSE_UP, ButtonMouseUp);
+}
+int Button::renderGLComptAll() {
+	switch(this->status) {
+		case Button::NORMAL:
+			this->shapeNormal->renderGLComptAll();
+			return true;
+		case Button::PRESS:
+			this->shapePressed->renderGLComptAll();
+			return true;
+		case Button::ROLLOVER:
+			this->shapeRollOver->renderGLComptAll();
+			return true;
+	}
+}
+int Button::renderGL400() {
+	switch(this->status) {
+		case Button::NORMAL:
+			this->shapeNormal->renderGL400();
+			return true;
+		case Button::PRESS:
+			this->shapePressed->renderGL400();
+			return true;
+		case Button::ROLLOVER:
+			this->shapeRollOver->renderGL400();
+			return true;
+	}
+}
+int Button::renderGL330() {
+	switch(this->status) {
+		case Button::NORMAL:
+			this->shapeNormal->renderGL330();
+			return true;
+		case Button::PRESS:
+			this->shapePressed->renderGL330();
+			return true;
+		case Button::ROLLOVER:
+			this->shapeRollOver->renderGL330();
+			return true;
+	}
+}
+int Button::renderGL210() {
+	switch(this->status) {
+		case Button::NORMAL:
+			this->shapeNormal->renderGL210();
+			return true;
+		case Button::PRESS:
+			this->shapePressed->renderGL210();
+			return true;
+		case Button::ROLLOVER:
+			this->shapeRollOver->renderGL210();
+			return true;
+	}
+}
