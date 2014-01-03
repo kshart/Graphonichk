@@ -126,13 +126,12 @@ void ScrollBarHmouseUp (const EventMouse *e) {
 		sb->scrollStarted = false;
 	}
 }
-void ScrollBarHmouseMove (const EventMouseShape *e) {
-	ScrollBarH *sb = (ScrollBarH*)(e->shape);
+void ScrollBarHmouseMove (const EventMouse *e) {
+	ScrollBarH *sb = (ScrollBarH*)(e->obj);
 	short mousex, mousey;
-	printf("ScrollBarHmouseMove %i %i\n", e->localx, e->localy);
 	if (sb->scrollStarted) {
-		mousex = e->localx - sb->bar->width/2;
-		mousey = e->localy - sb->bar->height/2;
+		mousex = e->x - sb->globalx - sb->bar->width/2;
+		mousey = e->y - sb->globaly - sb->bar->height/2;
 		if (mousey<0) mousey = 0;
 		if ( mousey>(sb->height - sb->bar->height) ) mousey = sb->height - sb->bar->height;
 		sb->position = (float)mousey/(sb->height - sb->bar->height);
@@ -167,12 +166,12 @@ void ScrollBarWmouseUp (const EventMouse *e) {
 		sb->scrollStarted = false;
 	}
 }
-void ScrollBarWmouseMove (const EventMouseShape *e) {
+void ScrollBarWmouseMove (const EventMouse *e) {
 	ScrollBarH *sb = (ScrollBarH*)(e->obj);
 	short mousex, mousey;
 	if (sb->scrollStarted) {
-		mousex = e->localx - sb->bar->width/2;
-		mousey = e->localy - sb->bar->height/2;
+		mousex = e->x - sb->globalx - sb->bar->width/2;
+		mousey = e->y - sb->globaly - sb->bar->height/2;
 		if (mousex<0) mousex = 0;
 		if ( mousex>(sb->width - sb->bar->width) ) mousex = sb->width - sb->bar->width;
 		sb->position = (float)mousex/(sb->width - sb->bar->width);
@@ -191,7 +190,7 @@ ScrollBarH::ScrollBarH(unsigned short w, unsigned short h) :Directory() {
 	this->height = h;
 	
 	this->addEventHandler(EventMouseShape::MOUSE_DOWN, ScrollBarHmouseDown);
-	this->addEventHandler(EventMouseShape::MOUSE_MOVE, ScrollBarHmouseMove);
+	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_MOVE, ScrollBarHmouseMove, this);
 	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, ScrollBarHmouseUp, this);
 	root.window->renderComplete = false;
 }
@@ -204,7 +203,7 @@ ScrollBarW::ScrollBarW(unsigned short w, unsigned short h) :Directory() {
 	this->height = h;
 	
 	this->addEventHandler(EventMouseShape::MOUSE_DOWN, ScrollBarWmouseDown);
-	this->addEventHandler(EventMouseShape::MOUSE_MOVE, ScrollBarWmouseMove);
+	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_MOVE, ScrollBarWmouseMove, this);
 	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, ScrollBarWmouseUp, this);
 	root.window->renderComplete = false;
 }
