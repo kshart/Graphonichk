@@ -127,6 +127,32 @@ namespace grEngine {
 		STATE state;
 		void *click();
 	};*/
+	class ScrollBarH;
+	class ScrollBarW;
+	
+	class ScrollBarH :public Directory {
+	  public:
+		ScrollBarH(unsigned short w, unsigned short h);
+		void mouseDown (const EventMouse *e);
+		void mouseUp (const EventMouse *e);
+		void mouseMove (const EventMouse *e);
+		
+		FRect *pad, *bar;
+		float position;
+		bool scrollStarted;
+	};
+	class ScrollBarW :public Directory {
+	  public:
+		ScrollBarW(unsigned short w, unsigned short h);
+		void mouseDown (const EventMouse *e);
+		void mouseUp (const EventMouse *e);
+		void mouseMove (const EventMouse *e);
+		
+		FRect *pad, *bar;
+		float position;
+		bool scrollStarted;
+	};
+	
 }
 
 

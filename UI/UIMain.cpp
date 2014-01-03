@@ -98,3 +98,117 @@ UIUnit::UIUnit() :Shape(Shape::TYPE_NULL) {
 void UIUnit::trace() {
 	printf("<UIUnit x='%i' y='%i' width='%i' height='%i'/>\n", this->x, this->y, this->width, this->height);
 }
+
+
+void ScrollBarHmouseDown (const EventMouse *e) {
+	ScrollBarH *sb = (ScrollBarH*)(e->obj);
+	short mousex = e->x - sb->globalx, mousey = e->y - sb->globaly;
+	if (mousex>0 && mousey>0 && mousex<sb->width && mousey<sb->height) {
+		printf("paintMouseDown\n");
+		mousex -= sb->bar->width/2;
+		mousey -= sb->bar->height/2;
+		if (mousey<0) mousey = 0;
+		if ( mousey>(sb->height - sb->bar->height) ) mousey = sb->height - sb->bar->height;
+		sb->position = (float)mousey/(sb->height - sb->bar->height);
+		sb->bar->drag(0, mousey);
+		sb->scrollStarted = true;
+	}
+}
+void ScrollBarHmouseUp (const EventMouse *e) {
+	ScrollBarH *sb = (ScrollBarH*)(e->obj);
+	short mousex, mousey;
+	if (sb->scrollStarted) {
+		mousex = e->x - sb->globalx - sb->bar->width/2;
+		mousey = e->y - sb->globaly - sb->bar->height/2;
+		
+		if (mousey<0) mousey = 0;
+		if ( mousey>(sb->height - sb->bar->height) ) mousey = sb->height - sb->bar->height;
+		sb->position = (float)mousey/(sb->height - sb->bar->height);
+		sb->bar->drag(0, mousey);
+		sb->scrollStarted = false;
+	}
+}
+void ScrollBarHmouseMove (const EventMouse *e) {
+	ScrollBarH *sb = (ScrollBarH*)(e->obj);
+	short mousex, mousey;
+	if (sb->scrollStarted) {
+		mousex = e->x - sb->globalx - sb->bar->width/2;
+		mousey = e->y - sb->globaly - sb->bar->height/2;
+		if (mousey<0) mousey = 0;
+		if ( mousey>(sb->height - sb->bar->height) ) mousey = sb->height - sb->bar->height;
+		sb->position = (float)mousey/(sb->height - sb->bar->height);
+		sb->bar->drag(0, mousey);
+		
+	}
+	//sb->scrollStarted = false;
+}
+void ScrollBarWmouseDown (const EventMouse *e) {
+	ScrollBarH *sb = (ScrollBarH*)(e->obj);
+	short mousex = e->x - sb->globalx, mousey = e->y - sb->globaly;
+	if (mousex>0 && mousey>0 && mousex<sb->width && mousey<sb->height) {
+		printf("paintMouseDown\n");
+		mousex -= sb->bar->width/2;
+		mousey -= sb->bar->height/2;
+		if (mousey<0) mousey = 0;
+		if ( mousex>(sb->width - sb->bar->width) ) mousex = sb->width - sb->bar->width;
+		sb->position = (float)mousex/(sb->width - sb->bar->width);
+		sb->bar->drag(mousex, 0);
+		sb->scrollStarted = true;
+	}
+}
+void ScrollBarWmouseUp (const EventMouse *e) {
+	ScrollBarH *sb = (ScrollBarH*)(e->obj);
+	short mousex, mousey;
+	if (sb->scrollStarted) {
+		mousex = e->x - sb->globalx - sb->bar->width/2;
+		mousey = e->y - sb->globaly - sb->bar->height/2;
+		
+		if (mousex<0) mousex = 0;
+		if ( mousex>(sb->width - sb->bar->width) ) mousex = sb->width - sb->bar->width;
+		sb->position = (float)mousex/(sb->width - sb->bar->width);
+		sb->bar->drag(mousex, 0);
+		sb->scrollStarted = false;
+	}
+}
+void ScrollBarWmouseMove (const EventMouse *e) {
+	ScrollBarH *sb = (ScrollBarH*)(e->obj);
+	short mousex, mousey;
+	if (sb->scrollStarted) {
+		mousex = e->x - sb->globalx - sb->bar->width/2;
+		mousey = e->y - sb->globaly - sb->bar->height/2;
+		if (mousex<0) mousex = 0;
+		if ( mousex>(sb->width - sb->bar->width) ) mousex = sb->width - sb->bar->width;
+		sb->position = (float)mousex/(sb->width - sb->bar->width);
+		sb->bar->drag(mousex, 0);
+		
+	}
+	//sb->scrollStarted = false;
+}
+
+ScrollBarH::ScrollBarH(unsigned short w, unsigned short h) :Directory() {
+	this->pad = new FRect(w, h, 0xFF0000FF);
+	this->bar = new FRect(w, 60, 0xFFFF0000);
+	this->addChild(this->pad);
+	this->addChild(this->bar);
+	this->width = w;
+	this->height = h;
+	
+	this->addEventHandler(EventMouse::MOUSE_DOWN, ScrollBarHmouseDown);
+	this->addEventHandler(EventMouse::MOUSE_MOVE, ScrollBarHmouseMove);
+	this->addEventHandler(EventMouse::MOUSE_UP, ScrollBarHmouseUp);
+	root.window->renderComplete = false;
+}
+ScrollBarW::ScrollBarW(unsigned short w, unsigned short h) :Directory() {
+	this->pad = new FRect(w, h, 0xFF0000FF);
+	this->bar = new FRect(60, h, 0xFFFF0000);
+	this->addChild(this->pad);
+	this->addChild(this->bar);
+	this->width = w;
+	this->height = h;
+	
+	this->addEventHandler(EventMouse::MOUSE_DOWN, ScrollBarWmouseDown);
+	this->addEventHandler(EventMouse::MOUSE_MOVE, ScrollBarWmouseMove);
+	this->addEventHandler(EventMouse::MOUSE_UP, ScrollBarWmouseUp);
+	root.window->renderComplete = false;
+}
+
