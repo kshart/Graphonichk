@@ -44,25 +44,14 @@ namespace grEngine {
 	};
 	class Shape :public EventDispatcher<EventMouse> {
 	  public:
-		enum {
-			TYPE_NULL,
-			TYPE_DIRECTORY,
-			TYPE_TEXTURE,
-			TYPE_TEXTFIELD,
-			
-			TYPE_POINT,
-			TYPE_LINE,
-			TYPE_RECT,
-			TYPE_CIRCLE
-		};
-		Shape(short type);
+		Shape(int crc32);
 		virtual void trace();
 		void drag(short x, short y);
 		
 		GLuint meshVAO;
 		Directory* parent;
 		Point offsetPos;
-		short type;
+		int crc32;
 		short globalx, globaly, x, y;
 		unsigned short width, height;
 		
@@ -77,6 +66,7 @@ namespace grEngine {
 	};
 	class Bitmap :public Shape {
 	  public:
+		enum {CRC32=0xEFC15B9A};
 		Bitmap(Texture*);
 		//~Bitmap();
 		void trace();
@@ -88,6 +78,7 @@ namespace grEngine {
 	};
 	class Directory :public Shape, public Buffer {
 	  public:
+		enum {CRC32=0xC489C679};
 		enum BUFFER_TYPE {
 			PREDEFINED_LIST_SH,
 			TO_TEXTURE
@@ -128,6 +119,7 @@ namespace grEngine {
 	
 	class FPoint :public Shape {
 	  public:
+		enum {CRC32=0xD88563EF};
 		FPoint(int, uint32_t);
 		int renderGLComptAll();
 		int radius;
@@ -135,6 +127,7 @@ namespace grEngine {
 	};
 	class FLines :public Shape {
 	  public:
+		enum {CRC32=0x20211C5D};
 		FLines(void*, short, short, uint32_t);
 		int renderGLComptAll();
 		short length, lineWidth;
@@ -143,6 +136,7 @@ namespace grEngine {
 	};
 	class FRect :public Shape {
 	  public:
+		enum {CRC32=0x27311957};
 		FRect(short, short, uint32_t);
 		FRect(short, short, uint32_t, unsigned short);
 		FRect(short, short, uint32_t, uint32_t, unsigned short);
@@ -153,6 +147,13 @@ namespace grEngine {
 	};
 
 	
+/*CRC32
+Bitmap		0xEFC15B9A
+Directory	0xC489C679
+FPoint		0xD88563EF
+FLines		0x20211C5D
+FRect		0x27311957
+*/
 	
 }
 

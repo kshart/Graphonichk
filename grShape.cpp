@@ -15,8 +15,8 @@
 using namespace std;
 using namespace grEngine;
 
-grEngine::Shape::Shape (short type) {
-	this->type = type;
+grEngine::Shape::Shape (int crc32) {
+	this->crc32 = crc32;
 	this->parent = NULL;
 	this->globalx = 0;
 	this->x = 0;
@@ -67,7 +67,7 @@ int grEngine::Shape::callEvent(EventMouse* event) {
 	}
 }
 
-grEngine::Bitmap::Bitmap(Texture *tex) :Shape(Shape::TYPE_TEXTURE) {
+grEngine::Bitmap::Bitmap(Texture *tex) :Shape(Bitmap::CRC32) {
 	this->tex = tex;
 	if (tex->type!=0 && tex->format!=0) {
 		this->width = tex->width;
@@ -100,12 +100,12 @@ int grEngine::Bitmap::renderGL330() {
 	//glEnable( GL_TEXTURE_2D );
 	printf("renderGL330\n");
 	short vertex[12] = {
-		this->globalx, this->globaly,
-		this->globalx+this->width, this->globaly,
-		this->globalx+this->width, this->globaly+this->height,
-		this->globalx, this->globaly,
-		this->globalx+this->width, this->globaly+this->height,
-		this->globalx, this->globaly+this->height
+		(short)(this->globalx),				(short)(this->globaly),
+		(short)(this->globalx+this->width),	(short)(this->globaly),
+		(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
+		(short)(this->globalx),				(short)(this->globaly),
+		(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
+		(short)(this->globalx),				(short)(this->globaly+this->height)
 	};
 	short texCoord[12] = {
 		0, 0,
@@ -142,10 +142,10 @@ int grEngine::Bitmap::renderGL210() {
 	unsigned char faces[4] = {0, 1, 2, 3};
 	short texCoord[8] = { 0, 0, 0, 1, 1, 1, 1, 0};
 	short vexCoord[8] = { 
-		this->globalx, this->globaly,
-		this->globalx, this->globaly+this->height,
-		this->globalx+this->width, this->globaly+this->height,
-		this->globalx+this->width, this->globaly
+		(short)(this->globalx),				(short)(this->globaly),
+		(short)(this->globalx),				(short)(this->globaly+this->height),
+		(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
+		(short)(this->globalx+this->width),	(short)(this->globaly)
 	};
 	Texture *tex = this->tex;
 	
@@ -191,7 +191,7 @@ int grEngine::Buffer::bufferGL210() {
 	return false;
 }
 
-grEngine::Directory::Directory() :Shape(Shape::TYPE_DIRECTORY), Buffer() {
+grEngine::Directory::Directory() :Shape(Directory::CRC32), Buffer() {
 	this->shapeCache = NULL;
 	this->totalShape = this->totalDir = 0;
 	this->parent = NULL;
@@ -365,7 +365,7 @@ void grEngine::Directory::updateChPos() {
 	for(int i=0; i<this->child.size(); i++) {
 		this->child[i]->globalx = this->globalx+this->child[i]->x;
 		this->child[i]->globaly = this->globaly+this->child[i]->y;
-		if (this->child[i]->type == TYPE_DIRECTORY) ((Directory*)(this->child[i]))->updateChPos();
+		if (this->child[i]->crc32 == Directory::CRC32) ((Directory*)(this->child[i]))->updateChPos();
 	}
 }
 void grEngine::Directory::drag(short x, short y) {
@@ -382,7 +382,7 @@ vector<Shape*>* grEngine::Directory::getChildShape() {
 	
 	vector<Shape*>* arr = new vector<Shape*>;
 	for (int i = 0; i<this->child.size( ); i++) {
-		if (this->child[i]->type == TYPE_DIRECTORY) {
+		if (this->child[i]->crc32 == Directory::CRC32) {
 			((Directory*)(this->child[i]))->getChildShape(arr);
 		}else{
 			arr->push_back( this->child[i] );
@@ -392,8 +392,8 @@ vector<Shape*>* grEngine::Directory::getChildShape() {
 }
 void grEngine::Directory::getChildShape(vector<Shape*>* arr) {
 	for (int i = 0; i<this->child.size( ); i++) {
-		switch (this->child[i]->type) {
-			case Shape::TYPE_DIRECTORY:
+		switch (this->child[i]->crc32) {
+			case Directory::CRC32:
 				((Directory*)(this->child[i]))->getChildShape(arr);
 				break;
 			default :
@@ -433,7 +433,7 @@ void grEngine::Directory::addChild(Shape *sh) {
 		this->height = sh->y+sh->offsetPos.y+sh->height-this->offsetPos.y;
 	}
 	this->child.push_back( sh );
-	if (sh->type == Shape::TYPE_DIRECTORY) {
+	if (sh->crc32 == Directory::crc32) {
 		this->totalShape += dir->totalShape;
 		this->totalDir += dir->totalDir+1;
 		while(dir->parent!=NULL) {
@@ -507,93 +507,8 @@ int grEngine::Directory::callEvent(EventMouse* event) {
 		this->child[i]->callEvent(event);
 	}
 }
-/*void grEngine::Directory::addChild(Directory *dir) {
-	Directory *dr = this;
-	dir->parent = this;
-	dir->globalx = this->globalx+dir->x;
-	dir->globaly = this->globaly+dir->y;
-	this->child.push_back( dir );
-	this->totalShape += dir->totalShape;
-	this->totalDir += dir->totalDir+1;
-	while(dr->parent!=NULL) {
-		dr = dr->parent;
-		dr->totalDir += dir->totalDir+1;
-	}
-	dir->updateChPos();
-}
-void grEngine::Directory::addChild(Shape *sh) {
-	Directory *dir = this;
-	sh->parent = this;
-	sh->globalx = this->globalx+sh->x;
-	sh->globaly = this->globaly+sh->y;
-	this->child.push_back( sh );
-	this->totalShape++;
-	printf("12totalShape = %i\n", this->totalShape);
-	while(dir->parent!=NULL) {
-		dir = dir->parent;
-		dir->totalShape++;
-	}
-}
-int grEngine::Directory::save(string path) {
-	FILE *file = fopen(path.c_str(), "wb");
-	this->saveFD(file, 0);
-	fclose(file);
-	return true;
-}
- int grEngine::Directory::saveFD(FILE *file, long offset) {
-	sdHead head;
-	Shape *sh;
-	head.signature = LIB_SIGN;
-	head.ver = 1;
-	head.nameLength = 0;
-	head.descriptLength = 0;
-	head.imgLength = 0;
-	head.dirLength = this->totalDir+1;
-	head.size = (sizeof(sdTypeImg)+1)*this->totalShape + (sizeof(sdTypeDir)+1)*head.dirLength+sizeof(sdHead)+head.nameLength+head.descriptLength;
-	printf("pprint size=%i\n", head.size);
-	head.imgOffset = sizeof(sdHead)+head.nameLength+head.descriptLength;
-	fseek(file, offset+sizeof(sdHead)+head.descriptLength+head.nameLength, SEEK_SET);
-	this->saveFFD(file, &head);
 
-	fseek(file, offset, SEEK_SET);
-	fwrite(&head, sizeof(sdHead), 1, file);
-	return true;
-}*/
-/*int grEngine::Directory::saveFFD (FILE *file, sdHead *head) {
-	sdTypeDir dh;
-	sdTypeImg ih;
-	char type = 0xAA;//GR_DIRECTORY;<bug>
-	dh.size = this->child.size();
-	dh.x = this->x;
-	dh.y = this->y;
-	fwrite(&type, 1, 1, file);
-	fwrite(&dh, sizeof(sdTypeDir), 1, file);
-	head->imgOffset += 1+sizeof(sdTypeDir);
-	for (int i=0; i<this->child.size(); i++) {
-		switch (this->child[i]->type) {
-			case TYPE_DIRECTORY:
-				((Directory*)(this->child[i].ln))->saveFFD(file, head);
-				break;
-			case GR_SHAPE:
-				ih.x = ((Shape*)(this->child[i].ln))->x;
-				ih.y = ((Shape*)(this->child[i].ln))->y;
-				ih.offset = head->size;
-				ih.ID = head->imgLength;
-				head->imgLength++;
-				//type = GR_SHAPE;
-				fwrite(&type, 1, 1, file);
-				fwrite(&ih, sizeof(sdTypeImg), 1, file);
-				head->imgOffset += 1+sizeof(sdTypeImg);
-
-				//head->size += ((Shape*)(this->child[i].ln))->link->saveFD(file, GR_IMG_I_BMP, head->size);
-				fseek(file, head->imgOffset, SEEK_SET);
-				break;
-		}
-	}
-	return 1;
-}*///BUGERT
-
-grEngine::FPoint::FPoint(int rad, uint32_t color=0 ) :Shape(Shape::TYPE_POINT) {
+grEngine::FPoint::FPoint(int rad, uint32_t color=0 ) :Shape(FPoint::CRC32) {
 	this->radius = rad;
 	this->color.color = color;
 }
@@ -608,7 +523,7 @@ int grEngine::FPoint::renderGLComptAll() {
 	glEnd();
 	glPopMatrix();
 }
-grEngine::FLines::FLines(void *arr, short length, short w, unsigned int color=0) :Shape(Shape::TYPE_LINE) {
+grEngine::FLines::FLines(void *arr, short length, short w, unsigned int color=0) :Shape(FLines::CRC32) {
 	this->arr = (short*)arr;
 	this->length = length;
 	this->lineWidth = w;
@@ -629,7 +544,7 @@ int grEngine::FLines::renderGLComptAll() {
 	glEnd();
 	glPopMatrix();
 }
-grEngine::FRect::FRect(short width, short height, uint32_t backgroundColor) :Shape(Shape::TYPE_RECT) {
+grEngine::FRect::FRect(short width, short height, uint32_t backgroundColor) :Shape(FRect::CRC32) {
 	this->width = width;
 	this->height = height;
 	this->borderSize = 0;
@@ -637,7 +552,7 @@ grEngine::FRect::FRect(short width, short height, uint32_t backgroundColor) :Sha
 	this->background = true;
 	this->backgroundColor.color = backgroundColor;
 }
-grEngine::FRect::FRect(short width, short height, uint32_t borderColor, unsigned short borderSize) :Shape(Shape::TYPE_RECT) {
+grEngine::FRect::FRect(short width, short height, uint32_t borderColor, unsigned short borderSize) :Shape(FRect::CRC32) {
 	this->width = width;
 	this->height = height;
 	this->borderSize = borderSize;
@@ -645,7 +560,7 @@ grEngine::FRect::FRect(short width, short height, uint32_t borderColor, unsigned
 	this->background = false;
 	this->backgroundColor.color = 0;
 }
-grEngine::FRect::FRect(short width, short height, uint32_t backgroundColor, uint32_t borderColor, unsigned short borderSize) :Shape(Shape::TYPE_RECT) {
+grEngine::FRect::FRect(short width, short height, uint32_t backgroundColor, uint32_t borderColor, unsigned short borderSize) :Shape(FRect::CRC32) {
 	this->width = width;
 	this->height = height;
 	this->borderSize = borderSize;

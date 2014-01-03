@@ -92,7 +92,7 @@ void UIObject::getChild(vector<UIUnit*> *arr) {
 }*/
 
 
-UIUnit::UIUnit() :Shape(Shape::TYPE_NULL) {
+UIUnit::UIUnit() :Shape(0) {
 	
 }
 void UIUnit::trace() {
@@ -234,7 +234,7 @@ void ButtonMouseMove (const EventMouse *e) {
 	//sb->scrollStarted = false;
 }
 
-Button::Button(unsigned short w, unsigned short h) :Shape(Shape::TYPE_NULL) {
+Button::Button(unsigned short w, unsigned short h) :Shape(0) {
 	this->width = w;
 	this->height = h;
 	this->press = false;

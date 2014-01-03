@@ -119,7 +119,7 @@ void grEngine::Font::trace() {
 	printf("</Fonts>\n");
 }
 
-grEngine::TextField::TextField(short x, short y, unsigned short w, unsigned short h) :Shape(Shape::TYPE_TEXTFIELD){
+grEngine::TextField::TextField(short x, short y, unsigned short w, unsigned short h) :Shape(0){
 	this->tex = new Texture(w, h, GL_ALPHA, GL_UNSIGNED_BYTE);
 	this->padding = this->paddingLeft = this->paddingRight = this->paddingTop = this->paddingBottom = 0;
 	this->width = w;
