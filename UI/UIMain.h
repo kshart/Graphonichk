@@ -10,7 +10,6 @@
 
 #include <vector>
 #include "../grBaseTypes.h"
-#include "../grDirectory.h"
 #ifdef	__cplusplus
 extern "C" {
 #endif
