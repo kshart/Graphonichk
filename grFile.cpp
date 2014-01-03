@@ -1,0 +1,128 @@
+#include <string>
+#include "grBaseTypes.h"
+#include "grFile.h"
+
+using namespace std;
+using namespace grEngine;
+
+DWORD WINAPI FileLoad::loaderThread (void* sys) {
+	FileLoad *fl;
+	EventFileLoad *eventFile;
+	printf("Start loaderThread\n");
+	System::threadDataSysInit(sys);
+	ReleaseSemaphore( ((ThreadDataSys*)sys)->mutex, 1, NULL );
+	while(true) {
+		for(int i=0; i<root.files.size(); i++) {
+			fl = root.files[i];
+			switch (fl->status) {
+				case FileLoad::STOP:// <editor-fold defaultstate="collapsed" desc="FileLoad::STOP">
+					printf("FileLoad::STOP\n");
+					fl->data = malloc(fl->size);
+					if ( fl->data != NULL ) {
+						fl->status = FileLoad::PROCESS;
+						if (!ReadFile( fl->fileHandle, fl->data, fl->size, NULL, &(fl->ovl) )) {
+							switch(GetLastError()) {
+								case ERROR_IO_PENDING:
+									fl->status = FileLoad::PROCESS;
+									printf("Read file pending.\n");
+									break;
+								case ERROR_HANDLE_EOF:
+									fl->status = FileLoad::SUCCESS;
+									fl->progres = fl->size;
+									printf("End of the file. The file is read.\n");
+									CloseHandle(fl->fileHandle);
+									CloseHandle(fl->ovl.hEvent);
+									break;
+								default:
+									fl->status = FileLoad::READ_FILE_ERROR;
+									fl->progres = 0;
+									free(fl->data);
+									printf("Read file failed.\n");
+									CloseHandle(fl->fileHandle);
+									CloseHandle(fl->ovl.hEvent);
+									break;
+							}
+						}else{
+							printf("readFile %i\n", GetLastError());
+						}
+					}
+					break;// </editor-fold>
+				case FileLoad::PROCESS:// <editor-fold defaultstate="collapsed" desc="FileLoad::PROCESS">
+					GetOverlappedResult(fl->fileHandle, &(fl->ovl), &(fl->progres), false);
+					switch (WaitForSingleObject(fl->ovl.hEvent, 0)) {
+						case WAIT_ABANDONED:
+							fl->status = FileLoad::READ_FILE_ERROR;
+							fl->progres = 0;
+							free(fl->data);
+							CloseHandle(fl->fileHandle);
+							CloseHandle(fl->ovl.hEvent);
+							printf("WAIT_ABANDONED\n");
+							break;
+						case WAIT_OBJECT_0:
+							printf("<FileLoad size='%iKB'>\n", fl->progres/1024);
+							fl->status = STATUS::SUCCESS;
+							root.files.erase(root.files.begin()+i);
+							i--;
+							eventFile = new EventFileLoad();
+							eventFile->file = fl;
+							eventFile->type = EventFileLoad::FILE_SUCCESS;
+							//root.events.fileLoader.callEvent(eventFile);
+							fl->callEvent(eventFile);
+							//printf("%s</FileLoad>\n", fl->data);
+							break;
+						case WAIT_TIMEOUT:
+							printf("<FileLoad size='%iKB'/>\n", fl->progres/1024);
+							break;
+						case WAIT_FAILED:
+							fl->status = FileLoad::READ_FILE_ERROR;
+							fl->progres = 0;
+							free(fl->data);
+							CloseHandle(fl->fileHandle);
+							CloseHandle(fl->ovl.hEvent);
+							printf("WAIT_FAILED\n");
+							break;
+					}
+					printf("FileLoad::PROCESS\n");
+					break;// </editor-fold>
+			}
+			
+		}
+		Sleep(100);
+	}
+}
+
+void FileLoad::init () {
+	ThreadDataSys s;
+	s.mutex = CreateSemaphore( NULL, 1, 1, "fileLoad" );
+	s.window = NULL;
+	s.system = &grEngine::root;
+	WaitForSingleObject(s.mutex, INFINITE);
+	//this->winThread = 
+	CreateThread(NULL, 0, FileLoad::loaderThread, &s, 0, NULL);
+	WaitForSingleObject(s.mutex, INFINITE);
+	CloseHandle(s.mutex);
+}
+FileLoad::FileLoad(string path) {
+	this->progres = 0.0;
+	this->fileHandle = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+	if (this->fileHandle == INVALID_HANDLE_VALUE) {
+		printf("Could not open file (error %d)\n", GetLastError());
+		this->status = STATUS::FILE_NOT_FOUND;
+		this->size = 0;
+		this->path = "";
+		this->name = "";
+		this->data = NULL;
+	}else{
+		this->status = STATUS::STOP;
+		this->ovl.Offset = 0;
+		this->ovl.OffsetHigh = 0;
+		this->ovl.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+		if (this->ovl.hEvent == NULL) GetLastError();
+		this->size = GetFileSize(this->fileHandle, NULL);
+		this->path = path;
+		//this->name = get_name(path);
+		this->data = NULL;
+		root.files.push_back(this);
+	}
+	printf("<FileLoad size='%i' path='%s' fileHandle='%i' />\n", this->size, this->path.c_str(), this->fileHandle);
+}
