@@ -57,8 +57,6 @@ namespace grEngine {
 	
 	
 	
-	
-	
 	class UIButton;
 	class UICheckbox;
 		//Unchecked
@@ -167,6 +165,23 @@ namespace grEngine {
 		Shape *shapePressed, *shapeNormal, *shapeRollOver;
 		STATUS status;
 		bool press;
+	};
+	class UICheckbox :public Shape {
+	public:
+		enum {CRC32=0x4CA925F4};
+		enum STATUS {
+			UNCHECKED_PRESS, UNCHECKED_NORMAL, UNCHECKED_ROLLOVER, UNCHECKED_DISABLE,
+			CHECKED_PRESS, CHECKED_NORMAL, CHECKED_ROLLOVER, CHECKED_DISABLE
+		};
+		UICheckbox(unsigned short w, unsigned short h);
+		int renderGLComptAll();
+		int renderGL400();
+		int renderGL330();
+		int renderGL210();
+		Shape *shUnchkPressed, *shUnchkNormal, *shUnchkRollOver, *shUnchkDisable, *shChkPressed, *shChkNormal, *shChkRollOver, *shChkDisable;
+		STATUS status;
+		bool press;
+		bool checked;
 	};
 }
 

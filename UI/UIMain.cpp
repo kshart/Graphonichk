@@ -226,11 +226,6 @@ void ButtonMouseUp (const EventMouse *e) {
 	}
 	root.window->renderComplete = false;
 }
-void ButtonMouseMove (const EventMouseShape *e) {
-	UIButton *sb = (UIButton*)(e->shape);
-	short mousex, mousey;
-	//sb->scrollStarted = false;
-}
 void ButtonMouseOver (const EventMouseShape *e) {
 	UIButton *sb = (UIButton*)(e->shape);
 	if (sb->press) {
@@ -256,7 +251,6 @@ UIButton::UIButton(unsigned short w, unsigned short h) :Shape(UIButton::CRC32) {
 	this->shapeNormal = new FRect(w, h, 0xFF00FF00);
 	this->shapeRollOver = new FRect(w, h, 0xFF0000FF);
 	this->addEventHandler(EventMouseShape::MOUSE_DOWN, ButtonMouseDown);
-	this->addEventHandler(EventMouseShape::MOUSE_MOVE, ButtonMouseMove);
 	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, ButtonMouseOut);
 	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OVER, ButtonMouseOver);
 	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, ButtonMouseUp, this);
@@ -310,6 +304,207 @@ int UIButton::renderGL210() {
 			return true;
 		case UIButton::ROLLOVER:
 			this->shapeRollOver->renderGL210();
+			return true;
+	}
+}
+
+
+void UICheckboxMouseDown (const EventMouseShape *e) {
+	UICheckbox *sb = (UICheckbox*)(e->shape);
+	if (sb->status!=UICheckbox::CHECKED_DISABLE && sb->status!=UICheckbox::UNCHECKED_DISABLE) {
+		sb->press = true;
+		if (sb->checked) {
+			sb->status = UICheckbox::CHECKED_PRESS;
+		}else{
+			sb->status = UICheckbox::UNCHECKED_PRESS;
+		}
+		root.window->renderComplete = false;	
+	}
+}
+void UICheckboxMouseUp (const EventMouse *e) {
+	UICheckbox *sb = (UICheckbox*)(e->obj);
+	short localx, localy;
+	if (sb->press) {
+		sb->press = false;
+		localx = e->x - sb->globalx;
+		localy = e->y - sb->globaly;
+		if (localx>0 && localx<sb->width && localy>0 && localy<sb->height) {
+			if (sb->checked) {
+				sb->checked = false;
+				sb->status = UICheckbox::UNCHECKED_NORMAL;
+			}else{
+				sb->checked = true;
+				sb->status = UICheckbox::CHECKED_NORMAL;
+			}
+		}else{
+			if (sb->checked) {
+				sb->status = UICheckbox::CHECKED_NORMAL;
+			}else{
+				sb->status = UICheckbox::UNCHECKED_NORMAL;
+			}
+		}
+		root.window->renderComplete = false;
+	}
+}
+void UICheckboxMouseOver (const EventMouseShape *e) {
+	UICheckbox *sb = (UICheckbox*)(e->shape);
+	if (sb->status!=UICheckbox::CHECKED_DISABLE && sb->status!=UICheckbox::UNCHECKED_DISABLE) {
+		if (sb->checked) {
+			if (sb->press) {
+				sb->status = UICheckbox::CHECKED_PRESS;
+			}else{
+				sb->status = UICheckbox::CHECKED_ROLLOVER;
+			}
+		}else{
+			if (sb->press) {
+				sb->status = UICheckbox::UNCHECKED_PRESS;
+			}else{
+				sb->status = UICheckbox::UNCHECKED_ROLLOVER;
+			}
+		}
+		root.window->renderComplete = false;	
+	}
+}
+void UICheckboxMouseOut (const EventMouseShape *e) {
+	UICheckbox *sb = (UICheckbox*)(e->shape);
+	if (sb->status!=UICheckbox::CHECKED_DISABLE && sb->status!=UICheckbox::UNCHECKED_DISABLE) {
+		if (sb->checked) {
+			sb->status = UICheckbox::CHECKED_NORMAL;
+		}else{
+			sb->status = UICheckbox::UNCHECKED_NORMAL;
+		}
+		root.window->renderComplete = false;	
+	}
+}
+
+UICheckbox::UICheckbox(unsigned short w, unsigned short h) :Shape(UIButton::CRC32) {
+	this->width = w;
+	this->height = h;
+	this->press = false;
+	this->checked = false;
+	this->status = UICheckbox::UNCHECKED_NORMAL;
+	this->shUnchkPressed = new FRect(w, h, 0xFFFF0000);
+	this->shUnchkNormal = new FRect(w, h, 0xFF00FF00);
+	this->shUnchkRollOver = new FRect(w, h, 0xFF0000FF);
+	this->shUnchkDisable = new FRect(w, h, 0xFFAAAAAA);
+	this->shChkPressed = new FRect(w, h, 0xFFFF00FF);
+	this->shChkNormal = new FRect(w, h, 0xFFFFFF00);
+	this->shChkRollOver = new FRect(w, h, 0xFF00FFFF);
+	this->shChkDisable = new FRect(w, h, 0xFF444444);
+	this->addEventHandler(EventMouseShape::MOUSE_DOWN, UICheckboxMouseDown);
+	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, UICheckboxMouseOut);
+	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OVER, UICheckboxMouseOver);
+	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, UICheckboxMouseUp, this);
+}
+int UICheckbox::renderGLComptAll() {
+	switch(this->status) {
+		case UICheckbox::UNCHECKED_PRESS:
+			this->shUnchkPressed->renderGLComptAll();
+			return true;
+		case UICheckbox::UNCHECKED_NORMAL:
+			this->shUnchkNormal->renderGLComptAll();
+			return true;
+		case UICheckbox::UNCHECKED_ROLLOVER:
+			this->shUnchkRollOver->renderGLComptAll();
+			return true;
+		case UICheckbox::UNCHECKED_DISABLE:
+			this->shUnchkDisable->renderGLComptAll();
+			return true;
+		case UICheckbox::CHECKED_PRESS:
+			this->shChkPressed->renderGLComptAll();
+			return true;
+		case UICheckbox::CHECKED_NORMAL:
+			this->shChkNormal->renderGLComptAll();
+			return true;
+		case UICheckbox::CHECKED_ROLLOVER:
+			this->shChkRollOver->renderGLComptAll();
+			return true;
+		case UICheckbox::CHECKED_DISABLE:
+			this->shChkDisable->renderGLComptAll();
+			return true;
+	}
+}
+int UICheckbox::renderGL400() {
+	switch(this->status) {
+		case UICheckbox::UNCHECKED_PRESS:
+			this->shUnchkPressed->renderGL400();
+			return true;
+		case UICheckbox::UNCHECKED_NORMAL:
+			this->shUnchkNormal->renderGL400();
+			return true;
+		case UICheckbox::UNCHECKED_ROLLOVER:
+			this->shUnchkRollOver->renderGL400();
+			return true;
+		case UICheckbox::UNCHECKED_DISABLE:
+			this->shUnchkDisable->renderGL400();
+			return true;
+		case UICheckbox::CHECKED_PRESS:
+			this->shChkPressed->renderGL400();
+			return true;
+		case UICheckbox::CHECKED_NORMAL:
+			this->shChkNormal->renderGL400();
+			return true;
+		case UICheckbox::CHECKED_ROLLOVER:
+			this->shChkRollOver->renderGL400();
+			return true;
+		case UICheckbox::CHECKED_DISABLE:
+			this->shChkDisable->renderGL400();
+			return true;
+	}
+}
+int UICheckbox::renderGL330() {
+	switch(this->status) {
+		case UICheckbox::UNCHECKED_PRESS:
+			this->shUnchkPressed->renderGL330();
+			return true;
+		case UICheckbox::UNCHECKED_NORMAL:
+			this->shUnchkNormal->renderGL330();
+			return true;
+		case UICheckbox::UNCHECKED_ROLLOVER:
+			this->shUnchkRollOver->renderGL330();
+			return true;
+		case UICheckbox::UNCHECKED_DISABLE:
+			this->shUnchkDisable->renderGL330();
+			return true;
+		case UICheckbox::CHECKED_PRESS:
+			this->shChkPressed->renderGL330();
+			return true;
+		case UICheckbox::CHECKED_NORMAL:
+			this->shChkNormal->renderGL330();
+			return true;
+		case UICheckbox::CHECKED_ROLLOVER:
+			this->shChkRollOver->renderGL330();
+			return true;
+		case UICheckbox::CHECKED_DISABLE:
+			this->shChkDisable->renderGL330();
+			return true;
+	}
+}
+int UICheckbox::renderGL210() {
+	switch(this->status) {
+		case UICheckbox::UNCHECKED_PRESS:
+			this->shUnchkPressed->renderGL210();
+			return true;
+		case UICheckbox::UNCHECKED_NORMAL:
+			this->shUnchkNormal->renderGL210();
+			return true;
+		case UICheckbox::UNCHECKED_ROLLOVER:
+			this->shUnchkRollOver->renderGL210();
+			return true;
+		case UICheckbox::UNCHECKED_DISABLE:
+			this->shUnchkDisable->renderGL210();
+			return true;
+		case UICheckbox::CHECKED_PRESS:
+			this->shChkPressed->renderGL210();
+			return true;
+		case UICheckbox::CHECKED_NORMAL:
+			this->shChkNormal->renderGL210();
+			return true;
+		case UICheckbox::CHECKED_ROLLOVER:
+			this->shChkRollOver->renderGL210();
+			return true;
+		case UICheckbox::CHECKED_DISABLE:
+			this->shChkDisable->renderGL210();
 			return true;
 	}
 }
