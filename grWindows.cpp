@@ -90,10 +90,9 @@ DWORD WINAPI renderThread (void* sys) {
 	win->resize(win->width, win->height);
 	printf("SUCCESS\n");
 	while (IsWindow(win->hWnd)) {
-		if (!root.window->renderComplete) {
+		if ( !root.window->textureUpdateBuffer.empty() ) {
 			Texture *tex;
 			int countLoadedTex = 0;
-			//2 1
 			for(int i=0; i<root.window->textureUpdateBuffer.size()-countLoadedTex; i++) {
 				tex = root.window->textureUpdateBuffer[i];
 				if (tex->type!=0 && tex->format!=0 && tex->GLID==0 && tex->status==Texture::ERR_NO) {
@@ -117,27 +116,30 @@ DWORD WINAPI renderThread (void* sys) {
 			if (countLoadedTex < root.window->textureUpdateBuffer.size()) {
 				root.window->textureUpdateBuffer.resize( root.window->textureUpdateBuffer.size()-countLoadedTex );
 			}
-			countLoadedTex = 0;
-			//2 1
+		}
+		if ( !root.window->bitmapUpdateBuffer.empty() ) {
 			Bitmap *bmp;
-			for(int i=0; i<root.window->bitmapUpdateBuffer.size()-countLoadedTex; i++) {
+			int countUpdateBMP = 0;
+			for(int i=0; i<root.window->bitmapUpdateBuffer.size()-countUpdateBMP; i++) {
 				bmp = root.window->bitmapUpdateBuffer[i];
 				if (bmp->tex->GLID!=0 && bmp->tex->status==Texture::ERR_NO) {
 					bmp->width = bmp->tex->width;
 					bmp->height = bmp->tex->height;
-					countLoadedTex++;
-					if (countLoadedTex >= root.window->bitmapUpdateBuffer.size()) {
+					root.window->renderComplete = false;
+					countUpdateBMP++;
+					if (countUpdateBMP >= root.window->bitmapUpdateBuffer.size()) {
 						root.window->bitmapUpdateBuffer.clear();
 						break;
 					}
-					root.window->bitmapUpdateBuffer[i] = root.window->bitmapUpdateBuffer[ root.window->bitmapUpdateBuffer.size()-countLoadedTex ]; 
-					root.window->bitmapUpdateBuffer[ root.window->bitmapUpdateBuffer.size()-countLoadedTex ] = NULL;
+					root.window->bitmapUpdateBuffer[i] = root.window->bitmapUpdateBuffer[ root.window->bitmapUpdateBuffer.size()-countUpdateBMP ]; 
+					root.window->bitmapUpdateBuffer[ root.window->bitmapUpdateBuffer.size()-countUpdateBMP ] = NULL;
 				}
 			}
-			if (countLoadedTex < root.window->bitmapUpdateBuffer.size()) {
-				root.window->bitmapUpdateBuffer.resize( root.window->bitmapUpdateBuffer.size()-countLoadedTex );
+			if (countUpdateBMP < root.window->bitmapUpdateBuffer.size()) {
+				root.window->bitmapUpdateBuffer.resize( root.window->bitmapUpdateBuffer.size()-countUpdateBMP );
 			}
-			root.window->root->trace();
+		}
+		if (!root.window->renderComplete) {
 			root.window->redraw();
 		}
 		Sleep(10);
