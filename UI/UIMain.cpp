@@ -219,13 +219,32 @@ void ButtonMouseDown (const EventMouseShape *e) {
 void ButtonMouseUp (const EventMouse *e) {
 	Button *sb = (Button*)(e->obj);
 	sb->press = false;
-	sb->status = Button::NORMAL;
+	if (sb->mouseEventRollOver) {
+		sb->status = Button::ROLLOVER;
+	}else{
+		sb->status = Button::NORMAL;
+	}
 	root.window->renderComplete = false;
 }
 void ButtonMouseMove (const EventMouseShape *e) {
 	Button *sb = (Button*)(e->shape);
 	short mousex, mousey;
 	//sb->scrollStarted = false;
+}
+void ButtonMouseOver (const EventMouseShape *e) {
+	Button *sb = (Button*)(e->shape);
+	if (sb->press) {
+		sb->status = Button::PRESS;
+	}else{
+		sb->status = Button::ROLLOVER;
+	}
+	root.window->renderComplete = false;
+}
+void ButtonMouseOut (const EventMouseShape *e) {
+	Button *sb = (Button*)(e->shape);
+	sb->status = Button::NORMAL;
+	
+	root.window->renderComplete = false;
 }
 
 Button::Button(unsigned short w, unsigned short h) :Shape(0) {
@@ -238,6 +257,8 @@ Button::Button(unsigned short w, unsigned short h) :Shape(0) {
 	this->shapeRollOver = new FRect(w, h, 0xFF0000FF);
 	this->addEventHandler(EventMouseShape::MOUSE_DOWN, ButtonMouseDown);
 	this->addEventHandler(EventMouseShape::MOUSE_MOVE, ButtonMouseMove);
+	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, ButtonMouseOut);
+	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OVER, ButtonMouseOver);
 	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, ButtonMouseUp, this);
 }
 int Button::renderGLComptAll() {

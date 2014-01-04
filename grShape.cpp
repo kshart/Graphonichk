@@ -18,6 +18,7 @@ using namespace grEngine;
 grEngine::Shape::Shape (int crc32) {
 	this->crc32 = crc32;
 	this->mouseEventActive = false;
+	this->mouseEventRollOver = false;
 	this->parent = NULL;
 	this->globalx = 0;
 	this->x = 0;
@@ -521,6 +522,7 @@ Shape* grEngine::Directory::globalHitTest(short x, short y) {
 	return NULL;
 }
 int grEngine::Directory::callEvent(EventMouseShape* event) {
+	EventMouseShape* eventRollOver;
 	event->shape = this;
 	event->localx = event->globalx - this->globalx;
 	event->localy = event->globaly - this->globaly;
@@ -530,11 +532,25 @@ int grEngine::Directory::callEvent(EventMouseShape* event) {
 			this->eventList[i].fun(event);
 		}
 	}
-	for(int i=0, s=this->child.size(); i<s; i++) {
+	for(int i=this->child.size()-1; i>=0; i--) {
 		if (this->child[i]->mouseEventActive) {
 			sh = this->child[i];
 			if (event->globalx>sh->x+sh->offsetPos.x && event->globaly>sh->y+sh->offsetPos.y && event->globalx<sh->x+sh->offsetPos.x+sh->width && event->globaly<sh->x+sh->offsetPos.x+sh->height) {
+				if (!sh->mouseEventRollOver) {
+					sh->mouseEventRollOver = true;
+					eventRollOver = new EventMouseShape();
+					memcpy(eventRollOver, event, sizeof(EventMouseShape));
+					eventRollOver->type = EventMouseShape::MOUSE_ROLL_OVER;
+					sh->callEvent(eventRollOver);
+				}
 				sh->callEvent(event);
+				break;
+			}else if (sh->mouseEventRollOver) {
+				sh->mouseEventRollOver = false;
+				eventRollOver = new EventMouseShape();
+				memcpy(eventRollOver, event, sizeof(EventMouseShape));
+				eventRollOver->type = EventMouseShape::MOUSE_ROLL_OUT;
+				sh->callEvent(eventRollOver);
 			}
 		}
 	}

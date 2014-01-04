@@ -64,6 +64,7 @@ namespace grEngine {
 		unsigned short width, height;
 		///
 		bool mouseEventActive;
+		bool mouseEventRollOver;
 		
 		virtual int renderGLComptAll();
 		virtual int renderGL400();
