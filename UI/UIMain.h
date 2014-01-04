@@ -162,6 +162,7 @@ namespace grEngine {
 		int renderGL400();
 		int renderGL330();
 		int renderGL210();
+		void updateGlobalPosition();
 		Shape *shapePressed, *shapeNormal, *shapeRollOver;
 		STATUS status;
 		bool press;
@@ -174,6 +175,7 @@ namespace grEngine {
 			CHECKED_PRESS, CHECKED_NORMAL, CHECKED_ROLLOVER, CHECKED_DISABLE
 		};
 		UICheckbox(unsigned short w, unsigned short h);
+		void updateGlobalPosition();
 		int renderGLComptAll();
 		int renderGL400();
 		int renderGL330();

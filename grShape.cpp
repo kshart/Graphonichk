@@ -15,7 +15,7 @@
 using namespace std;
 using namespace grEngine;
 
-grEngine::Shape::Shape (int crc32) {
+grEngine::Shape::Shape(int crc32) {
 	this->crc32 = crc32;
 	this->mouseEventActive = false;
 	this->mouseEventRollOver = false;
@@ -27,10 +27,10 @@ grEngine::Shape::Shape (int crc32) {
 	this->width = this->height = 0;
 	this->offsetPos.x = this->offsetPos.y = 0;
 }
-void grEngine::Shape::trace() {
+void Shape::trace() {
 	printf("Shape a='%i' x=%i, y=%i, gx=%i, gy=%i, w=%i, h=%i\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->width, this->height);
 }
-void grEngine::Shape::drag(short x, short y) {
+void Shape::drag(short x, short y) {
 	this->x = x;
 	this->y = y;
 	if (this->parent!=NULL) {
@@ -39,19 +39,27 @@ void grEngine::Shape::drag(short x, short y) {
 	}
 	root.window->renderComplete = false;
 }
-int grEngine::Shape::renderGLComptAll() {
+void Shape::updateGlobalPosition() {
+	if (this->parent==NULL) {
+		this->globalx = this->globaly = 0;
+	}else{
+		this->globalx = this->parent->globalx + this->x;
+		this->globaly = this->parent->globaly + this->y;
+	}
+}
+int Shape::renderGLComptAll() {
 	return false;
 }
-int grEngine::Shape::renderGL400() {
+int Shape::renderGL400() {
 	return false;
 }
-int grEngine::Shape::renderGL330() {
+int Shape::renderGL330() {
 	return false;
 }
-int grEngine::Shape::renderGL210() {
+int Shape::renderGL210() {
 	return false;
 }
-Shape* grEngine::Shape::globalHitTest(short x, short y) {
+Shape* Shape::globalHitTest(short x, short y) {
 	if ( x>this->globalx+this->offsetPos.x &&
 		 y>this->globaly+this->offsetPos.y &&
 		 x<this->globalx+this->offsetPos.x+this->width &&
@@ -60,7 +68,7 @@ Shape* grEngine::Shape::globalHitTest(short x, short y) {
 	}
 	return NULL;
 }
-int grEngine::Shape::callEvent(EventMouseShape* event) {
+int Shape::callEvent(EventMouseShape* event) {
 	event->shape = this;
 	event->localx = event->globalx-this->globalx;
 	event->localy = event->globaly-this->globaly;
@@ -70,7 +78,7 @@ int grEngine::Shape::callEvent(EventMouseShape* event) {
 		}
 	}
 }
-int grEngine::Shape::addEventHandler( int type, void(*fun)(const EventMouseShape*)) {
+int Shape::addEventHandler( int type, void(*fun)(const EventMouseShape*)) {
 	EventLinc el;
 	el.obj = this;
 	el.type = type;
@@ -82,130 +90,6 @@ int grEngine::Shape::addEventHandler( int type, void(*fun)(const EventMouseShape
 		sh = sh->parent;
 		sh->mouseEventActive = true;
 	}
-}
-
-grEngine::Bitmap::Bitmap(Texture *tex) :Shape(Bitmap::CRC32) {
-	this->tex = tex;
-	if (tex->type!=0 && tex->format!=0) {
-		this->width = tex->width;
-		this->height = tex->height;
-	}else{
-		root.window->bitmapUpdateBuffer.push_back(this);
-	}
-}
-void grEngine::Bitmap::trace() {
-	printf("<Bitmap a='%i' x='%i' y='%i' gx='%i' gy='%i' w='%i' h='%i' texId='%i'/>\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->width, this->height, this->tex);
-}
-int grEngine::Bitmap::renderGLComptAll() {
-	Texture *tex = this->tex;
-	glEnable( GL_TEXTURE_2D );
-	glBindTexture(GL_TEXTURE_2D, tex->GLID);
-	glColor4ub(0xFF,0xFF,0xFF,0xFF);
-	glBegin( GL_QUADS );// <editor-fold defaultstate="collapsed" desc="GL_QUADS">
-		glTexCoord2d( 0.0, 0.0 );	glVertex2s(this->globalx, this->globaly );
-		glTexCoord2d( 0.0, 1.0 );	glVertex2s(this->globalx, this->globaly+tex->height );
-		glTexCoord2d( 1.0, 1.0 );	glVertex2s(this->globalx+tex->width, this->globaly+tex->height );
-		glTexCoord2d( 1.0, 0.0 );	glVertex2s(this->globalx+tex->width, this->globaly );
-	glEnd();// </editor-fold>
-	glDisable( GL_TEXTURE_2D );
-	return true;
-}
-int grEngine::Bitmap::renderGL400() {
-	return false;
-}
-int grEngine::Bitmap::renderGL330() {
-	//glEnable( GL_TEXTURE_2D );
-	printf("renderGL330\n");
-	short vertex[12] = {
-		(short)(this->globalx),				(short)(this->globaly),
-		(short)(this->globalx+this->width),	(short)(this->globaly),
-		(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
-		(short)(this->globalx),				(short)(this->globaly),
-		(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
-		(short)(this->globalx),				(short)(this->globaly+this->height)
-	};
-	short texCoord[12] = {
-		0, 0,
-		1, 0,
-		1, 1,
-		0, 0,
-		1, 1,
-		0, 1
-	};
-	glBindTexture(GL_TEXTURE_2D, tex->GLID);
-	GLuint meshVAO, meshVBO;
-	glGenVertexArrays(1, &meshVAO);
-	glBindVertexArray(meshVAO);
-	glGenBuffers(1, &meshVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
-	glBufferData(GL_ARRAY_BUFFER, 12*2, vertex, GL_STATIC_DRAW);
-	GLint positionLocation = glGetAttribLocation(GLShader::glsl->shaderProgram, "position");
-	glVertexAttribPointer(positionLocation, 2, GL_SHORT, GL_FALSE, 0, NULL);
-	glEnableVertexAttribArray(positionLocation);
-	glGenBuffers(1, &meshVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
-	glBufferData(GL_ARRAY_BUFFER, 12*2, texCoord, GL_STATIC_DRAW);
-	positionLocation = glGetAttribLocation(GLShader::glsl->shaderProgram, "texCoord");
-	glVertexAttribPointer(positionLocation, 2, GL_SHORT, GL_FALSE, 0, NULL);
-	glEnableVertexAttribArray(positionLocation);
-	glBindVertexArray(meshVAO);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	//glDisable(GL_TEXTURE_2D);
-	return true;
-}
-int grEngine::Bitmap::renderGL210() {
-	if (this->tex->GLID == 0) return false;
-	printf("renderGL210 \n");
-	unsigned char faces[4] = {0, 1, 2, 3};
-	short texCoord[8] = { 0, 0, 0, 1, 1, 1, 1, 0};
-	short vexCoord[8] = { 
-		(short)(this->globalx),				(short)(this->globaly),
-		(short)(this->globalx),				(short)(this->globaly+this->height),
-		(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
-		(short)(this->globalx+this->width),	(short)(this->globaly)
-	};
-	Texture *tex = this->tex;
-	
-	glEnable( GL_TEXTURE_2D );
-	glBindTexture(GL_TEXTURE_2D, tex->GLID);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState (GL_TEXTURE_COORD_ARRAY);
-		glVertexPointer (2, GL_SHORT, 0, vexCoord);
-		glTexCoordPointer(2, GL_SHORT, 0, texCoord);
-		glDrawElements(GL_QUADS, 4, GL_UNSIGNED_BYTE, faces);
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	glDisable( GL_TEXTURE_2D );
-	return true;
-}
-
-grEngine::Buffer::Buffer() {
-	this->success = false;
-	this->status = false;
-	this->tex = NULL;
-}
-bool grEngine::Buffer::switchOn() {
-	if (!this->status) {
-		root.window->FBOBuffer.push_back(this);
-		status = true;
-		success = false;
-	}
-	return false;
-}
-bool grEngine::Buffer::switchOff() {
-	return false;
-}
-int grEngine::Buffer::bufferGLComptAll() {
-	return false;
-}
-int grEngine::Buffer::bufferGL400() {
-	return false;
-}
-int grEngine::Buffer::bufferGL330() {
-	return false;
-}
-int grEngine::Buffer::bufferGL210() {
-	return false;
 }
 
 grEngine::Directory::Directory() :Shape(Directory::CRC32), Buffer() {
@@ -378,21 +262,17 @@ bool grEngine::Directory::switchOn() {
 	}
 	return false;
 }
-void grEngine::Directory::updateChPos() {
+void grEngine::Directory::updateGlobalPosition() {
 	for(int i=0; i<this->child.size(); i++) {
 		this->child[i]->globalx = this->globalx+this->child[i]->x;
 		this->child[i]->globaly = this->globaly+this->child[i]->y;
-		if (this->child[i]->crc32 == Directory::CRC32) ((Directory*)(this->child[i]))->updateChPos();
+		if (this->child[i]->crc32 == Directory::CRC32) ((Directory*)(this->child[i]))->updateGlobalPosition();
 	}
 }
 void grEngine::Directory::drag(short x, short y) {
-	if (this->parent!=NULL) {
-		this->globalx = this->parent->globalx+x;
-		this->globaly = this->parent->globaly+y;
-	}
 	this->x = x;
 	this->y = y;
-	this->updateChPos();
+	this->updateGlobalPosition();
 	root.window->renderComplete = false;
 }
 vector<Shape*>* grEngine::Directory::getChildShape() {
@@ -423,12 +303,11 @@ void grEngine::Directory::addChild(Shape *sh) {
 	Directory *dir = this;
 	short nx, ny;
 	sh->parent = this;
+	sh->updateGlobalPosition();
 	//	y	by	bh	outB
 	//	50	-30	70	20/90
 	// by	bh	outB
 	// -50	100	ob.h-by
-	sh->globalx = this->globalx+sh->x;
-	sh->globaly = this->globaly+sh->y;
 	#ifdef DEBUG
 	sh->trace();
 	this->trace();
@@ -466,7 +345,6 @@ void grEngine::Directory::addChild(Shape *sh) {
 				shape->mouseEventActive = true;
 			}
 		}
-		dir->updateChPos();
 	}else{
 		this->totalShape++;
 		while(dir->parent!=NULL) {
@@ -554,6 +432,130 @@ int grEngine::Directory::callEvent(EventMouseShape* event) {
 			}
 		}
 	}
+}
+
+Bitmap::Bitmap(Texture *tex) :Shape(Bitmap::CRC32) {
+	this->tex = tex;
+	if (tex->type!=0 && tex->format!=0) {
+		this->width = tex->width;
+		this->height = tex->height;
+	}else{
+		root.window->bitmapUpdateBuffer.push_back(this);
+	}
+}
+void Bitmap::trace() {
+	printf("<Bitmap a='%i' x='%i' y='%i' gx='%i' gy='%i' w='%i' h='%i' texId='%i'/>\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->width, this->height, this->tex);
+}
+int Bitmap::renderGLComptAll() {
+	Texture *tex = this->tex;
+	glEnable( GL_TEXTURE_2D );
+	glBindTexture(GL_TEXTURE_2D, tex->GLID);
+	glColor4ub(0xFF,0xFF,0xFF,0xFF);
+	glBegin( GL_QUADS );// <editor-fold defaultstate="collapsed" desc="GL_QUADS">
+		glTexCoord2d( 0.0, 0.0 );	glVertex2s(this->globalx, this->globaly );
+		glTexCoord2d( 0.0, 1.0 );	glVertex2s(this->globalx, this->globaly+tex->height );
+		glTexCoord2d( 1.0, 1.0 );	glVertex2s(this->globalx+tex->width, this->globaly+tex->height );
+		glTexCoord2d( 1.0, 0.0 );	glVertex2s(this->globalx+tex->width, this->globaly );
+	glEnd();// </editor-fold>
+	glDisable( GL_TEXTURE_2D );
+	return true;
+}
+int Bitmap::renderGL400() {
+	return false;
+}
+int Bitmap::renderGL330() {
+	//glEnable( GL_TEXTURE_2D );
+	printf("renderGL330\n");
+	short vertex[12] = {
+		(short)(this->globalx),				(short)(this->globaly),
+		(short)(this->globalx+this->width),	(short)(this->globaly),
+		(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
+		(short)(this->globalx),				(short)(this->globaly),
+		(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
+		(short)(this->globalx),				(short)(this->globaly+this->height)
+	};
+	short texCoord[12] = {
+		0, 0,
+		1, 0,
+		1, 1,
+		0, 0,
+		1, 1,
+		0, 1
+	};
+	glBindTexture(GL_TEXTURE_2D, tex->GLID);
+	GLuint meshVAO, meshVBO;
+	glGenVertexArrays(1, &meshVAO);
+	glBindVertexArray(meshVAO);
+	glGenBuffers(1, &meshVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
+	glBufferData(GL_ARRAY_BUFFER, 12*2, vertex, GL_STATIC_DRAW);
+	GLint positionLocation = glGetAttribLocation(GLShader::glsl->shaderProgram, "position");
+	glVertexAttribPointer(positionLocation, 2, GL_SHORT, GL_FALSE, 0, NULL);
+	glEnableVertexAttribArray(positionLocation);
+	glGenBuffers(1, &meshVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
+	glBufferData(GL_ARRAY_BUFFER, 12*2, texCoord, GL_STATIC_DRAW);
+	positionLocation = glGetAttribLocation(GLShader::glsl->shaderProgram, "texCoord");
+	glVertexAttribPointer(positionLocation, 2, GL_SHORT, GL_FALSE, 0, NULL);
+	glEnableVertexAttribArray(positionLocation);
+	glBindVertexArray(meshVAO);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	//glDisable(GL_TEXTURE_2D);
+	return true;
+}
+int Bitmap::renderGL210() {
+	if (this->tex->GLID == 0) return false;
+	printf("renderGL210 \n");
+	unsigned char faces[4] = {0, 1, 2, 3};
+	short texCoord[8] = { 0, 0, 0, 1, 1, 1, 1, 0};
+	short vexCoord[8] = { 
+		(short)(this->globalx),				(short)(this->globaly),
+		(short)(this->globalx),				(short)(this->globaly+this->height),
+		(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
+		(short)(this->globalx+this->width),	(short)(this->globaly)
+	};
+	Texture *tex = this->tex;
+	
+	glEnable( GL_TEXTURE_2D );
+	glBindTexture(GL_TEXTURE_2D, tex->GLID);
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState (GL_TEXTURE_COORD_ARRAY);
+		glVertexPointer (2, GL_SHORT, 0, vexCoord);
+		glTexCoordPointer(2, GL_SHORT, 0, texCoord);
+		glDrawElements(GL_QUADS, 4, GL_UNSIGNED_BYTE, faces);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisable( GL_TEXTURE_2D );
+	return true;
+}
+
+grEngine::Buffer::Buffer() {
+	this->success = false;
+	this->status = false;
+	this->tex = NULL;
+}
+bool grEngine::Buffer::switchOn() {
+	if (!this->status) {
+		root.window->FBOBuffer.push_back(this);
+		status = true;
+		success = false;
+	}
+	return false;
+}
+bool grEngine::Buffer::switchOff() {
+	return false;
+}
+int grEngine::Buffer::bufferGLComptAll() {
+	return false;
+}
+int grEngine::Buffer::bufferGL400() {
+	return false;
+}
+int grEngine::Buffer::bufferGL330() {
+	return false;
+}
+int grEngine::Buffer::bufferGL210() {
+	return false;
 }
 
 grEngine::FPoint::FPoint(int rad, uint32_t color=0 ) :Shape(FPoint::CRC32) {

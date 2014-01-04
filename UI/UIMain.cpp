@@ -255,6 +255,19 @@ UIButton::UIButton(unsigned short w, unsigned short h) :Shape(UIButton::CRC32) {
 	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OVER, ButtonMouseOver);
 	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, ButtonMouseUp, this);
 }
+void UIButton::updateGlobalPosition() {
+	if (this->parent!=NULL) {
+		this->globalx = parent->globalx+this->x;
+		this->globaly = parent->globaly+this->y;
+		this->shapePressed->globalx = this->globalx+shapePressed->x;
+		this->shapePressed->globaly = this->globaly+shapePressed->y;
+		this->shapeNormal->globalx = this->globalx+shapeNormal->x;
+		this->shapeNormal->globaly = this->globaly+shapeNormal->y;
+		this->shapeRollOver->globalx = this->globalx+shapeRollOver->x;
+		this->shapeRollOver->globaly = this->globaly+shapeRollOver->y;
+	}
+	root.window->renderComplete = false;
+}
 int UIButton::renderGLComptAll() {
 	switch(this->status) {
 		case UIButton::NORMAL:
@@ -395,6 +408,29 @@ UICheckbox::UICheckbox(unsigned short w, unsigned short h) :Shape(UIButton::CRC3
 	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, UICheckboxMouseOut);
 	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OVER, UICheckboxMouseOver);
 	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, UICheckboxMouseUp, this);
+}
+void UICheckbox::updateGlobalPosition() {
+	if (this->parent!=NULL) {
+		this->globalx = this->parent->globalx+this->x;
+		this->globaly = this->parent->globaly+this->y;
+		this->shUnchkPressed->globalx = this->globalx+shUnchkPressed->x;
+		this->shUnchkPressed->globaly = this->globaly+shUnchkPressed->y;
+		this->shUnchkNormal->globalx = this->globalx+shUnchkNormal->x;
+		this->shUnchkNormal->globaly = this->globaly+shUnchkNormal->y;
+		this->shUnchkRollOver->globalx = this->globalx+shUnchkRollOver->x;
+		this->shUnchkRollOver->globaly = this->globaly+shUnchkRollOver->y;
+		this->shUnchkDisable->globalx = this->globalx+shUnchkDisable->x;
+		this->shUnchkDisable->globaly = this->globaly+shUnchkDisable->y;
+		this->shChkPressed->globalx = this->globalx+shChkPressed->x;
+		this->shChkPressed->globaly = this->globaly+shChkPressed->y;
+		this->shChkNormal->globalx = this->globalx+shChkNormal->x;
+		this->shChkNormal->globaly = this->globaly+shChkNormal->y;
+		this->shChkRollOver->globalx = this->globalx+shChkRollOver->x;
+		this->shChkRollOver->globaly = this->globaly+shChkRollOver->y;
+		this->shChkDisable->globalx = this->globalx+shChkRollOver->x;
+		this->shChkDisable->globaly = this->globaly+shChkRollOver->y;
+	}
+	root.window->renderComplete = false;
 }
 int UICheckbox::renderGLComptAll() {
 	switch(this->status) {

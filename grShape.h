@@ -48,8 +48,8 @@ namespace grEngine {
 		///Конструктор Shape (использовать только в классах наслнд) 
 		virtual void trace();
 		///Конструктор Shape (использовать только в классах наслнд) 
-		void drag(short x, short y);
-		
+		virtual void drag(short x, short y);
+		virtual void updateGlobalPosition();
 		///Конструктор Shape (использовать только в классах наслнд) 
 		GLuint meshVAO;
 		///Ссылка на родительскую директорию
@@ -99,7 +99,7 @@ namespace grEngine {
 		virtual void trace();
 		virtual void addChild(Shape*);
 		virtual void drag(short, short);
-		virtual void updateChPos();
+		virtual void updateGlobalPosition();
 		//virtual int load(string);
 		//virtual int loadFD(FILE*, long);
 		//virtual int save(string);
