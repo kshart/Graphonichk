@@ -586,6 +586,24 @@ UIRadioButton *UIRadioButtonGroup::addRadioButton() {
 	this->addChild(rb);
 	return rb;
 }
+bool UIRadioButtonGroup::setActiveButton(UIRadioButton* rb) {
+	UIRadioButton *rb1;
+	bool searchRB = false;
+	for (int i=this->child.size()-1; i>=0; i--) {
+		rb1 = dynamic_cast<UIRadioButton*>(this->child[i]);
+		if (rb1!=NULL) {
+			if (rb1 = rb) {
+				searchRB = true;
+				rb1->checked = true;
+				rb1->status = UIRadioButton::CHECKED_NORMAL;
+			}else{
+				rb1->checked = false;
+				rb1->status = UIRadioButton::UNCHECKED_NORMAL;
+			}
+		}
+	}
+	return searchRB;
+}
 
 void UIRadioButtonMouseDown (const EventMouseShape *e) {
 	printf("UIRadioButtonMouseDown");
@@ -602,16 +620,19 @@ void UIRadioButtonMouseDown (const EventMouseShape *e) {
 }
 void UIRadioButtonMouseUp (const EventMouse *e) {
 	UIRadioButton *sb = (UIRadioButton*)(e->obj);
+	UIRadioButtonGroup *gr;
 	short localx, localy;
 	if (sb->press) {
 		sb->press = false;
 		localx = e->x - sb->globalx;
 		localy = e->y - sb->globaly;
 		if (localx>0 && localx<sb->width && localy>0 && localy<sb->height) {
-			if (sb->checked) {
-				sb->checked = false;
-				sb->status = UIRadioButton::UNCHECKED_NORMAL;
-			}else{
+			if (!sb->checked) {
+				gr = sb->group;
+				for (int i=gr->child.size()-1; i>=0; i--) {
+					((UIRadioButton*)(gr->child[i]))->checked = false;
+					((UIRadioButton*)(gr->child[i]))->status = UIRadioButton::UNCHECKED_NORMAL;
+				}
 				sb->checked = true;
 				sb->status = UIRadioButton::CHECKED_NORMAL;
 			}

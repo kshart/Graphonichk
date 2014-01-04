@@ -199,6 +199,7 @@ namespace grEngine {
 		enum {CRC32=0xE7E01EB1};
 		UIRadioButtonGroup();
 		UIRadioButton *addRadioButton();
+		bool setActiveButton(UIRadioButton *rb);
 		
 		bool active;
 		UIRadioButton *checked;
