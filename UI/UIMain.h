@@ -153,12 +153,13 @@ namespace grEngine {
 		bool scrollStarted;
 	};
 	
-	class Button :public Shape {
+	class UIButton :public Shape {
 	public:
+		enum {CRC32=0x251F1AC9};
 		enum STATUS {
 			PRESS, NORMAL, ROLLOVER
 		};
-		Button(unsigned short w, unsigned short h);
+		UIButton(unsigned short w, unsigned short h);
 		int renderGLComptAll();
 		int renderGL400();
 		int renderGL330();
