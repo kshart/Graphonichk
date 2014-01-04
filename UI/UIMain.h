@@ -167,6 +167,7 @@ namespace grEngine {
 		int renderGL330();
 		int renderGL210();
 		void updateGlobalPosition();
+		int callEvent(EventMouseShape *e);
 		Shape *shapePressed, *shapeNormal, *shapeRollOver;
 		STATUS status;
 		bool press;

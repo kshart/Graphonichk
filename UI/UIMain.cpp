@@ -208,13 +208,6 @@ UIScrollBarW::UIScrollBarW(unsigned short w, unsigned short h) :Directory(UIScro
 	root.window->renderComplete = false;
 }
 
-void ButtonMouseDown (const EventMouseShape *e) {
-	printf("mouseDown\n");
-	UIButton *sb = (UIButton*)(e->shape);
-	sb->press = true;
-	sb->status = UIButton::PRESS;
-	root.window->renderComplete = false;
-}
 void ButtonMouseUp (const EventMouse *e) {
 	UIButton *sb = (UIButton*)(e->obj);
 	sb->press = false;
@@ -225,23 +218,9 @@ void ButtonMouseUp (const EventMouse *e) {
 	}
 	root.window->renderComplete = false;
 }
-void ButtonMouseOver (const EventMouseShape *e) {
-	UIButton *sb = (UIButton*)(e->shape);
-	if (sb->press) {
-		sb->status = UIButton::PRESS;
-	}else{
-		sb->status = UIButton::ROLLOVER;
-	}
-	root.window->renderComplete = false;
-}
-void ButtonMouseOut (const EventMouseShape *e) {
-	UIButton *sb = (UIButton*)(e->shape);
-	sb->status = UIButton::NORMAL;
-	
-	root.window->renderComplete = false;
-}
 
 UIButton::UIButton(int crc32, unsigned short w, unsigned short h, Shape* shPressed, Shape* shNormal, Shape* shRollOver) :Shape(crc32) {
+	this->mouseEventActive = true;
 	this->width = w;
 	this->height = h;
 	this->press = false;
@@ -249,22 +228,20 @@ UIButton::UIButton(int crc32, unsigned short w, unsigned short h, Shape* shPress
 	this->shapePressed = shPressed;
 	this->shapeNormal = shNormal;
 	this->shapeRollOver = shRollOver;
-	this->addEventHandler(EventMouseShape::MOUSE_DOWN, ButtonMouseDown);
-	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, ButtonMouseOut);
-	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OVER, ButtonMouseOver);
 	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, ButtonMouseUp, this);
 }
 UIButton::UIButton(unsigned short w, unsigned short h) :Shape(UIButton::CRC32) {
+	this->mouseEventActive = true;
 	this->width = w;
 	this->height = h;
 	this->press = false;
 	this->status = UIButton::NORMAL;
-	this->shapePressed = new FRect(w, h, 0xFFFF0000);
-	this->shapeNormal = new FRect(w, h, 0xFF00FF00);
-	this->shapeRollOver = new FRect(w, h, 0xFF0000FF);
-	this->addEventHandler(EventMouseShape::MOUSE_DOWN, ButtonMouseDown);
-	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, ButtonMouseOut);
-	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OVER, ButtonMouseOver);
+	this->shapePressed = new FRect(w, h, 0xFF16A085);
+	this->shapeNormal = new FRect(w, h, 0xFF1ABC9C);
+	this->shapeRollOver = new FRect(w, h, 0xFF48C9B0);
+	((FRect*)this->shapePressed)->radius = 20;
+	((FRect*)this->shapeNormal)->radius = 20;
+	((FRect*)this->shapeRollOver)->radius = 20;
 	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, ButtonMouseUp, this);
 }
 void UIButton::updateGlobalPosition() {
@@ -279,6 +256,30 @@ void UIButton::updateGlobalPosition() {
 		this->shapeRollOver->globaly = this->globaly+shapeRollOver->y;
 	}
 	root.window->renderComplete = false;
+}
+int UIButton::callEvent(EventMouseShape* event) {
+	//event->shape = this;
+	//event->localx = event->globalx - this->globalx;
+	//event->localy = event->globaly - this->globaly;
+	switch (event->type) {
+		case EventMouseShape::MOUSE_DOWN:
+			this->press = true;
+			this->status = UIButton::PRESS;
+			root.window->renderComplete = false;
+			break;
+		case EventMouseShape::MOUSE_ROLL_OUT:
+			this->status = UIButton::NORMAL;
+			root.window->renderComplete = false;
+			break;
+		case EventMouseShape::MOUSE_ROLL_OVER:
+			if (this->press) {
+				this->status = UIButton::PRESS;
+			}else{
+				this->status = UIButton::ROLLOVER;
+			}
+			root.window->renderComplete = false;
+			break;
+	}
 }
 int UIButton::renderGLComptAll() {
 	switch(this->status) {

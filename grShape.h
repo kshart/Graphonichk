@@ -123,7 +123,6 @@ namespace grEngine {
 		virtual void getChildShape(vector<Shape*>*);
 		virtual Shape* globalHitTest(short x, short y);
 		virtual int callEvent(EventMouseShape *e);
-		//vector<unsigned short> childEvent
 		
 		GLuint totalShapeVertexInit;
 		vector<Shape*> child;
@@ -152,10 +151,11 @@ namespace grEngine {
 	class FRect :public Shape {
 	  public:
 		enum {CRC32=0x27311957};
-		FRect(short, short, uint32_t);
-		FRect(short, short, uint32_t, unsigned short);
-		FRect(short, short, uint32_t, uint32_t, unsigned short);
+		FRect(short width, short height, uint32_t backgroundColor);
+		FRect(short width, short height, uint32_t borderColor, unsigned short borderSize);
+		FRect(short width, short height, uint32_t backgroundColor, uint32_t borderColor, unsigned short borderSize);
 		int renderGLComptAll();
+		short radius;
 		short borderSize;
 		char background;
 		argb borderColor, backgroundColor;

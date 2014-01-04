@@ -638,9 +638,11 @@ int FLines::renderGLComptAll() {
 	glEnd();
 	glPopMatrix();
 }
+
 FRect::FRect(short width, short height, uint32_t backgroundColor) :Shape(FRect::CRC32) {
 	this->width = width;
 	this->height = height;
+	this->radius = 0;
 	this->borderSize = 0;
 	this->borderColor.color = 0;
 	this->background = true;
@@ -649,6 +651,7 @@ FRect::FRect(short width, short height, uint32_t backgroundColor) :Shape(FRect::
 FRect::FRect(short width, short height, uint32_t borderColor, unsigned short borderSize) :Shape(FRect::CRC32) {
 	this->width = width;
 	this->height = height;
+	this->radius = 0;
 	this->borderSize = borderSize;
 	this->borderColor.color = borderColor;
 	this->background = false;
@@ -657,6 +660,7 @@ FRect::FRect(short width, short height, uint32_t borderColor, unsigned short bor
 FRect::FRect(short width, short height, uint32_t backgroundColor, uint32_t borderColor, unsigned short borderSize) :Shape(FRect::CRC32) {
 	this->width = width;
 	this->height = height;
+	this->radius = 0;
 	this->borderSize = borderSize;
 	this->borderColor.color = borderColor;
 	this->background = true;
@@ -664,15 +668,39 @@ FRect::FRect(short width, short height, uint32_t backgroundColor, uint32_t borde
 }
 int FRect::renderGLComptAll() {
 	glPushMatrix();
-	//glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 	if (this->background) {
-		glBegin(GL_QUADS);
-			glColor3ub(this->backgroundColor.r, this->backgroundColor.g, this->backgroundColor.b );
-			glVertex2s(this->globalx, this->globaly);
-			glVertex2s(this->globalx+this->width, this->globaly);
-			glVertex2s(this->globalx+this->width, this->globaly+this->height);
-			glVertex2s(this->globalx, this->globaly+this->height);
-		glEnd();
+		if (this->radius>0) {
+			glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+			glLineWidth(1);
+			glBegin(GL_QUADS);
+				glColor3ub(this->backgroundColor.r, this->backgroundColor.g, this->backgroundColor.b );
+				glVertex2s(this->globalx+this->radius,				this->globaly);
+				glVertex2s(this->globalx+this->width-this->radius,	this->globaly);
+				glVertex2s(this->globalx+this->width-this->radius,	this->globaly+this->height);
+				glVertex2s(this->globalx+this->radius,				this->globaly+this->height);
+				
+				glVertex2s(this->globalx,				this->globaly+this->radius);
+				glVertex2s(this->globalx+this->width,	this->globaly+this->radius);
+				glVertex2s(this->globalx+this->width,	this->globaly+this->height-this->radius);
+				glVertex2s(this->globalx,				this->globaly+this->height-this->radius);
+			glEnd();
+			glPointSize(this->radius*2);
+			glBegin(GL_POINTS);
+				glColor3ub(this->backgroundColor.r, this->backgroundColor.g, this->backgroundColor.b );
+				glVertex2s(this->globalx+this->radius, this->globaly+this->radius);
+				glVertex2s(this->globalx+this->width-this->radius, this->globaly+this->radius);
+				glVertex2s(this->globalx+this->width-this->radius, this->globaly+this->height-this->radius);
+				glVertex2s(this->globalx+this->radius, this->globaly+this->height-this->radius);
+			glEnd();
+		}else{
+			glBegin(GL_QUADS);
+				glColor3ub(this->backgroundColor.r, this->backgroundColor.g, this->backgroundColor.b );
+				glVertex2s(this->globalx, this->globaly);
+				glVertex2s(this->globalx+this->width, this->globaly);
+				glVertex2s(this->globalx+this->width, this->globaly+this->height);
+				glVertex2s(this->globalx, this->globaly+this->height);
+			glEnd();
+		}
 	}
 	if (this->borderSize) {
 		glLineWidth(this->borderSize);
