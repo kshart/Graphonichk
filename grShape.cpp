@@ -12,6 +12,7 @@
 
 #include "grBaseTypes.h"
 #include "grShape.h"
+#include "UI/UIMain.h"
 using namespace std;
 using namespace grEngine;
 
@@ -33,9 +34,26 @@ void Shape::trace() {
 void Shape::drag(short x, short y) {
 	this->x = x;
 	this->y = y;
+	short ny, nx;
 	if (this->parent!=NULL) {
-		this->globalx = parent->globalx+x;
-		this->globaly = parent->globaly+y;
+		this->globalx = this->parent->globalx+x;
+		this->globaly = this->parent->globaly+y;
+		if (this->x+this->offsetPos.x < this->parent->offsetPos.x) {
+			nx = this->x+this->offsetPos.x;
+			this->width -= nx-this->parent->offsetPos.x;
+			this->offsetPos.x = nx;
+		}
+		if (this->y+this->offsetPos.y < this->parent->offsetPos.y) {
+			ny = this->y+this->offsetPos.y;
+			this->parent->height -= ny-this->parent->offsetPos.y;
+			this->parent->offsetPos.y = ny;
+		}
+		if (this->x+this->offsetPos.x+this->width > this->parent->offsetPos.x+this->parent->width) {
+			this->parent->width = this->x+this->offsetPos.x+this->width-this->parent->offsetPos.x;
+		}
+		if (this->y+this->offsetPos.y+this->height-this->parent->offsetPos.y > this->parent->height) {
+			this->parent->height = this->y+this->offsetPos.y+this->height-this->parent->offsetPos.y;
+		}
 	}
 	root.window->renderComplete = false;
 }
@@ -132,7 +150,7 @@ int Directory::renderGLComptAll() {
 			this->child[i]->renderGLComptAll();
 		}
 	}
-	#ifdef DEBUG
+
 	glLineWidth(1);
 	glColor4ub(0xFF,0,0,0xFF);
 	glBegin(GL_LINE_STRIP);// <editor-fold defaultstate="collapsed" desc="GL_LINE_STRIP">
@@ -142,7 +160,6 @@ int Directory::renderGLComptAll() {
 		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y+this->height );
 		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
 	glEnd();// </editor-fold>
-	#endif
 	return true;
 }
 int Directory::renderGL400() {
@@ -268,23 +285,46 @@ bool Directory::switchOn() {
 	return false;
 }
 void Directory::updateGlobalPosition() {
+	if (this->parent==NULL) {
+		this->globalx = this->globaly = 0;
+	}else{
+		this->globalx = this->parent->globalx + this->x;
+		this->globaly = this->parent->globaly + this->y;
+	}
 	for(int i=0; i<this->child.size(); i++) {
-		this->child[i]->globalx = this->globalx+this->child[i]->x;
-		this->child[i]->globaly = this->globaly+this->child[i]->y;
-		if (this->child[i]->crc32 == Directory::CRC32) ((Directory*)(this->child[i]))->updateGlobalPosition();
+		this->child[i]->updateGlobalPosition();
 	}
 }
 void Directory::drag(short x, short y) {
+	short nx, ny;
 	this->x = x;
 	this->y = y;
-	this->updateGlobalPosition();
+	if ( this->parent!=NULL || this==root.window->root) {
+		this->updateGlobalPosition();
+		if (this->x+this->offsetPos.x < this->parent->offsetPos.x) {
+			nx = this->x+this->offsetPos.x;
+			this->width -= nx-this->parent->offsetPos.x;
+			this->offsetPos.x = nx;
+		}
+		if (this->y+this->offsetPos.y < this->parent->offsetPos.y) {
+			ny = this->y+this->offsetPos.y;
+			this->parent->height -= ny-this->parent->offsetPos.y;
+			this->parent->offsetPos.y = ny;
+		}
+		if (this->x+this->offsetPos.x+this->width > this->parent->offsetPos.x+this->parent->width) {
+			this->parent->width = this->x+this->offsetPos.x+this->width-this->parent->offsetPos.x;
+		}
+		if (this->y+this->offsetPos.y+this->height-this->parent->offsetPos.y > this->parent->height) {
+			this->parent->height = this->y+this->offsetPos.y+this->height-this->parent->offsetPos.y;
+		}
+	}
 	root.window->renderComplete = false;
 }
 vector<Shape*>* Directory::getChildShape() {
 	
 	vector<Shape*>* arr = new vector<Shape*>;
 	for (int i = 0; i<this->child.size( ); i++) {
-		if (this->child[i]->crc32 == Directory::CRC32) {
+		if (dynamic_cast<Directory*>(this->child[i]) != NULL) {
 			((Directory*)(this->child[i]))->getChildShape(arr);
 		}else{
 			arr->push_back( this->child[i] );
@@ -293,30 +333,34 @@ vector<Shape*>* Directory::getChildShape() {
 	return arr;
 }
 void Directory::getChildShape(vector<Shape*>* arr) {
+	Directory *dir;
 	for (int i = 0; i<this->child.size( ); i++) {
-		switch (this->child[i]->crc32) {
-			case Directory::CRC32:
-				((Directory*)(this->child[i]))->getChildShape(arr);
-				break;
-			default :
-				arr->push_back( this->child[i] );
-				break;
+		dir = dynamic_cast<Directory*>(this->child[i]);
+		if (dir == NULL) {
+			arr->push_back( this->child[i] );
+		}else{
+			dir->getChildShape(arr);
 		}
 	}
 }
 void Directory::addChild(Shape *sh) {
-	Directory *dir = this;
+	Directory *dir; 
 	short nx, ny;
 	sh->parent = this;
-	sh->updateGlobalPosition();
 	//	y	by	bh	outB
 	//	50	-30	70	20/90
 	// by	bh	outB
 	// -50	100	ob.h-by
-	#ifdef DEBUG
-	sh->trace();
-	this->trace();
-	#endif
+	if (sh->mouseEventActive) {
+		this->mouseEventActive = true;
+		Shape *shape = this;
+		while (shape->parent != NULL) {
+			shape = shape->parent;
+			shape->mouseEventActive = true;
+		}
+	}
+	if (this->parent!=NULL || this==root.window->root) sh->updateGlobalPosition();
+	
 	if (sh->x+sh->offsetPos.x < this->offsetPos.x) {
 		nx = sh->x+sh->offsetPos.x;
 		this->width -= nx-this->offsetPos.x;
@@ -334,24 +378,16 @@ void Directory::addChild(Shape *sh) {
 		this->height = sh->y+sh->offsetPos.y+sh->height-this->offsetPos.y;
 	}
 	this->child.push_back( sh );
-	if (sh->crc32 == Directory::crc32) {
-		this->totalShape += dir->totalShape;
-		this->totalDir += dir->totalDir+1;
+	dir = dynamic_cast<Directory*>(sh);
+	if ( dir!=NULL ) {
 		while(dir->parent!=NULL) {
 			dir = dir->parent;
 			dir->totalShape += ((Directory*)sh)->totalShape;
 			dir->totalDir += ((Directory*)sh)->totalDir+1;
 		}
-		if (sh->mouseEventActive) {
-			this->mouseEventActive = true;
-			Shape *shape = this;
-			while (shape->parent != NULL) {
-				shape = shape->parent;
-				shape->mouseEventActive = true;
-			}
-		}
 	}else{
-		this->totalShape++;
+		dir = this;
+		dir->totalShape++;
 		while(dir->parent!=NULL) {
 			dir = dir->parent;
 			dir->totalShape++;
@@ -418,7 +454,10 @@ int Directory::callEvent(EventMouseShape* event) {
 	for(int i=this->child.size()-1; i>=0; i--) {
 		if (this->child[i]->mouseEventActive) {
 			sh = this->child[i];
-			if (event->globalx>sh->x+sh->offsetPos.x && event->globaly>sh->y+sh->offsetPos.y && event->globalx<sh->x+sh->offsetPos.x+sh->width && event->globaly<sh->x+sh->offsetPos.x+sh->height) {
+			if (event->localx>sh->x+sh->offsetPos.x &&
+				event->localy>sh->y+sh->offsetPos.y &&
+				event->localx<sh->x+sh->offsetPos.x+sh->width &&
+				event->localy<sh->y+sh->offsetPos.y+sh->height) {
 				if (!sh->mouseEventRollOver) {
 					sh->mouseEventRollOver = true;
 					eventRollOver = new EventMouseShape();

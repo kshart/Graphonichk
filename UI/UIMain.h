@@ -65,6 +65,7 @@ namespace grEngine {
 		//Disabled unchecked
 		//Disabled checked
 	class UIRadioButton;
+	class UIRadioButtonGroup;
 		//Radio is off
 		//Radio is on
 		//Disabled radio is off
@@ -185,6 +186,38 @@ namespace grEngine {
 		int renderGL400();
 		int renderGL330();
 		int renderGL210();
+		Shape *shUnchkPressed, *shUnchkNormal, *shUnchkRollOver, *shUnchkDisable, *shChkPressed, *shChkNormal, *shChkRollOver, *shChkDisable;
+		STATUS status;
+		bool press;
+		bool checked;
+	};
+	
+	class UIRadioButtonGroup :public Directory {
+	private:
+		//void addChild(Shape*);
+	public:
+		enum {CRC32=0xE7E01EB1};
+		UIRadioButtonGroup();
+		UIRadioButton *addRadioButton();
+		
+		bool active;
+		UIRadioButton *checked;
+	};
+	class UIRadioButton :public Shape {
+	private:
+	public:
+		enum {CRC32=0x97511BB6};
+		enum STATUS {
+			UNCHECKED_PRESS, UNCHECKED_NORMAL, UNCHECKED_ROLLOVER, UNCHECKED_DISABLE,
+			CHECKED_PRESS, CHECKED_NORMAL, CHECKED_ROLLOVER, CHECKED_DISABLE
+		};
+		UIRadioButton(unsigned short w, unsigned short h, UIRadioButtonGroup *gr);
+		void updateGlobalPosition();
+		int renderGLComptAll();
+		int renderGL400();
+		int renderGL330();
+		int renderGL210();
+		UIRadioButtonGroup *group;
 		Shape *shUnchkPressed, *shUnchkNormal, *shUnchkRollOver, *shUnchkDisable, *shChkPressed, *shChkNormal, *shChkRollOver, *shChkDisable;
 		STATUS status;
 		bool press;

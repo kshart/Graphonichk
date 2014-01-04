@@ -576,3 +576,239 @@ int UICheckbox::renderGL210() {
 			return true;
 	}
 }
+
+
+UIRadioButtonGroup::UIRadioButtonGroup() :Directory(UIRadioButtonGroup::CRC32) {
+	
+}
+UIRadioButton *UIRadioButtonGroup::addRadioButton() {
+	UIRadioButton *rb = new UIRadioButton(40, 40, this);
+	this->addChild(rb);
+	return rb;
+}
+
+void UIRadioButtonMouseDown (const EventMouseShape *e) {
+	printf("UIRadioButtonMouseDown");
+	UIRadioButton *sb = (UIRadioButton*)(e->shape);
+	if (sb->status!=UIRadioButton::CHECKED_DISABLE && sb->status!=UIRadioButton::UNCHECKED_DISABLE) {
+		sb->press = true;
+		if (sb->checked) {
+			sb->status = UIRadioButton::CHECKED_PRESS;
+		}else{
+			sb->status = UIRadioButton::UNCHECKED_PRESS;
+		}
+		root.window->renderComplete = false;	
+	}
+}
+void UIRadioButtonMouseUp (const EventMouse *e) {
+	UIRadioButton *sb = (UIRadioButton*)(e->obj);
+	short localx, localy;
+	if (sb->press) {
+		sb->press = false;
+		localx = e->x - sb->globalx;
+		localy = e->y - sb->globaly;
+		if (localx>0 && localx<sb->width && localy>0 && localy<sb->height) {
+			if (sb->checked) {
+				sb->checked = false;
+				sb->status = UIRadioButton::UNCHECKED_NORMAL;
+			}else{
+				sb->checked = true;
+				sb->status = UIRadioButton::CHECKED_NORMAL;
+			}
+		}else{
+			if (sb->checked) {
+				sb->status = UIRadioButton::CHECKED_NORMAL;
+			}else{
+				sb->status = UIRadioButton::UNCHECKED_NORMAL;
+			}
+		}
+		root.window->renderComplete = false;
+	}
+}
+void UIRadioButtonMouseOver (const EventMouseShape *e) {
+	UIRadioButton *sb = (UIRadioButton*)(e->shape);
+	if (sb->status!=UIRadioButton::CHECKED_DISABLE && sb->status!=UIRadioButton::UNCHECKED_DISABLE) {
+		if (sb->checked) {
+			if (sb->press) {
+				sb->status = UIRadioButton::CHECKED_PRESS;
+			}else{
+				sb->status = UIRadioButton::CHECKED_ROLLOVER;
+			}
+		}else{
+			if (sb->press) {
+				sb->status = UIRadioButton::UNCHECKED_PRESS;
+			}else{
+				sb->status = UIRadioButton::UNCHECKED_ROLLOVER;
+			}
+		}
+		root.window->renderComplete = false;	
+	}
+}
+void UIRadioButtonMouseOut (const EventMouseShape *e) {
+	UIRadioButton *sb = (UIRadioButton*)(e->shape);
+	if (sb->status!=UIRadioButton::CHECKED_DISABLE && sb->status!=UIRadioButton::UNCHECKED_DISABLE) {
+		if (sb->checked) {
+			sb->status = UIRadioButton::CHECKED_NORMAL;
+		}else{
+			sb->status = UIRadioButton::UNCHECKED_NORMAL;
+		}
+		root.window->renderComplete = false;	
+	}
+}
+
+
+UIRadioButton::UIRadioButton(unsigned short w, unsigned short h, UIRadioButtonGroup *gr) :Shape(UIRadioButton::CRC32) {
+	this->width = w;
+	this->height = h;
+	this->group = gr;
+	this->press = false;
+	this->checked = false;
+	this->status = UIRadioButton::UNCHECKED_NORMAL;
+	this->shUnchkPressed = new FRect(w, h, 0xFFFF0000);
+	this->shUnchkNormal = new FRect(w, h, 0xFF00FF00);
+	this->shUnchkRollOver = new FRect(w, h, 0xFF0000FF);
+	this->shUnchkDisable = new FRect(w, h, 0xFFAAAAAA);
+	this->shChkPressed = new FRect(w, h, 0xFFFF00FF);
+	this->shChkNormal = new FRect(w, h, 0xFFFFFF00);
+	this->shChkRollOver = new FRect(w, h, 0xFF00FFFF);
+	this->shChkDisable = new FRect(w, h, 0xFF444444);
+	this->addEventHandler(EventMouseShape::MOUSE_DOWN, UIRadioButtonMouseDown);
+	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, UIRadioButtonMouseOut);
+	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OVER, UIRadioButtonMouseOver);
+	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, UIRadioButtonMouseUp, this);
+}
+void UIRadioButton::updateGlobalPosition() {
+	if (this->parent!=NULL) {
+		this->globalx = this->parent->globalx+this->x;
+		this->globaly = this->parent->globaly+this->y;
+		this->shUnchkPressed->globalx = this->globalx+shUnchkPressed->x;
+		this->shUnchkPressed->globaly = this->globaly+shUnchkPressed->y;
+		this->shUnchkNormal->globalx = this->globalx+shUnchkNormal->x;
+		this->shUnchkNormal->globaly = this->globaly+shUnchkNormal->y;
+		this->shUnchkRollOver->globalx = this->globalx+shUnchkRollOver->x;
+		this->shUnchkRollOver->globaly = this->globaly+shUnchkRollOver->y;
+		this->shUnchkDisable->globalx = this->globalx+shUnchkDisable->x;
+		this->shUnchkDisable->globaly = this->globaly+shUnchkDisable->y;
+		this->shChkPressed->globalx = this->globalx+shChkPressed->x;
+		this->shChkPressed->globaly = this->globaly+shChkPressed->y;
+		this->shChkNormal->globalx = this->globalx+shChkNormal->x;
+		this->shChkNormal->globaly = this->globaly+shChkNormal->y;
+		this->shChkRollOver->globalx = this->globalx+shChkRollOver->x;
+		this->shChkRollOver->globaly = this->globaly+shChkRollOver->y;
+		this->shChkDisable->globalx = this->globalx+shChkRollOver->x;
+		this->shChkDisable->globaly = this->globaly+shChkRollOver->y;
+	}
+	root.window->renderComplete = false;
+}
+int UIRadioButton::renderGLComptAll() {
+	switch(this->status) {
+		case UIRadioButton::UNCHECKED_PRESS:
+			this->shUnchkPressed->renderGLComptAll();
+			return true;
+		case UIRadioButton::UNCHECKED_NORMAL:
+			this->shUnchkNormal->renderGLComptAll();
+			return true;
+		case UIRadioButton::UNCHECKED_ROLLOVER:
+			this->shUnchkRollOver->renderGLComptAll();
+			return true;
+		case UIRadioButton::UNCHECKED_DISABLE:
+			this->shUnchkDisable->renderGLComptAll();
+			return true;
+		case UIRadioButton::CHECKED_PRESS:
+			this->shChkPressed->renderGLComptAll();
+			return true;
+		case UIRadioButton::CHECKED_NORMAL:
+			this->shChkNormal->renderGLComptAll();
+			return true;
+		case UIRadioButton::CHECKED_ROLLOVER:
+			this->shChkRollOver->renderGLComptAll();
+			return true;
+		case UIRadioButton::CHECKED_DISABLE:
+			this->shChkDisable->renderGLComptAll();
+			return true;
+	}
+}
+int UIRadioButton::renderGL400() {
+	switch(this->status) {
+		case UIRadioButton::UNCHECKED_PRESS:
+			this->shUnchkPressed->renderGL400();
+			return true;
+		case UIRadioButton::UNCHECKED_NORMAL:
+			this->shUnchkNormal->renderGL400();
+			return true;
+		case UIRadioButton::UNCHECKED_ROLLOVER:
+			this->shUnchkRollOver->renderGL400();
+			return true;
+		case UIRadioButton::UNCHECKED_DISABLE:
+			this->shUnchkDisable->renderGL400();
+			return true;
+		case UIRadioButton::CHECKED_PRESS:
+			this->shChkPressed->renderGL400();
+			return true;
+		case UIRadioButton::CHECKED_NORMAL:
+			this->shChkNormal->renderGL400();
+			return true;
+		case UIRadioButton::CHECKED_ROLLOVER:
+			this->shChkRollOver->renderGL400();
+			return true;
+		case UIRadioButton::CHECKED_DISABLE:
+			this->shChkDisable->renderGL400();
+			return true;
+	}
+}
+int UIRadioButton::renderGL330() {
+	switch(this->status) {
+		case UIRadioButton::UNCHECKED_PRESS:
+			this->shUnchkPressed->renderGL330();
+			return true;
+		case UIRadioButton::UNCHECKED_NORMAL:
+			this->shUnchkNormal->renderGL330();
+			return true;
+		case UIRadioButton::UNCHECKED_ROLLOVER:
+			this->shUnchkRollOver->renderGL330();
+			return true;
+		case UIRadioButton::UNCHECKED_DISABLE:
+			this->shUnchkDisable->renderGL330();
+			return true;
+		case UIRadioButton::CHECKED_PRESS:
+			this->shChkPressed->renderGL330();
+			return true;
+		case UIRadioButton::CHECKED_NORMAL:
+			this->shChkNormal->renderGL330();
+			return true;
+		case UIRadioButton::CHECKED_ROLLOVER:
+			this->shChkRollOver->renderGL330();
+			return true;
+		case UIRadioButton::CHECKED_DISABLE:
+			this->shChkDisable->renderGL330();
+			return true;
+	}
+}
+int UIRadioButton::renderGL210() {
+	switch(this->status) {
+		case UIRadioButton::UNCHECKED_PRESS:
+			this->shUnchkPressed->renderGL210();
+			return true;
+		case UIRadioButton::UNCHECKED_NORMAL:
+			this->shUnchkNormal->renderGL210();
+			return true;
+		case UIRadioButton::UNCHECKED_ROLLOVER:
+			this->shUnchkRollOver->renderGL210();
+			return true;
+		case UIRadioButton::UNCHECKED_DISABLE:
+			this->shUnchkDisable->renderGL210();
+			return true;
+		case UIRadioButton::CHECKED_PRESS:
+			this->shChkPressed->renderGL210();
+			return true;
+		case UIRadioButton::CHECKED_NORMAL:
+			this->shChkNormal->renderGL210();
+			return true;
+		case UIRadioButton::CHECKED_ROLLOVER:
+			this->shChkRollOver->renderGL210();
+			return true;
+		case UIRadioButton::CHECKED_DISABLE:
+			this->shChkDisable->renderGL210();
+			return true;
+	}
+}

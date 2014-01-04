@@ -137,6 +137,7 @@ DWORD WINAPI renderThread (void* sys) {
 			if (countLoadedTex < root.window->bitmapUpdateBuffer.size()) {
 				root.window->bitmapUpdateBuffer.resize( root.window->bitmapUpdateBuffer.size()-countLoadedTex );
 			}
+			root.window->root->trace();
 			root.window->redraw();
 		}
 		Sleep(10);
