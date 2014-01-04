@@ -92,17 +92,22 @@ int Shape::addEventHandler( int type, void(*fun)(const EventMouseShape*)) {
 	}
 }
 
-grEngine::Directory::Directory() :Shape(Directory::CRC32), Buffer() {
+Directory::Directory() :Shape(Directory::CRC32), Buffer() {
 	this->shapeCache = NULL;
 	this->totalShape = this->totalDir = 0;
 	this->parent = NULL;
 }
-void grEngine::Directory::trace() {
+Directory::Directory(int crc32) :Shape(crc32), Buffer() {
+	this->shapeCache = NULL;
+	this->totalShape = this->totalDir = 0;
+	this->parent = NULL;
+}
+void Directory::trace() {
 	printf("<Directory mouseActive='%i' pos='%i, %i' gpos='%i, %i' rect='%i, %i, %i, %i'>\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->offsetPos.x, this->offsetPos.y, this->width, this->height);
 	for (int i=0; i<this->child.size(); i++) this->child[i]->trace(); 
 	printf("</Directory>\n");
 }
-int grEngine::Directory::renderGLComptAll() {
+int Directory::renderGLComptAll() {
 	if (this->success && this->tex->GLID!=0) {
 		Texture *tex = this->tex;
 		glEnable( GL_TEXTURE_2D );
@@ -140,7 +145,7 @@ int grEngine::Directory::renderGLComptAll() {
 	#endif
 	return true;
 }
-int grEngine::Directory::renderGL400() {
+int Directory::renderGL400() {
 	printf("Directory p\n");
 	for (int i=0; i<this->child.size(); i++) {
 		this->child[i]->trace();
@@ -148,7 +153,7 @@ int grEngine::Directory::renderGL400() {
 	}
 	return true;
 }
-int grEngine::Directory::renderGL330() {
+int Directory::renderGL330() {
 	if (this->success && this->tex->GLID!=0) {
 		Texture *tex = this->tex;
 		glEnable( GL_TEXTURE_2D );
@@ -186,7 +191,7 @@ int grEngine::Directory::renderGL330() {
 	#endif
 	return true;
 }
-int grEngine::Directory::renderGL210() {
+int Directory::renderGL210() {
 	if ( this->shapeCache != NULL ) {
 		#ifdef DEBUG
 		printf("Directory shapeCache\n");
@@ -212,7 +217,7 @@ int grEngine::Directory::renderGL210() {
 	#endif
 	return true;
 }
-int grEngine::Directory::bufferGLComptAll() {
+int Directory::bufferGLComptAll() {
 	for(int i=0; i<this->bufChild.size(); i++) {
 		this->bufChild[i]->bufferGLComptAll();
 	}
@@ -244,16 +249,16 @@ int grEngine::Directory::bufferGLComptAll() {
 	this->success = true;
 	return false;
 }
-int grEngine::Directory::bufferGL400() {
+int Directory::bufferGL400() {
 	return false;
 }
-int grEngine::Directory::bufferGL330() {
+int Directory::bufferGL330() {
 	return false;
 }
-int grEngine::Directory::bufferGL210() {
+int Directory::bufferGL210() {
 	return false;
 }
-bool grEngine::Directory::switchOn() {
+bool Directory::switchOn() {
 	if (!this->status) {
 		this->tex = new Texture(this->width, this->height, GL_RGBA, GL_UNSIGNED_BYTE);
 		root.window->FBOBuffer.push_back(this);
@@ -262,20 +267,20 @@ bool grEngine::Directory::switchOn() {
 	}
 	return false;
 }
-void grEngine::Directory::updateGlobalPosition() {
+void Directory::updateGlobalPosition() {
 	for(int i=0; i<this->child.size(); i++) {
 		this->child[i]->globalx = this->globalx+this->child[i]->x;
 		this->child[i]->globaly = this->globaly+this->child[i]->y;
 		if (this->child[i]->crc32 == Directory::CRC32) ((Directory*)(this->child[i]))->updateGlobalPosition();
 	}
 }
-void grEngine::Directory::drag(short x, short y) {
+void Directory::drag(short x, short y) {
 	this->x = x;
 	this->y = y;
 	this->updateGlobalPosition();
 	root.window->renderComplete = false;
 }
-vector<Shape*>* grEngine::Directory::getChildShape() {
+vector<Shape*>* Directory::getChildShape() {
 	
 	vector<Shape*>* arr = new vector<Shape*>;
 	for (int i = 0; i<this->child.size( ); i++) {
@@ -287,7 +292,7 @@ vector<Shape*>* grEngine::Directory::getChildShape() {
 	}
 	return arr;
 }
-void grEngine::Directory::getChildShape(vector<Shape*>* arr) {
+void Directory::getChildShape(vector<Shape*>* arr) {
 	for (int i = 0; i<this->child.size( ); i++) {
 		switch (this->child[i]->crc32) {
 			case Directory::CRC32:
@@ -299,7 +304,7 @@ void grEngine::Directory::getChildShape(vector<Shape*>* arr) {
 		}
 	}
 }
-void grEngine::Directory::addChild(Shape *sh) {
+void Directory::addChild(Shape *sh) {
 	Directory *dir = this;
 	short nx, ny;
 	sh->parent = this;
@@ -357,7 +362,7 @@ void grEngine::Directory::addChild(Shape *sh) {
 	#endif
 	root.window->renderComplete = false;
 }
-void grEngine::Directory::setBuffer(Directory::BUFFER_TYPE type, char val) {
+void Directory::setBuffer(Directory::BUFFER_TYPE type, char val) {
 	/*switch (type) {
 		case Directory::TO_TEXTURE :
 			if ( val==Texture::LOC::UNAVAILABLE ) {
@@ -391,7 +396,7 @@ void grEngine::Directory::setBuffer(Directory::BUFFER_TYPE type, char val) {
 			return;
 	}*/
 }
-Shape* grEngine::Directory::globalHitTest(short x, short y) {
+Shape* Directory::globalHitTest(short x, short y) {
 	Shape* sh;
 	for(int i=this->child.size()-1; i>=0; i--) {
 		sh = this->child[i]->globalHitTest(x, y);
@@ -399,7 +404,7 @@ Shape* grEngine::Directory::globalHitTest(short x, short y) {
 	}
 	return NULL;
 }
-int grEngine::Directory::callEvent(EventMouseShape* event) {
+int Directory::callEvent(EventMouseShape* event) {
 	EventMouseShape* eventRollOver;
 	event->shape = this;
 	event->localx = event->globalx - this->globalx;
@@ -529,12 +534,12 @@ int Bitmap::renderGL210() {
 	return true;
 }
 
-grEngine::Buffer::Buffer() {
+Buffer::Buffer() {
 	this->success = false;
 	this->status = false;
 	this->tex = NULL;
 }
-bool grEngine::Buffer::switchOn() {
+bool Buffer::switchOn() {
 	if (!this->status) {
 		root.window->FBOBuffer.push_back(this);
 		status = true;
@@ -542,27 +547,27 @@ bool grEngine::Buffer::switchOn() {
 	}
 	return false;
 }
-bool grEngine::Buffer::switchOff() {
+bool Buffer::switchOff() {
 	return false;
 }
-int grEngine::Buffer::bufferGLComptAll() {
+int Buffer::bufferGLComptAll() {
 	return false;
 }
-int grEngine::Buffer::bufferGL400() {
+int Buffer::bufferGL400() {
 	return false;
 }
-int grEngine::Buffer::bufferGL330() {
+int Buffer::bufferGL330() {
 	return false;
 }
-int grEngine::Buffer::bufferGL210() {
+int Buffer::bufferGL210() {
 	return false;
 }
 
-grEngine::FPoint::FPoint(int rad, uint32_t color=0 ) :Shape(FPoint::CRC32) {
+FPoint::FPoint(int rad, uint32_t color=0 ) :Shape(FPoint::CRC32) {
 	this->radius = rad;
 	this->color.color = color;
 }
-int grEngine::FPoint::renderGLComptAll() {
+int FPoint::renderGLComptAll() {
 	glPushMatrix();
 	//glTranslatef();
 	//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPEAT);
@@ -573,13 +578,13 @@ int grEngine::FPoint::renderGLComptAll() {
 	glEnd();
 	glPopMatrix();
 }
-grEngine::FLines::FLines(void *arr, short length, short w, unsigned int color=0) :Shape(FLines::CRC32) {
+FLines::FLines(void *arr, short length, short w, unsigned int color=0) :Shape(FLines::CRC32) {
 	this->arr = (short*)arr;
 	this->length = length;
 	this->lineWidth = w;
 	this->color.color = color;
 }
-int grEngine::FLines::renderGLComptAll() {
+int FLines::renderGLComptAll() {
 	glPushMatrix();
 	glLineWidth(this->lineWidth);
 	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
@@ -594,7 +599,7 @@ int grEngine::FLines::renderGLComptAll() {
 	glEnd();
 	glPopMatrix();
 }
-grEngine::FRect::FRect(short width, short height, uint32_t backgroundColor) :Shape(FRect::CRC32) {
+FRect::FRect(short width, short height, uint32_t backgroundColor) :Shape(FRect::CRC32) {
 	this->width = width;
 	this->height = height;
 	this->borderSize = 0;
@@ -602,7 +607,7 @@ grEngine::FRect::FRect(short width, short height, uint32_t backgroundColor) :Sha
 	this->background = true;
 	this->backgroundColor.color = backgroundColor;
 }
-grEngine::FRect::FRect(short width, short height, uint32_t borderColor, unsigned short borderSize) :Shape(FRect::CRC32) {
+FRect::FRect(short width, short height, uint32_t borderColor, unsigned short borderSize) :Shape(FRect::CRC32) {
 	this->width = width;
 	this->height = height;
 	this->borderSize = borderSize;
@@ -610,7 +615,7 @@ grEngine::FRect::FRect(short width, short height, uint32_t borderColor, unsigned
 	this->background = false;
 	this->backgroundColor.color = 0;
 }
-grEngine::FRect::FRect(short width, short height, uint32_t backgroundColor, uint32_t borderColor, unsigned short borderSize) :Shape(FRect::CRC32) {
+FRect::FRect(short width, short height, uint32_t backgroundColor, uint32_t borderColor, unsigned short borderSize) :Shape(FRect::CRC32) {
 	this->width = width;
 	this->height = height;
 	this->borderSize = borderSize;
@@ -618,7 +623,7 @@ grEngine::FRect::FRect(short width, short height, uint32_t backgroundColor, uint
 	this->background = true;
 	this->backgroundColor.color = backgroundColor;
 }
-int grEngine::FRect::renderGLComptAll() {
+int FRect::renderGLComptAll() {
 	glPushMatrix();
 	//glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 	if (this->background) {

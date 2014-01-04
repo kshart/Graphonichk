@@ -101,7 +101,7 @@ void UIUnit::trace() {
 
 
 void ScrollBarHmouseDown (const EventMouseShape *e) {
-	ScrollBarH *sb = (ScrollBarH*)(e->shape);
+	UIScrollBarH *sb = (UIScrollBarH*)(e->shape);
 	printf("paintMouseDown\n");
 	short mousex, mousey;
 	mousex = e->localx - sb->bar->width/2;
@@ -113,7 +113,7 @@ void ScrollBarHmouseDown (const EventMouseShape *e) {
 	sb->scrollStarted = true;
 }
 void ScrollBarHmouseUp (const EventMouse *e) {
-	ScrollBarH *sb = (ScrollBarH*)(e->obj);
+	UIScrollBarH *sb = (UIScrollBarH*)(e->obj);
 	short mousex, mousey;
 	if (sb->scrollStarted) {
 		mousex = e->x - sb->globalx - sb->bar->width/2;
@@ -127,7 +127,7 @@ void ScrollBarHmouseUp (const EventMouse *e) {
 	}
 }
 void ScrollBarHmouseMove (const EventMouse *e) {
-	ScrollBarH *sb = (ScrollBarH*)(e->obj);
+	UIScrollBarH *sb = (UIScrollBarH*)(e->obj);
 	short mousex, mousey;
 	if (sb->scrollStarted) {
 		mousex = e->x - sb->globalx - sb->bar->width/2;
@@ -141,7 +141,7 @@ void ScrollBarHmouseMove (const EventMouse *e) {
 	//sb->scrollStarted = false;
 }
 void ScrollBarWmouseDown (const EventMouseShape *e) {
-	ScrollBarH *sb = (ScrollBarH*)(e->shape);
+	UIScrollBarH *sb = (UIScrollBarH*)(e->shape);
 	short mousex, mousey;
 	printf("paintMouseDown\n");
 	mousex = e->localx - sb->bar->width/2;
@@ -153,7 +153,7 @@ void ScrollBarWmouseDown (const EventMouseShape *e) {
 	sb->scrollStarted = true;
 }
 void ScrollBarWmouseUp (const EventMouse *e) {
-	ScrollBarH *sb = (ScrollBarH*)(e->obj);
+	UIScrollBarH *sb = (UIScrollBarH*)(e->obj);
 	short mousex, mousey;
 	if (sb->scrollStarted) {
 		mousex = e->x - sb->globalx - sb->bar->width/2;
@@ -167,7 +167,7 @@ void ScrollBarWmouseUp (const EventMouse *e) {
 	}
 }
 void ScrollBarWmouseMove (const EventMouse *e) {
-	ScrollBarH *sb = (ScrollBarH*)(e->obj);
+	UIScrollBarH *sb = (UIScrollBarH*)(e->obj);
 	short mousex, mousey;
 	if (sb->scrollStarted) {
 		mousex = e->x - sb->globalx - sb->bar->width/2;
@@ -181,7 +181,7 @@ void ScrollBarWmouseMove (const EventMouse *e) {
 	//sb->scrollStarted = false;
 }
 
-ScrollBarH::ScrollBarH(unsigned short w, unsigned short h) :Directory() {
+UIScrollBarH::UIScrollBarH(unsigned short w, unsigned short h) :Directory(UIScrollBarH::CRC32) {
 	this->pad = new FRect(w, h, 0xFF0000FF);
 	this->bar = new FRect(w, 60, 0xFFFF0000);
 	this->addChild(this->pad);
@@ -194,7 +194,7 @@ ScrollBarH::ScrollBarH(unsigned short w, unsigned short h) :Directory() {
 	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, ScrollBarHmouseUp, this);
 	root.window->renderComplete = false;
 }
-ScrollBarW::ScrollBarW(unsigned short w, unsigned short h) :Directory() {
+UIScrollBarW::UIScrollBarW(unsigned short w, unsigned short h) :Directory(UIScrollBarW::CRC32) {
 	this->pad = new FRect(w, h, 0xFF0000FF);
 	this->bar = new FRect(60, h, 0xFFFF0000);
 	this->addChild(this->pad);
@@ -207,7 +207,6 @@ ScrollBarW::ScrollBarW(unsigned short w, unsigned short h) :Directory() {
 	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, ScrollBarWmouseUp, this);
 	root.window->renderComplete = false;
 }
-
 
 void ButtonMouseDown (const EventMouseShape *e) {
 	printf("mouseDown\n");
@@ -242,6 +241,19 @@ void ButtonMouseOut (const EventMouseShape *e) {
 	root.window->renderComplete = false;
 }
 
+UIButton::UIButton(int crc32, unsigned short w, unsigned short h, Shape* shPressed, Shape* shNormal, Shape* shRollOver) :Shape(crc32) {
+	this->width = w;
+	this->height = h;
+	this->press = false;
+	this->status = UIButton::NORMAL;
+	this->shapePressed = shPressed;
+	this->shapeNormal = shNormal;
+	this->shapeRollOver = shRollOver;
+	this->addEventHandler(EventMouseShape::MOUSE_DOWN, ButtonMouseDown);
+	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, ButtonMouseOut);
+	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OVER, ButtonMouseOver);
+	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, ButtonMouseUp, this);
+}
 UIButton::UIButton(unsigned short w, unsigned short h) :Shape(UIButton::CRC32) {
 	this->width = w;
 	this->height = h;
@@ -390,6 +402,26 @@ void UICheckboxMouseOut (const EventMouseShape *e) {
 	}
 }
 
+UICheckbox::UICheckbox(int crc32, unsigned short w, unsigned short h, Shape* shUnchkPressed, Shape* shUnchkNormal, Shape* shUnchkRollOver, Shape* shUnchkDisable, 
+		Shape* shChkPressed, Shape* shChkNormal, Shape* shChkRollOver, Shape* shChkDisable) :Shape(crc32) {
+	this->width = w;
+	this->height = h;
+	this->press = false;
+	this->checked = false;
+	this->status = UICheckbox::UNCHECKED_NORMAL;
+	this->shUnchkPressed = shUnchkPressed;
+	this->shUnchkNormal = shUnchkNormal;
+	this->shUnchkRollOver = shUnchkRollOver;
+	this->shUnchkDisable = shUnchkDisable;
+	this->shChkPressed = shChkPressed;
+	this->shChkNormal = shChkNormal;
+	this->shChkRollOver = shChkRollOver;
+	this->shChkDisable = shChkDisable;
+	this->addEventHandler(EventMouseShape::MOUSE_DOWN, UICheckboxMouseDown);
+	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, UICheckboxMouseOut);
+	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OVER, UICheckboxMouseOver);
+	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, UICheckboxMouseUp, this);
+}
 UICheckbox::UICheckbox(unsigned short w, unsigned short h) :Shape(UIButton::CRC32) {
 	this->width = w;
 	this->height = h;

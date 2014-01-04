@@ -56,7 +56,8 @@ namespace grEngine {
 	};
 	
 	
-	
+	class UIScrollBarH;
+	class UIScrollBarW;
 	class UIButton;
 	class UICheckbox;
 		//Unchecked
@@ -125,12 +126,11 @@ namespace grEngine {
 		STATE state;
 		void *click();
 	};*/
-	class ScrollBarH;
-	class ScrollBarW;
 	
-	class ScrollBarH :public Directory {
-	  public:
-		ScrollBarH(unsigned short w, unsigned short h);
+	class UIScrollBarH :public Directory {
+	public:
+		enum{CRC32=0xE8BC50C8};
+		UIScrollBarH(unsigned short w, unsigned short h);
 		void mouseDown (const EventMouse *e);
 		void mouseUp (const EventMouse *e);
 		void mouseMove (const EventMouse *e);
@@ -139,9 +139,10 @@ namespace grEngine {
 		float position;
 		bool scrollStarted;
 	};
-	class ScrollBarW :public Directory {
-	  public:
-		ScrollBarW(unsigned short w, unsigned short h);
+	class UIScrollBarW :public Directory {
+	public:
+		enum{CRC32=0x65B45D3D};
+		UIScrollBarW(unsigned short w, unsigned short h);
 		void mouseDown (const EventMouse *e);
 		void mouseUp (const EventMouse *e);
 		void mouseMove (const EventMouse *e);
@@ -152,6 +153,8 @@ namespace grEngine {
 	};
 	
 	class UIButton :public Shape {
+	private:
+		UIButton(int crc32, unsigned short w, unsigned short h, Shape *shPressed, Shape *shNormal, Shape *shRollOver);
 	public:
 		enum {CRC32=0x251F1AC9};
 		enum STATUS {
@@ -168,6 +171,8 @@ namespace grEngine {
 		bool press;
 	};
 	class UICheckbox :public Shape {
+	private:
+		UICheckbox(int crc32, unsigned short w, unsigned short h, Shape *shUnchkPressed, Shape *shUnchkNormal, Shape *shUnchkRollOver, Shape *shUnchkDisable, Shape *shChkPressed, Shape *shChkNormal, Shape *shChkRollOver, Shape *shChkDisable);
 	public:
 		enum {CRC32=0x4CA925F4};
 		enum STATUS {

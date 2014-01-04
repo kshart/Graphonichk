@@ -42,9 +42,10 @@ namespace grEngine {
 		Texture *tex;
 	};
 	class Shape :public EventDispatcher<EventMouseShape> {
-	  public:
+	protected:
 		///Конструктор Shape (использовать только в классах наслнд) 
 		Shape(int crc32);
+	public:
 		///Конструктор Shape (использовать только в классах наслнд) 
 		virtual void trace();
 		///Конструктор Shape (использовать только в классах наслнд) 
@@ -89,7 +90,9 @@ namespace grEngine {
 		Texture *tex;
 	};
 	class Directory :public Shape, public Buffer {
-	  public:
+	protected:
+		Directory(int crc32);
+	public:
 		enum {CRC32=0xC489C679};
 		enum BUFFER_TYPE {
 			PREDEFINED_LIST_SH,
