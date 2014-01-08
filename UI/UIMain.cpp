@@ -266,11 +266,11 @@ int UIButton::callEvent(EventMouseShape* event) {
 			this->press = true;
 			this->status = UIButton::PRESS;
 			root.window->renderComplete = false;
-			break;
+			return true;
 		case EventMouseShape::MOUSE_ROLL_OUT:
 			this->status = UIButton::NORMAL;
 			root.window->renderComplete = false;
-			break;
+			return true;
 		case EventMouseShape::MOUSE_ROLL_OVER:
 			if (this->press) {
 				this->status = UIButton::PRESS;
@@ -278,7 +278,7 @@ int UIButton::callEvent(EventMouseShape* event) {
 				this->status = UIButton::ROLLOVER;
 			}
 			root.window->renderComplete = false;
-			break;
+			return true;
 	}
 }
 int UIButton::renderGLComptAll() {
@@ -333,7 +333,6 @@ int UIButton::renderGL210() {
 			return true;
 	}
 }
-
 
 void UICheckboxMouseDown (const EventMouseShape *e) {
 	UICheckbox *sb = (UICheckbox*)(e->shape);

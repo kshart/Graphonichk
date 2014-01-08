@@ -54,7 +54,6 @@ namespace grEngine {
 			VER_CORE_400
 		};
 		OPENGL_VER ver;
-		GLuint FBOGL;
 		void trace();
 		void resizeWindow(short, short);
 		static int init(OPENGL_VER);

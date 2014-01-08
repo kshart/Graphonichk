@@ -35,7 +35,6 @@ namespace grEngine {
 	class TextFormat {
 	  public:
 		TextFormat();
-		static TextFormat *globalTextFormat;
 		enum DIR:char {
 			LTR,
 			RTL
@@ -67,9 +66,6 @@ namespace grEngine {
 	};
 	class Font {
 	  public:
-		static TextFormat *tf;
-		static FT_Library library;
-		static vector<Font*> fonts;
 		static void trace();
 		static int init();
 		
@@ -84,7 +80,7 @@ namespace grEngine {
 	  private:
 		TextFormat *tf;
 	  public:
-		TextField(short, short, unsigned short, unsigned short);
+		TextField(unsigned short, unsigned short);
 		void trace();
 		int renderGLComptAll();
 		int renderGL400();
@@ -94,19 +90,16 @@ namespace grEngine {
 		int bufferGL400();
 		int bufferGL300();
 		int bufferGL210();
+		bool bufferMode(bool mode);
+		
 		void setString(string str);
 		void setFormat(TextFormat *tf);
 		
-		union {
-			//string strUTF8;
-			//u16string strUTF16;
-			//u32string strUTF32;
-		};
 		string strUTF8;
-		enum STR_TYPE:char {
+		/*enum STR_TYPE:char {
 			UTF8, UTF16, UTF32
 		};
-		STR_TYPE strType;
+		STR_TYPE strType;*/
 		
 		unsigned short borderSize;
 		char background, multiline;

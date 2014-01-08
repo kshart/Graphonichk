@@ -62,7 +62,7 @@ Texture::Texture(Image *img) {
 	this->status = STATUS::ERR_NO;
 	this->img = img->img;
 	this->GLID = 0;
-	root.window->textureBuffer.push_back(this);
+	root.window->textureUpdateBuffer.push_back(this);
 }
 Texture::Texture(unsigned short w, unsigned short h, GLuint format, GLuint type) {
 	this->coordX = this->coordY = 1.0;
@@ -72,8 +72,8 @@ Texture::Texture(unsigned short w, unsigned short h, GLuint format, GLuint type)
 	this->format = format;
 	this->width = w;
 	this->height = h;
-	
-		/*glBindTexture( GL_TEXTURE_2D, this->GLID );
+	this->GLID = 0;
+	/*glBindTexture( GL_TEXTURE_2D, this->GLID );
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
@@ -96,7 +96,7 @@ Texture::Texture(unsigned short w, unsigned short h, GLuint format, GLuint type)
 				break;
 		}
 		this->loc = LOC::TEXTURE;*/
-	root.window->textureBuffer.push_back(this);
+	root.window->textureUpdateBuffer.push_back(this);
 }
 Texture::~Texture() {
 	glDeleteTextures(1, &this->GLID);

@@ -47,3 +47,5 @@ grEngine::EventWindow::EventWindow() {
 grEngine::EventFileLoad::EventFileLoad() {
 	this->file = NULL;
 }
+
+//:Event(Event::EVENT_KEYBOARD)

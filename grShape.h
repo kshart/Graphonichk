@@ -28,18 +28,20 @@ namespace grEngine {
 	class FCircle;
 	
 	class Buffer {
-	  public:
+	protected:
 		Buffer();
+	public:
 		virtual int bufferGLComptAll();
 		virtual int bufferGL400();
 		virtual int bufferGL330();
 		virtual int bufferGL210();
-		virtual bool switchOn();
-		virtual bool switchOff();
-		bool success;
-		bool status;
+		virtual bool bufferMode(bool mode);
+		virtual bool bufferUpdate();
+		bool bufferInit;
+		bool bufferActivate;
 		vector<Buffer*> bufChild;
-		Texture *tex;
+		Texture *bufferTexture;
+		GLuint bufferFrame;
 	};
 	class Shape :public EventDispatcher<EventMouseShape> {
 	protected:
@@ -118,7 +120,8 @@ namespace grEngine {
 		virtual int bufferGL400();
 		virtual int bufferGL330();
 		virtual int bufferGL210();
-		virtual bool switchOn();
+		virtual bool bufferMode(bool mode);
+		
 		virtual vector<Shape*>* getChildShape();
 		virtual void getChildShape(vector<Shape*>*);
 		virtual Shape* globalHitTest(short x, short y);

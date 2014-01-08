@@ -126,17 +126,17 @@ void Directory::trace() {
 	printf("</Directory>\n");
 }
 int Directory::renderGLComptAll() {
-	if (this->success && this->tex->GLID!=0) {
-		Texture *tex = this->tex;
+	if (this->bufferInit) {
+		Texture *tex = this->bufferTexture;
 		glEnable( GL_TEXTURE_2D );
 		glBindTexture(GL_TEXTURE_2D, tex->GLID);
 		glColor4ub(0xFF,0xFF,0xFF,0xFF);
 		glBegin( GL_QUADS );// <editor-fold defaultstate="collapsed" desc="GL_QUADS">
-					glTexCoord2d( 0.0, 0.0 );	glVertex2i(this->globalx+offsetPos.x, this->globaly+offsetPos.y );
-					glTexCoord2d( 0.0, 1.0 );	glVertex2i(this->globalx+offsetPos.x, this->globaly+offsetPos.y+tex->height );
-					glTexCoord2d( 1.0, 1.0 );	glVertex2i(this->globalx+offsetPos.x+tex->width, this->globaly+offsetPos.y+tex->height );
-					glTexCoord2d( 1.0, 0.0 );	glVertex2i(this->globalx+offsetPos.x+tex->width, this->globaly+offsetPos.y );
-				glEnd();// </editor-fold>
+			glTexCoord2d( 0.0, 0.0 );	glVertex2i(this->globalx+offsetPos.x, this->globaly+offsetPos.y );
+			glTexCoord2d( 0.0, 1.0 );	glVertex2i(this->globalx+offsetPos.x, this->globaly+offsetPos.y+tex->height );
+			glTexCoord2d( 1.0, 1.0 );	glVertex2i(this->globalx+offsetPos.x+tex->width, this->globaly+offsetPos.y+tex->height );
+			glTexCoord2d( 1.0, 0.0 );	glVertex2i(this->globalx+offsetPos.x+tex->width, this->globaly+offsetPos.y );
+		glEnd();// </editor-fold>
 		glDisable( GL_TEXTURE_2D );
 	}else if ( this->shapeCache != NULL ) {
 		#ifdef DEBUG
@@ -171,8 +171,8 @@ int Directory::renderGL400() {
 	return true;
 }
 int Directory::renderGL330() {
-	if (this->success && this->tex->GLID!=0) {
-		Texture *tex = this->tex;
+	if (this->bufferInit) {
+		Texture *tex = this->bufferTexture;
 		glEnable( GL_TEXTURE_2D );
 		glBindTexture(GL_TEXTURE_2D, tex->GLID);
 		glColor4ub(0xFF,0xFF,0xFF,0xFF);
@@ -234,20 +234,18 @@ int Directory::renderGL210() {
 	#endif
 	return true;
 }
+
 int Directory::bufferGLComptAll() {
 	for(int i=0; i<this->bufChild.size(); i++) {
 		this->bufChild[i]->bufferGLComptAll();
 	}
-	#ifdef DEBUG
-	this->trace();
-	#endif
-	glGenFramebuffers(1, &root.window->ogl->FBOGL);
-	glBindFramebuffer(GL_FRAMEBUFFER, root.window->ogl->FBOGL);
+	glBindFramebuffer(GL_FRAMEBUFFER, this->bufferFrame);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, this->bufferTexture->GLID, 0);
 	
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, this->tex->GLID, 0);
 	glViewport( 0, 0, this->width, this->height );
 	glLoadIdentity( );
 	gluOrtho2D( this->offsetPos.x+this->globalx, this->offsetPos.x+this->globalx+this->width, this->offsetPos.y+this->globaly, this->offsetPos.y+this->globaly+this->height );
+	
 	glClearColor( 0.1, 0, 0, 0.1 );
 	glClear( GL_COLOR_BUFFER_BIT );
 	
@@ -259,12 +257,9 @@ int Directory::bufferGLComptAll() {
 	
 	glDisable( GL_BLEND );
 	glDisable( GL_ALPHA_TEST );
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
-	glDeleteFramebuffers(1, &root.window->ogl->FBOGL);
-	
-	this->success = true;
-	return false;
+	//glDeleteFramebuffers(1, &root.window->ogl->FBOGL);
+	return true;
 }
 int Directory::bufferGL400() {
 	return false;
@@ -275,15 +270,20 @@ int Directory::bufferGL330() {
 int Directory::bufferGL210() {
 	return false;
 }
-bool Directory::switchOn() {
-	if (!this->status) {
-		this->tex = new Texture(this->width, this->height, GL_RGBA, GL_UNSIGNED_BYTE);
+bool Directory::bufferMode(bool mode) {
+	if (mode && !this->bufferActivate ) {
+		this->bufferTexture = new Texture(this->width, this->height, GL_RGBA, GL_UNSIGNED_BYTE);
 		root.window->FBOBuffer.push_back(this);
-		status = true;
-		success = false;
+		
+		this->bufferActivate = true;
+		this->bufferInit = false;
+	}else if ( !mode && this->bufferActivate ) {
+		this->bufferActivate = false;
+		this->bufferTexture->close();
 	}
-	return false;
+	return true;
 }
+
 void Directory::updateGlobalPosition() {
 	if (this->parent==NULL) {
 		this->globalx = this->globaly = 0;
@@ -574,32 +574,35 @@ int Bitmap::renderGL210() {
 }
 
 Buffer::Buffer() {
-	this->success = false;
-	this->status = false;
-	this->tex = NULL;
+	this->bufferInit = false;
+	this->bufferActivate = false;
+	this->bufferTexture = NULL;
+	this->bufferFrame = 0;
 }
-bool Buffer::switchOn() {
-	if (!this->status) {
+bool Buffer::bufferMode(bool mode) {
+	/*if (mode && !this->bufferActivate ) {
 		root.window->FBOBuffer.push_back(this);
-		status = true;
-		success = false;
-	}
+		this->bufferActivate = true;
+		this->bufferStatus = false;
+	}else if ( !mode && this->bufferActivate ) {
+		this->bufferActivate = false;
+	}*/
 	return false;
 }
-bool Buffer::switchOff() {
+bool Buffer::bufferUpdate() {
 	return false;
 }
 int Buffer::bufferGLComptAll() {
-	return false;
+	return true;
 }
 int Buffer::bufferGL400() {
-	return false;
+	return true;
 }
 int Buffer::bufferGL330() {
-	return false;
+	return true;
 }
 int Buffer::bufferGL210() {
-	return false;
+	return true;
 }
 
 FPoint::FPoint(int rad, uint32_t color=0 ) :Shape(FPoint::CRC32) {

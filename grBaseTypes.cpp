@@ -15,21 +15,15 @@ System grEngine::root;
 void System::init(HINSTANCE hi) {
 	root.window = NULL;
 	root.hInstance = hi;
+	root.font.globalTextFormat = new TextFormat();
 	Windows::regFirstWin();
 	FileLoad::init();
+	Font::init();
 }
 void System::threadDataSysInit(void *data){
 	ThreadDataSys *s = (ThreadDataSys*)data;
 	memcpy(&root, s->system, sizeof(System));
 	root.window = s->window;
-}
-System::System() {
-	root.window = NULL;
-	root.hInstance = NULL;
-}
-System::System(Windows *win) {
-	this->windows = root.windows;
-	this->window = win;
 }
 
 

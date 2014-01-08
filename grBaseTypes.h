@@ -9,6 +9,8 @@
 #ifndef GRBASETYPES_H
 #define	GRBASETYPES_H
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
 #include <string>
 #include <windows.h>
 /*
@@ -73,6 +75,7 @@ namespace grEngine {
 	//Font
 	class TextField;
 	class Font;
+	class TextFormat;
 	//Font
 	class Directory;
 	class Rect;
@@ -195,17 +198,19 @@ namespace grEngine {
 	//template class EventDispatcher<EventFileLoad>;
 	class System {
 	  public:
-		static void init(HINSTANCE hi);
-		System();
-		System(Windows *win);
-		
 		HINSTANCE hInstance;
 		vector<Windows*> windows;
 		vector<FileLoad*> files;
+		vector<Font*> fonts;
+		struct {
+			FT_Library library;
+			TextFormat *globalTextFormat;
+		} font;
 		struct {
 			EventDispatcher<EventFileLoad> fileLoader;
 		} events;
 		Windows *window;
+		static void init(HINSTANCE hi);
 		static void threadDataSysInit(void*);
 	};
 	

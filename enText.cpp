@@ -52,13 +52,7 @@ using namespace grEngine;
 	return error;
 }*/
 //FT_Err_Unknown_File_Format
-FT_Library grEngine::Font::library;
-vector<Font*> grEngine::Font::fonts;
-int grEngine::Font::init() {
-	FT_Init_FreeType( &Font::library );
-}
 
-TextFormat *grEngine::TextFormat::globalTextFormat = new TextFormat();
 grEngine::TextFormat::TextFormat() {
 	this->fn = NULL;
 	//unsigned short strWidth, strHeight;
@@ -74,7 +68,7 @@ grEngine::TextFormat::TextFormat() {
 
 grEngine::Font::Font(string path) {
 	this->path = path;
-	this->error = FT_New_Face( Font::library, path.c_str(), 0, &this->face );
+	this->error = FT_New_Face( root.font.library, path.c_str(), 0, &this->face );
 	if (this->error != FT_Err_Ok) return;
 	this->error = FT_Set_Char_Size(face, 0, 50*64, root.window->dpi, root.window->dpi );
 	if (this->error != FT_Err_Ok) return;
@@ -103,24 +97,29 @@ grEngine::Font::Font(string path) {
 		fgs->ramUsed+=fgs->arr[i].bmpWidth*fgs->arr[i].bmpHeight;
 	} 
 	this->cache.push_back(fgs[0]);
-	Font::fonts.push_back(this);
+	root.fonts.push_back(this);
 }
 void grEngine::Font::cached(unsigned int id) {
 }
-void grEngine::Font::trace() {
-	printf("<Fonts count='%i'>\n", Font::fonts.size());
-	for(int i=0; i<Font::fonts.size(); i++) {
-		printf("\t<Font path='%s' cached='%i' error='%i'>\n", Font::fonts[i]->path.c_str(), Font::fonts[i]->cache.size(), Font::fonts[i]->error);
-		for(int t=0; t<Font::fonts[i]->cache.size(); t++) {
-			printf("\t\t<FontFace size='%i' count='%i' ramUsed='%iKb'/>\n", Font::fonts[i]->cache[t].size, Font::fonts[i]->cache[t].count, Font::fonts[i]->cache[t].ramUsed/1024);
+
+void Font::trace() {
+	printf("<Fonts count='%i'>\n", root.fonts.size());
+	for(int i=0; i<root.fonts.size(); i++) {
+		printf("\t<Font path='%s' cached='%i' error='%i'>\n", root.fonts[i]->path.c_str(), root.fonts[i]->cache.size(), root.fonts[i]->error);
+		for(int t=0; t<root.fonts[i]->cache.size(); t++) {
+			printf("\t\t<FontFace size='%i' count='%i' ramUsed='%iKb'/>\n", root.fonts[i]->cache[t].size, root.fonts[i]->cache[t].count, root.fonts[i]->cache[t].ramUsed/1024);
 		}
 		printf("\t</Font>\n");
 	}
 	printf("</Fonts>\n");
 }
+int Font::init() {
+	FT_Init_FreeType( &(root.font.library) );
+}
 
-grEngine::TextField::TextField(short x, short y, unsigned short w, unsigned short h) :Shape(0){
-	this->tex = new Texture(w, h, GL_ALPHA, GL_UNSIGNED_BYTE);
+
+TextField::TextField(unsigned short w, unsigned short h) :Shape(0){
+	this->bufferTexture = new Texture(w, h, GL_ALPHA, GL_UNSIGNED_BYTE);
 	this->padding = this->paddingLeft = this->paddingRight = this->paddingTop = this->paddingBottom = 0;
 	this->width = w;
 	this->height = h;
@@ -129,27 +128,37 @@ grEngine::TextField::TextField(short x, short y, unsigned short w, unsigned shor
 	//this->style.borderRight = this->fn->cache[0].arr[ FT_Get_Char_Index(this->fn->face, ' ')].horiAdvance;
 	//this->style.borderTop = this->style.borderBottom = this->style.lineHeight = this->fn->cache[0].size*1.5;
 }
-void grEngine::TextField::setString(string str) {
+void TextField::setString(string str) {
 	this->strUTF8 = str;
-	this->strType = STR_TYPE::UTF8;
-	this->switchOn();
+	this->bufferMode(true);
 }
-void grEngine::TextField::trace() {
+bool TextField::bufferMode(bool mode) {
+	if (mode && !this->bufferActivate ) {
+		root.window->FBOBuffer.push_back(this);
+		
+		this->bufferActivate = true;
+		this->bufferInit = false;
+	}else if ( !mode && this->bufferActivate ) {
+		this->bufferActivate = false;
+		this->bufferTexture->close();
+	}
+	return true;
+}
+void TextField::trace() {
 	//printf("<Bitmap x='%i' y='%i' gx='%i' gy='%i' w='%i' h='%i' texId='%i'/>\n", this->x, this->y, this->globalx, this->globaly, this->width, this->height, this->tex);
 }
-int grEngine::TextField::bufferGLComptAll() {
+int TextField::bufferGLComptAll() {
 	//if (Windows::renderComplete) {
 	
 	//5, 10, 15, 20, 25, 30
 	//8, 15, 23, 31, 38, 46
-		glGenFramebuffers(1, &root.window->ogl->FBOGL);
-		glBindFramebuffer(GL_FRAMEBUFFER, root.window->ogl->FBOGL);
+	if (this->bufferTexture->GLID == 0) return false; 
+	printf("TextField::bufferGLComptAll\n");
+		glBindFramebuffer(GL_FRAMEBUFFER, this->bufferFrame);
 		
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, this->tex->GLID, 0);
-		glViewport( 0, 0, this->width, this->height );
-		glLoadIdentity( );
-		printf("|| %i %i %i %i ||\n", this->tex->width, this->tex->height, this->width, this->height );
-		gluOrtho2D( 0, this->width, 0, this->height ); 
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, this->bufferTexture->GLID, 0);
+		printf("|| %i %i %i %i ||\n", this->bufferTexture->width, this->bufferTexture->height, this->width, this->height );
+		root.window->ogl->resizeWindow(this->width, this->height);
 		glClearColor(0,0,0,0);
 		glClear( GL_COLOR_BUFFER_BIT );
 		
@@ -157,18 +166,24 @@ int grEngine::TextField::bufferGLComptAll() {
 		glEnable( GL_ALPHA_TEST );
 		glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 		TextFormat *t;
-		Font *f;
-		if (this->tf == NULL) {t=TextFormat::globalTextFormat;}else{t=this->tf;}
-		if (t->fn == NULL) {f=Font::fonts[0];}else{f=t->fn;}
+		Font *font;
+		if (this->tf == NULL) {t=root.font.globalTextFormat;}else{t=this->tf;}
+		if (t->fn == NULL) {
+			if (root.fonts.empty()) return false;
+			font=root.fonts[0];
+		}else{
+			font=t->fn;
+		}
+		
 		int lineHeight, lastID=0, id, bx, by, ch;
 		if (t->lineHeight == __SHRT_MAX__) { lineHeight = t->size*1.5; }else{ lineHeight = t->lineHeight; }
 		bx = this->paddingLeft;
 		by = this->paddingTop+lineHeight;
-		FontGlyph spaceGlyph = f->cache[0].arr[ FT_Get_Char_Index(f->face, ' ') ];
+		FontGlyph spaceGlyph = font->cache[0].arr[ FT_Get_Char_Index(font->face, ' ') ];
+		
+		this->bufferTexture->trace();
+		printf("TextField str=%s\n", this->strUTF8.c_str());
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		switch (strType) {
-			case STR_TYPE::UTF8:
-				printf("glid %i str %s\n", this->tex->GLID, this->strUTF8.c_str());
 				for(int i=0; i<this->strUTF8.length(); i++) {
 					if ( (unsigned char)(this->strUTF8[i])<0x20) {
 						switch (this->strUTF8[i]) {
@@ -185,37 +200,36 @@ int grEngine::TextField::bufferGLComptAll() {
 					}else{
 						if ( (unsigned char)(this->strUTF8[i])<0x80 ) {//utf8-1 0xxx-xxxx
 							ch = this->strUTF8[i];
-							id = FT_Get_Char_Index(f->face, this->strUTF8[i]);
+							id = FT_Get_Char_Index(font->face, this->strUTF8[i]);
 						}else if ( (unsigned char)(this->strUTF8[i])<0xE0 ) {//utf8-2 110x-xxxx 10xx-xxxx
 							ch = (this->strUTF8[i]&0x1F)<<6 | (this->strUTF8[i+1]&0x3F);
-							id = FT_Get_Char_Index(f->face, ch);
+							id = FT_Get_Char_Index(font->face, ch);
 							i++;
 						}else if ( (unsigned char)(this->strUTF8[i])<0xF0 ) {//utf8-3 1110-xxxx 10xx-xxxx 10xx-xxxx
 							ch = (this->strUTF8[i]&0x0F)<<12 | (this->strUTF8[i+1]&0x3F)<<6 | (this->strUTF8[i+2]&0x3F );
-							id = FT_Get_Char_Index(f->face, ch);
+							id = FT_Get_Char_Index(font->face, ch);
 							i+=2;
 						}else if ( (unsigned char)(this->strUTF8[i])<0xF8 ) {//utf8-4 1111-0xxx 10xx-xxxx 10xx-xxxx 10xx-xxxx 
 							ch = (this->strUTF8[i]&0x0F)<<18 | (this->strUTF8[i+1]&0x3F)<<12 | (this->strUTF8[i+1]&0x3F)<<6 | (this->strUTF8[i+2]&0x3F);
-							id = FT_Get_Char_Index(f->face, ch);
+							id = FT_Get_Char_Index(font->face, ch);
 							i+=3;
 						}
-						if (f->cache[0].arr[id].horiAdvance > 0) {
+						if (font->cache[0].arr[id].horiAdvance > 0) {
 							lastID = ch;
-							glRasterPos2s(bx+f->cache[0].arr[id].horiBearingX, by-f->cache[0].arr[id].horiBearingY);
-							glDrawPixels(f->cache[0].arr[id].bmpWidth, f->cache[0].arr[id].bmpHeight, GL_ALPHA, GL_UNSIGNED_BYTE, f->cache[0].arr[id].bmp);
+							glRasterPos2s(bx+font->cache[0].arr[id].horiBearingX, by-font->cache[0].arr[id].horiBearingY);
+							glDrawPixels(font->cache[0].arr[id].bmpWidth, font->cache[0].arr[id].bmpHeight, GL_ALPHA, GL_UNSIGNED_BYTE, font->cache[0].arr[id].bmp);
 							glBegin(GL_POINTS);
 							glVertex2s(bx, by);
 							glEnd();
-							bx+=f->cache[0].arr[id].horiAdvance;
+							bx+=font->cache[0].arr[id].horiAdvance;
 						}else{
-							int v1 = f->cache[0].arr[lastID].horiBearingX + f->cache[0].arr[lastID].width/2 - f->cache[0].arr[lastID].horiAdvance;
+							int v1 = font->cache[0].arr[lastID].horiBearingX + font->cache[0].arr[lastID].width/2 - font->cache[0].arr[lastID].horiAdvance;
 							//glRasterPos2s(bx+f->cache[0].arr[id].horiBearingX+v1, by - f->cache[0].arr[lastID].horiBearingY - f->cache[0].arr[id].height );
-							glRasterPos2s(bx+f->cache[0].arr[id].horiBearingX+v1, by-f->cache[0].arr[lastID].horiBearingY - f->cache[0].arr[id].height );
-							glDrawPixels(f->cache[0].arr[id].bmpWidth, f->cache[0].arr[id].bmpHeight, GL_ALPHA, GL_UNSIGNED_BYTE, f->cache[0].arr[id].bmp);
+							glRasterPos2s(bx+font->cache[0].arr[id].horiBearingX+v1, by-font->cache[0].arr[lastID].horiBearingY - font->cache[0].arr[id].height );
+							glDrawPixels(font->cache[0].arr[id].bmpWidth, font->cache[0].arr[id].bmpHeight, GL_ALPHA, GL_UNSIGNED_BYTE, font->cache[0].arr[id].bmp);
 						}
 					}
 				}
-		}
 		/*if ( ch == 0x0306 ) {
 								FontGlyph fg = f->cache[0].arr[id], lfg = f->cache[0].arr[lastID];
 								int v1, v2;
@@ -233,26 +247,21 @@ int grEngine::TextField::bufferGLComptAll() {
 		
 		glDisable( GL_BLEND );
 		glDisable( GL_ALPHA_TEST );
-		
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glDeleteFramebuffers(1, &root.window->ogl->FBOGL);
-		
-		this->success = true;
 		return true;
 	//}
 	//Windows::FBOBuffer.push_back(this);
 }
-int grEngine::TextField::bufferGL400() {
+int TextField::bufferGL400() {
 	return false;
 }
-int grEngine::TextField::bufferGL300() {
+int TextField::bufferGL300() {
 	return false;
 }
-int grEngine::TextField::bufferGL210() {
+int TextField::bufferGL210() {
 	return false;
 }
-int grEngine::TextField::renderGLComptAll() {
-	Texture *tex = this->tex;
+int TextField::renderGLComptAll() {
+	Texture *tex = this->bufferTexture;
 	glEnable( GL_TEXTURE_2D );
 	glBindTexture(GL_TEXTURE_2D, tex->GLID);
 	if (this->tf == NULL) {
@@ -269,12 +278,12 @@ int grEngine::TextField::renderGLComptAll() {
 	glDisable( GL_TEXTURE_2D );
 	return true;
 } 
-int grEngine::TextField::renderGL400() {
+int TextField::renderGL400() {
 	return false;
 }
-int grEngine::TextField::renderGL300() {
+int TextField::renderGL300() {
 	return false;
 }
-int grEngine::TextField::renderGL210() {
+int TextField::renderGL210() {
 	return false;
 }

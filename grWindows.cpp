@@ -102,7 +102,7 @@ DWORD WINAPI renderThread (void* sys) {
 					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-					glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, tex->width, tex->height, 0, tex->format, tex->type, tex->img );
+					glTexImage2D( GL_TEXTURE_2D, 0, tex->format, tex->width, tex->height, 0, tex->format, tex->type, tex->img );
 					root.window->textureBuffer.push_back(tex);
 					countLoadedTex++;
 					if (countLoadedTex >= root.window->textureUpdateBuffer.size()) {
@@ -113,7 +113,7 @@ DWORD WINAPI renderThread (void* sys) {
 					root.window->textureUpdateBuffer[ root.window->textureUpdateBuffer.size()-countLoadedTex ] = NULL;
 				}
 			}
-			if (countLoadedTex < root.window->textureUpdateBuffer.size()) {
+			if (countLoadedTex>0 && countLoadedTex < root.window->textureUpdateBuffer.size()) {
 				root.window->textureUpdateBuffer.resize( root.window->textureUpdateBuffer.size()-countLoadedTex );
 			}
 		}
@@ -138,6 +138,9 @@ DWORD WINAPI renderThread (void* sys) {
 			if (countUpdateBMP < root.window->bitmapUpdateBuffer.size()) {
 				root.window->bitmapUpdateBuffer.resize( root.window->bitmapUpdateBuffer.size()-countUpdateBMP );
 			}
+		}
+		if (!root.window->FBOBuffer.empty()) {
+			root.window->redrawFBO();
 		}
 		if (!root.window->renderComplete) {
 			root.window->redraw();
@@ -369,7 +372,6 @@ int OpenGL::init(OPENGL_VER ver) {
 	OPENGL_GET_PROC(PFNGLUNIFORMMATRIX4FVPROC, glUniformMatrix4fv);
 	OPENGL_GET_PROC(PFNGLUNIFORM1IPROC, glUniform1i);
 	root.window->ogl = new OpenGL();
-	root.window->ogl->FBOGL = 0;
 	root.window->ogl->ver = ver;
 	if ( ver==VER_COMPTABLE_ALL || ver==VER_CORE_210) {
 	}else{
@@ -737,10 +739,7 @@ void grEngine::Windows::redraw() {
 	grEngine::root.window->renderComplete = true;
 }
 void grEngine::Windows::redrawFBO () {
-	#ifdef DEBUG
 	fprintf(stdout, "WIN redrawFBO %i\n", Windows::FBOBuffer.size());
-	#endif
-	if (Windows::FBOBuffer.empty()) return;
 	//Directory *dir;
 	//GLuint fb;
 	//glGenFramebuffers(1, &fb);
@@ -748,17 +747,29 @@ void grEngine::Windows::redrawFBO () {
 	//typeid
 	//glGenFramebuffers(1, &Windows::FBOGL);
 	//glBindFramebuffer(GL_FRAMEBUFFER, Windows::FBOGL);
-	for(int i=0; i<Windows::FBOBuffer.size(); i++) {
-		Windows::FBOBuffer[i]->bufferGLComptAll();
+	unsigned int countUpdateFBO = 0;
+	Buffer *buf;
+	for(int i=0; i<this->FBOBuffer.size()-countUpdateFBO; i++) {
+		buf = this->FBOBuffer[i];
+		if (buf->bufferFrame==0) glGenFramebuffers(1, &(buf->bufferFrame));
+		if ( buf->bufferGLComptAll() ) {
+			buf->bufferInit = true;
+			countUpdateFBO++;
+			if (countUpdateFBO >= this->FBOBuffer.size()) {
+				this->FBOBuffer.clear();
+				break;
+			}
+			this->FBOBuffer[i] = this->FBOBuffer[ this->FBOBuffer.size()-countUpdateFBO ]; 
+			this->FBOBuffer[ this->FBOBuffer.size()-countUpdateFBO ] = NULL;
+		}
 	}
-	
+	if (countUpdateFBO < this->FBOBuffer.size()) {
+		this->FBOBuffer.resize( this->FBOBuffer.size()-countUpdateFBO );
+	}
 	//Windows::FBOBuffer.clear();
-	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	//glDeleteFramebuffers(1, &Windows::FBOGL);
-	glViewport( 0, 0, Windows::width, Windows::height );
-	glLoadIdentity();
-	gluOrtho2D( 0, Windows::width, Windows::height, 0 );
-	Windows::FBOBuffer.clear();
+	grEngine::root.window->ogl->resizeWindow(this->width, this->height);
 }
 /*
 int grEngine::Windows::addEventHandler(int type, void(*fun)(const EventWindows*)) {
