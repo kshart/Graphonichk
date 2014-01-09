@@ -10,6 +10,14 @@ string get_ext (const string& st) {
 }
 
 
+template<class Type> grEngine::Array<Type>::Array(unsigned int size) {
+	this->data = (Type*)malloc( size*sizeof(Type) );
+	if (this->data==NULL) {
+		this->size = 0;
+	}else{
+		this->size = size;
+	}
+}
 
 System grEngine::root;
 void System::init(HINSTANCE hi) {

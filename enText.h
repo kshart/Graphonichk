@@ -19,8 +19,8 @@ using namespace std;
 namespace grEngine {
 	class TextField;
 	class TextFormat;
+	class FontFace;
 	class Font;
-
 	typedef struct {//22
 		short ch;
 		void *bmp;
@@ -28,10 +28,14 @@ namespace grEngine {
 		short horiBearingX, horiBearingY, horiAdvance, vertBearingX, vertBearingY, vertAdvance;
 		
 	} FontGlyph;
-	typedef struct {
-		unsigned int size, count, ramUsed;
-		FontGlyph *arr;
-	} FontGlyphs;
+	template class Array<FontGlyph>;
+	
+	class FontFace {
+	public:
+		unsigned short size;
+		unsigned int ramUsed;
+		Array<FontGlyph> *arr;
+	};
 	class TextFormat {
 	  public:
 		TextFormat();
@@ -70,11 +74,12 @@ namespace grEngine {
 		static int init();
 		
 		Font(string path);
-		void cached(unsigned int id);
+		bool cached(unsigned short size);
 		int error;
 		string path;
 		FT_Face face;
-		vector<FontGlyphs> cache;
+		vector<FontFace*> cache;
+		FontFace *getFontFace(unsigned short size);
 	};
 	class TextField :public Buffer, public Shape {
 	  private:

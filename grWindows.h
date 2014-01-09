@@ -55,7 +55,7 @@ namespace grEngine {
 		};
 		OPENGL_VER ver;
 		void trace();
-		void resizeWindow(short, short);
+		void setViewportMatrix(short, short, short, short);
 		static int init(OPENGL_VER);
 	};
 	

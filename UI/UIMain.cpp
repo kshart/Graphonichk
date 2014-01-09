@@ -6,99 +6,204 @@
 
 using namespace std;
 using namespace grEngine;
-/*
+
+
 UIWorkspace::UIWorkspace(unsigned short width, unsigned short height) {
 	this->UIWorkspace::width = width;
 	this->UIWorkspace::height = height;
-	this->root = new UIObject(width, height);
-	this->root->resize(width, height);
+	this->root = new UIUnitDirectory(width, height);
+	//this->root->resize(width, height);
 }
 void UIWorkspace::getUIUnits() {
-	vector<UIUnit*> arr;
-	this->root->getChild(&arr);
-	printf("getUIUnits arrSize=%i\n", arr.size());
+	//vector<UIUnit*> arr;
+	//this->root->getChild(&arr);
+	//printf("getUIUnits arrSize=%i\n", arr.size());
 }
 
-UIObject::UIObject(unsigned short w, unsigned short h, UIObject *parent, UIUnit *unit) {
-	this->parent = parent;
-	this->unit = unit;
+UIUnitDirectory::UIUnitDirectory(unsigned short w, unsigned short h, Shape *sh) :UIUnit(w, h, sh) {
 	this->separationStyle = false;
-	this->x = this->y = 0;
-	this->rectWidth = w;
-	this->rectHeight = h;
-	this->width = this->height = this->position = 0;
 }
-void UIObject::resize(unsigned short w, unsigned short h) {
-	this->width = w;
-	this->height = h;
-	if (this->unit!=NULL) {
-		this->unit->width = w;
-		this->unit->height = h;
-	}
-}
-void UIObject::addChild(UIUnit* unit, unsigned short size, unsigned short pos) {
-	if (this->child.empty()) {
-		if (this->unit == NULL) {
-			unit->x = unit->y = 0;
-			unit->width = this->width;
-			unit->height = this->height;
+void UIUnitDirectory::addChild(UIUnit* unit, unsigned short pos) {
+	//UIUnitDirectory *obj = dynamic_cast<UIUnitDirectory*>(unit);
+	unit->parent = this;
+	/*if (obj==NULL) {
+		if (this->child.empty()) {
+			unit->x = 0;
 			unit->y = 0;
-			this->unit = unit;
+		}else if (this->separationStyle == UIUnitDirectory::SEPARATION_HEIGHT) {
+			unit->x = 0;
+			unit->y = (this->child.back())->y+(this->child.back())->height;
 		}else{
-			UIObject *ui1 = new UIObject(this, this->unit), *ui2 = new UIObject(this, unit);
-			if (this->separationStyle == SEPARATION_WIDTH) {
-				//unit->width = size;
-				ui1->resize(this->unit->width, this->height);
-				ui2->resize(unit->width, this->height);
-				ui1->x = 0;
-				ui1->y = 0;
-				ui2->x = this->unit->width;
-				ui2->y = 0;
-			}else{
-				ui1->resize(this->width, this->unit->height);
-				ui2->resize(this->width, unit->height);
-				//unit->height = size;
-			}
-			this->child.push_back(ui1);
-			this->child.push_back(ui2);
+			unit->x = (this->child.back())->x+(this->child.back())->width;
+			unit->y = 0;
 		}
-		
-	}else if (unit != NULL) {
-		UIObject *ui1 = new UIObject(this, unit);
-		if (pos == SHRT_MAX) {
-			if (this->separationStyle == SEPARATION_WIDTH) {
-				//unit->width = size;
-				ui1->resize(0, this->height);
-			}else{
-				ui1->resize(this->width, 0);
-				//unit->height = size;
-			}
-			this->child.push_back(new UIObject(this, unit));
+	}else{*/
+		/*if (this->child.empty()) {
+			unit->x = 0;
+			unit->y = 0;a
+		}else if (this->separationStyle == UIUnitDirectory::SEPARATION_HEIGHT) {
+			unit->x = 0;
+			unit->y = (this->child.back())->y+(this->child.back())->height;
 		}else{
-
+			unit->x = (this->child.back())->x+(this->child.back())->width;
+			unit->y = 0;
 		}
+		if (this->separationStyle == UIUnitDirectory::SEPARATION_HEIGHT) {
+			if (unit->y > this->scaledHeight) {
+				unit->scaledWidth = 0;
+				unit->scaledHeight = 0;
+			}else if ( unit->y+unit->height > this->scaledHeight) {
+				unit->scaledWidth = this->scaledWidth;
+				unit->scaledHeight = this->scaledHeight-unit->y;
+			}else{
+				unit->scaledWidth = this->scaledWidth;
+				unit->scaledHeight = unit->height;
+			}
+		}else{
+			if (unit->x > this->scaledWidth) {
+				unit->scaledWidth = 0;
+				unit->scaledHeight = 0;
+			}else if ( unit->x+unit->width > this->scaledWidth) {
+				unit->scaledWidth = this->scaledWidth-unit->x;
+				unit->scaledHeight = this->scaledHeight;
+			}else{
+				unit->scaledWidth = unit->width;
+				unit->scaledHeight = this->scaledHeight;
+			}
+		}
+	//}
+	unit->updateGlobalPosition();*/
+	this->child.push_back(unit);
+}
+void UIUnitDirectory::drag(unsigned short x, unsigned short y) {
+	this->UIUnit::drag(x, y);
+	for(int i=0; i<this->child.size(); i++) {
+		this->child[i]->updateGlobalPosition();
 	}
 }
-void UIObject::getChild(vector<UIUnit*> *arr) {
-	printf("<UIObject x='%i' y='%i' w='%i' h='%i'/>\n", this->x, this->y, this->width, this->height);
-	if (this->child.empty() && this->unit!=NULL) {
-		arr->push_back(this->unit);
-		//this->unit->trace();
+void UIUnitDirectory::resize(unsigned short w, unsigned short h) {
+	UIUnit *unit, *lastUnit;
+	this->scaledWidth = w;
+	this->scaledHeight = h;
+	if (this->child.empty()) return;
+	unit = this->child[0];
+	unit->drag(0, 0);
+	if (this->child.size()==1) {
+		unit->resize(this->scaledWidth, this->scaledHeight);
+		return;
+	}
+	if (this->separationStyle==SEPARATION::SEPARATION_HEIGHT) {
+		if (unit->height > this->scaledHeight) {
+			unit->resize(this->scaledWidth, this->scaledHeight);
+			return;
+		}else{
+			unit->resize(this->scaledWidth, unit->height);
+			for(int i=0; i<this->child.size()-2; i++) {
+				lastUnit = this->child[i];
+				unit = this->child[i+1];
+				unit->drag(0, lastUnit->y+lastUnit->height);
+				if (unit->y+unit->height > this->scaledHeight) {
+					unit->resize(this->scaledWidth, this->scaledHeight-unit->y);
+					return;
+				}else{
+					unit->resize(this->scaledWidth, unit->height);
+				}
+			}
+			lastUnit = this->child[this->child.size()-2];
+			unit = this->child.back();
+			unit->drag(0, lastUnit->y+lastUnit->height);
+			unit->resize(this->scaledWidth, this->scaledHeight-unit->y);
+		}
 	}else{
-		for(int i=0; i<this->child.size(); i++) {
-			this->child[i]->getChild(arr);
+		if (unit->width > this->scaledWidth) {
+			unit->resize(this->scaledWidth, this->scaledHeight);
+			return;
+		}else{
+			unit->resize(unit->width, this->scaledHeight);
+			for(int i=0; i<this->child.size()-2; i++) {
+				lastUnit = this->child[i];
+				unit = this->child[i+1];
+				unit->drag(lastUnit->x+lastUnit->width, 0);
+				if (unit->x+unit->width > this->scaledWidth) {
+					unit->resize(this->scaledWidth-unit->x, this->scaledHeight);
+					return;
+				}else{
+					unit->resize(unit->width, this->scaledHeight);
+				}
+			}
+			lastUnit = this->child[this->child.size()-2];
+			unit = this->child.back();
+			unit->drag(lastUnit->x+lastUnit->width, 0);
+			unit->resize(this->scaledWidth-unit->x, this->scaledHeight);
 		}
 	}
-}*/
-
-
-UIUnit::UIUnit() :Shape(0) {
+}
+Directory* UIUnitDirectory::getRect() {
+	Directory *dir = new Directory();
+	this->resize(this->width, this->height);
 	
+	for(int i=0; i<this->child.size(); i++) {
+		this->child[i]->getRect(dir);
+	}
+	//rect = new FRect(this->scaledWidth, this->scaledHeight, 0xFF00FFFF);
+	//vec->push_back(rect);
+	return dir;
 }
-void UIUnit::trace() {
-	printf("<UIUnit x='%i' y='%i' width='%i' height='%i'/>\n", this->x, this->y, this->width, this->height);
+void UIUnitDirectory::getRect(Directory *dir) {
+	//FRect *rect;
+	for(int i=0; i<this->child.size(); i++) {
+		this->child[i]->getRect(dir);
+	}
+	//rect = new FRect(this->scaledWidth, this->scaledHeight, 0xFF00FFFF);
+	//vec->push_back(rect);
+}
+void UIUnitDirectory::trace(unsigned int tab) {
+	printf( "%*.*c", 3*tab, 3*tab, ' ' );
+	printf("<UIObject x='%i'\ty='%i'\tgx='%i'\tgy='%i'\tw='%i'\th='%i'\tsw='%i'\tsh='%i'>\n", this->x, this->y, this->globalx, this->globaly, this->width, this->height, this->scaledWidth, this->scaledHeight);
+	for(int i=0; i<this->child.size(); i++) {
+		this->child[i]->trace(tab+1);
+	}
+	printf( "%*.*c", 3*tab, 3*tab, ' ' );
+	printf("</UIObject>\n");
 }
 
+UIUnit::UIUnit(unsigned short w, unsigned short h, Shape *sh) {
+	this->scaledWidth = this->width = w;
+	this->scaledHeight = this->height = h;
+	this->x = this->y = this->globalx = this->globaly;
+}
+void UIUnit::updateGlobalPosition() {
+	if (this->parent==NULL) return;
+	this->globalx = this->parent->globalx + this->x;
+	this->globaly = this->parent->globaly + this->y;
+}
+void UIUnit::drag(unsigned short x, unsigned short y) {
+	this->x = x;
+	this->y = y;
+	if (this->parent==NULL) return;
+	this->globalx = this->parent->globalx+x;
+	this->globaly = this->parent->globaly+y;
+}
+void UIUnit::resize(unsigned short w, unsigned short h) {
+	this->scaledWidth = w;
+	this->scaledHeight = h;
+}
+Directory* UIUnit::getRect() {
+	Directory *dir = new Directory();
+	FRect *rect = new FRect(this->scaledWidth-2, this->scaledHeight-2, 0xFF00FFFF);
+	rect->drag(this->globalx+1, this->globaly+1);
+	dir->addChild(rect);
+	return dir;
+}
+void UIUnit::getRect(Directory *dir) {
+	FRect *rect = new FRect(this->scaledWidth-2, this->scaledHeight-2, 0xFF00FFFF);
+	rect->drag(this->globalx+1, this->globaly+1);
+	dir->addChild(rect);
+}
+void UIUnit::trace(unsigned int tab) {
+	printf( "%*.*c", 3*tab, 3*tab, ' ' );
+	printf("<UIUnit x='%i'\ty='%i'\tgx='%i'\tgy='%i'\tw='%i'\th='%i'\tsw='%i'\tsh='%i'/>\n", this->x, this->y, this->globalx, this->globaly, this->width, this->height, this->scaledWidth, this->scaledHeight);
+}
 
 void ScrollBarHmouseDown (const EventMouseShape *e) {
 	UIScrollBarH *sb = (UIScrollBarH*)(e->shape);
@@ -423,18 +528,21 @@ UICheckbox::UICheckbox(int crc32, unsigned short w, unsigned short h, Shape* shU
 	root.window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, UICheckboxMouseUp, this);
 }
 UICheckbox::UICheckbox(unsigned short w, unsigned short h) :Shape(UIButton::CRC32) {
+	Texture *tex1 = new Texture("FlatUICheckBox.png");
+	Texture *tex2 = new Texture("FlatUICheckBoxRollOver.png");
+	Texture *tex3 = new Texture("FlatUICheckBoxCheck.png");
 	this->width = w;
 	this->height = h;
 	this->press = false;
 	this->checked = false;
 	this->status = UICheckbox::UNCHECKED_NORMAL;
-	this->shUnchkPressed = new FRect(w, h, 0xFFFF0000);
-	this->shUnchkNormal = new FRect(w, h, 0xFF00FF00);
-	this->shUnchkRollOver = new FRect(w, h, 0xFF0000FF);
+	this->shUnchkPressed = new Bitmap(tex2);
+	this->shUnchkNormal = new Bitmap(tex1);
+	this->shUnchkRollOver = new Bitmap(tex2);
 	this->shUnchkDisable = new FRect(w, h, 0xFFAAAAAA);
-	this->shChkPressed = new FRect(w, h, 0xFFFF00FF);
-	this->shChkNormal = new FRect(w, h, 0xFFFFFF00);
-	this->shChkRollOver = new FRect(w, h, 0xFF00FFFF);
+	this->shChkPressed = new Bitmap(tex3);
+	this->shChkNormal = new Bitmap(tex3);
+	this->shChkRollOver = new Bitmap(tex3);
 	this->shChkDisable = new FRect(w, h, 0xFF444444);
 	this->addEventHandler(EventMouseShape::MOUSE_DOWN, UICheckboxMouseDown);
 	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, UICheckboxMouseOut);
@@ -582,7 +690,7 @@ UIRadioButtonGroup::UIRadioButtonGroup() :Directory(UIRadioButtonGroup::CRC32) {
 	
 }
 UIRadioButton *UIRadioButtonGroup::addRadioButton() {
-	UIRadioButton *rb = new UIRadioButton(40, 40, this);
+	UIRadioButton *rb = new UIRadioButton(20, 20, this);
 	this->addChild(rb);
 	return rb;
 }
@@ -679,19 +787,22 @@ void UIRadioButtonMouseOut (const EventMouseShape *e) {
 
 
 UIRadioButton::UIRadioButton(unsigned short w, unsigned short h, UIRadioButtonGroup *gr) :Shape(UIRadioButton::CRC32) {
+	Texture *tex1 = new Texture("FlatUIRadioButton.png");
+	Texture *tex2 = new Texture("FlatUIRadioButtonRollOver.png");
+	Texture *tex3 = new Texture("FlatUIRadioButtonCheck.png");
 	this->width = w;
 	this->height = h;
 	this->group = gr;
 	this->press = false;
 	this->checked = false;
 	this->status = UIRadioButton::UNCHECKED_NORMAL;
-	this->shUnchkPressed = new FRect(w, h, 0xFFFF0000);
-	this->shUnchkNormal = new FRect(w, h, 0xFF00FF00);
-	this->shUnchkRollOver = new FRect(w, h, 0xFF0000FF);
+	this->shUnchkPressed = new Bitmap(tex2);
+	this->shUnchkNormal = new Bitmap(tex1);
+	this->shUnchkRollOver = new Bitmap(tex2);
 	this->shUnchkDisable = new FRect(w, h, 0xFFAAAAAA);
-	this->shChkPressed = new FRect(w, h, 0xFFFF00FF);
-	this->shChkNormal = new FRect(w, h, 0xFFFFFF00);
-	this->shChkRollOver = new FRect(w, h, 0xFF00FFFF);
+	this->shChkPressed = new Bitmap(tex3);
+	this->shChkNormal = new Bitmap(tex3);
+	this->shChkRollOver = new Bitmap(tex3);
 	this->shChkDisable = new FRect(w, h, 0xFF444444);
 	this->addEventHandler(EventMouseShape::MOUSE_DOWN, UIRadioButtonMouseDown);
 	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, UIRadioButtonMouseOut);

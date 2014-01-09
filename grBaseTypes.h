@@ -91,6 +91,14 @@ namespace grEngine {
 		unsigned short width, height;
 	};
 	
+
+	template<class Type> class Array {
+	public:
+		Array(unsigned int size);
+		~Array();
+		Type *data;
+		unsigned int size;
+	};
 	typedef struct __attribute__((packed)) {
 		uint16_t	signature;
 		uint32_t	sizeFile;
@@ -195,6 +203,28 @@ namespace grEngine {
 		HANDLE mutex;
 	} ThreadDataSys;
 
+	typedef struct{
+		enum TYPE {
+			PIXELS,
+			INCHES,
+			CENTIMETERS,
+			MILIMETERS,
+			POINTS,
+			PICAS,
+			PERCENTAGES
+		};
+		TYPE type;
+		union {
+			int pixels;
+			float inches;
+			float centimeters;
+			float milimeters;
+			float points;
+			float picas;
+			float percentages;
+		};
+	} Metric;
+	void metricToPixels(Metric *m, int v1=0);
 	//template class EventDispatcher<EventFileLoad>;
 	class System {
 	  public:

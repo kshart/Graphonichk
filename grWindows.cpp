@@ -297,13 +297,13 @@ PFNGLUNIFORM1IPROC			glUniform1i	 = NULL;
 #else
 #endif
 
-float *matrixOrto(float  w, float h, float f, float n) {
+float *matrixOrto(float left, float top, float right, float bottom, float f, float n) {
 	float *matrix = (float*)malloc(sizeof(float)*16);
 	//0 1 2 3
 	//4 5 6 7
 	//8 9 10 11
 	//12 13 14 15
-	matrix[0] = 2.0f/w;
+	/*matrix[0] = 2.0f/w;
 	matrix[1] = 0;
 	matrix[2] = 0;
 	matrix[3] = 0;
@@ -321,7 +321,7 @@ float *matrixOrto(float  w, float h, float f, float n) {
 	matrix[12] = -1;
     matrix[13] = 1;
     matrix[14] = -(f+n) / (f - n);
-    matrix[15] = 1;
+    matrix[15] = 1;*/
 	printf("\t%f\t%f\t%f\t%f\t\n", matrix[0], matrix[1], matrix[2], matrix[3]);
 	printf("\t%f\t%f\t%f\t%f\t\n", matrix[4], matrix[5], matrix[6], matrix[7]);
 	printf("\t%f\t%f\t%f\t%f\t\n", matrix[8], matrix[9], matrix[10], matrix[11]);
@@ -386,7 +386,7 @@ in vec2 texCoord;\n\
 			gl_Position   = matrixProjection * vec4(position, -1.0, 1.0);\n\
 			//fragTexcoord = vec2(1, 1);\n\
 		}", 
-					str2 = "#version 330 core\n\
+		str2 = "#version 330 core\n\
 		uniform sampler2D texture;\n\
 		in vec2 fragTexCoord;\n\
 		out vec4 color;\n\
@@ -415,27 +415,23 @@ in vec2 texCoord;\n\
 		printf("ERROR %i\n", glGetError());
 	}
 }
-void OpenGL::resizeWindow(short w, short h) {
+void OpenGL::setViewportMatrix(short left, short top, short right, short bottom) {
 	float *matrix;
 	switch (root.window->ogl->ver) {
 		case VER_COMPTABLE_ALL:
-			glViewport( 0, 0, w, h );
 			glLoadIdentity( );
-			gluOrtho2D( 0, w, h, 0 );
+			gluOrtho2D( left, right, bottom, top );
 			return;
 		case VER_CORE_210:
-			glViewport( 0, 0, w, h );
 			glLoadIdentity( );
-			gluOrtho2D( 0, w, h, 0 );
+			gluOrtho2D( left, right, bottom, top );
 			return;
 		case VER_CORE_330:
-			glViewport( 0, 0, w, h );
-			matrix = matrixOrto(w, h, 0.1, 5);
+			matrix = matrixOrto(left, top, right, bottom, 0.1, 5);
 			glBindAttribLocation(GLShader::glsl->shaderProgram, GLShader::matrixProjection, "matrixProjection");
 			glUniformMatrix4fv(GLShader::matrixProjection, 1, GL_FALSE, matrix);
 			return;
 		case VER_CORE_400:
-			glViewport( 0, 0, w, h );
 			return;
 	}
 }
@@ -547,7 +543,8 @@ void grEngine::Windows::resize(short width, short height) {
 	this->width  = rect.right-rect.left;
 	this->height = rect.bottom-rect.top;
 	printf("WIDTH %i HEIGHT %i", this->width, this->height);
-	grEngine::root.window->ogl->resizeWindow(this->width, this->height);
+	glViewport(0, 0, this->width, this->height);
+	grEngine::root.window->ogl->setViewportMatrix(0, 0, this->width, this->height);
 	EventWindow *e = new EventWindow();
 	e->window = grEngine::root.window;
 	e->type = EventWindow::WIN_SIZE;
@@ -736,7 +733,7 @@ void grEngine::Windows::redraw() {
 	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
 */
 	SwapBuffers(grEngine::root.window->hDC);
-	grEngine::root.window->renderComplete = true;
+	this->renderComplete = true;
 }
 void grEngine::Windows::redrawFBO () {
 	fprintf(stdout, "WIN redrawFBO %i\n", Windows::FBOBuffer.size());
@@ -754,6 +751,7 @@ void grEngine::Windows::redrawFBO () {
 		if (buf->bufferFrame==0) glGenFramebuffers(1, &(buf->bufferFrame));
 		if ( buf->bufferGLComptAll() ) {
 			buf->bufferInit = true;
+			this->renderComplete = false;
 			countUpdateFBO++;
 			if (countUpdateFBO >= this->FBOBuffer.size()) {
 				this->FBOBuffer.clear();
@@ -769,7 +767,8 @@ void grEngine::Windows::redrawFBO () {
 	//Windows::FBOBuffer.clear();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	//glDeleteFramebuffers(1, &Windows::FBOGL);
-	grEngine::root.window->ogl->resizeWindow(this->width, this->height);
+	glViewport(0, 0, this->width, this->height);
+	grEngine::root.window->ogl->setViewportMatrix(0, 0, this->width, this->height);
 }
 /*
 int grEngine::Windows::addEventHandler(int type, void(*fun)(const EventWindows*)) {

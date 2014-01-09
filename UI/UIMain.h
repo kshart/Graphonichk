@@ -1,8 +1,8 @@
 /* 
  * File:   UIWorkspace.h
- * Author: Артём Каширин
+ * Author: РђСЂС‚С‘Рј РљР°С€РёСЂРёРЅ
  *
- * Created on 8 Август 2013 г., 1:45
+ * Created on 8 РђРІРіСѓСЃС‚ 2013 Рі., 1:45
  */
 
 #ifndef UIWORKSPACE_H
@@ -19,38 +19,46 @@ using namespace std;
 namespace grEngine {
 	class UIWorkspace;
 	class UIUnit;
-	class UIObject;
+	class UIUnitDirectory;
 	
-	class UIObject {
-	  private:
-	  public:
+	class UIUnit {
+	public:
+		UIUnit(unsigned short w, unsigned short h, Shape *sh=NULL);
+		virtual void trace(unsigned int tab=0);
+		virtual void updateGlobalPosition();
+		virtual void resize(unsigned short w, unsigned short h);
+		virtual void drag(unsigned short x, unsigned short y);
+		virtual Directory* getRect();
+		virtual void getRect(Directory *dir);
+		
+		Shape *shape;
+		UIUnitDirectory *parent;
+		unsigned short width, height, scaledWidth, scaledHeight, x, y, globalx, globaly;
+	};
+	class UIUnitDirectory :public UIUnit {
+	public:
 		enum SEPARATION {
 			SEPARATION_WIDTH=true,
 			SEPARATION_HEIGHT=false
 		};
-		//UIObject(bool separation = false);
-		UIObject(unsigned short w, unsigned short h, UIObject *parent=NULL, UIUnit *unit=NULL);
+		UIUnitDirectory(unsigned short w, unsigned short h, Shape *sh=NULL);
 		
+		//void resize(unsigned short w, unsigned short h);
+		void addChild(UIUnit* unit, unsigned short pos=SHRT_MAX);
+		void drag(unsigned short x, unsigned short y);
 		void resize(unsigned short w, unsigned short h);
-		void addChild(UIUnit* unit, unsigned short size, unsigned short pos=SHRT_MAX);
-		void getChild(vector<UIUnit*> *arr);
+		Directory* getRect();
+		void getRect(Directory *dir);
+		void trace(unsigned int tab=0);
 		
-		UIObject *parent;
-		UIUnit *unit;
-		vector<UIObject*> child;
+		vector<UIUnit*> child;
+		
 		bool separationStyle;
-		short x, y;
-		unsigned short width, height, rectWidth, rectHeight, position;
-	};
-	class UIUnit :public Shape {
-	  public:
-		UIUnit();
-		void trace();
 	};
 	class UIWorkspace :public Directory {
 	  public:
 		UIWorkspace(unsigned short width, unsigned short height);
-		UIObject *root;
+		UIUnitDirectory *root;
 		unsigned short width, height;
 		void getUIUnits();
 	};
@@ -60,73 +68,8 @@ namespace grEngine {
 	class UIScrollBarW;
 	class UIButton;
 	class UICheckbox;
-		//Unchecked
-		//Checked
-		//Disabled unchecked
-		//Disabled checked
 	class UIRadioButton;
 	class UIRadioButtonGroup;
-		//Radio is off
-		//Radio is on
-		//Disabled radio is off
-		//Disabled radio is on
-	//class UIWorkspace;
-	
-	/*enum :char {
-		UI_SEPARATION_OFF,
-		UI_SEPARATION_LEFT_WIDTH,
-		UI_SEPARATION_RIGHT_WIDTH,
-		UI_SEPARATION_TOP_HEIGHT,
-		UI_SEPARATION_BOTTOM_HEIGHT
-	};
-	
-	class UIMain : public Directory {
-	public:
-		UIWorkspace *workspace;
-		//win
-		int type;
-		//0x80000000 ins theme;
-		
-		
-		unsigned short barHeight, buttonsHeight, border;
-		///win
-		short x, y;
-		unsigned short width, height;
-		
-		UIMain(short, short, unsigned short, unsigned short);
-	};
-	class UIObject : public Directory {
-		unsigned short width, height;
-		int resize(unsigned short, unsigned short);
-		int open();
-		int close();
-	};
-	class UIWorkspace {
-	  public:
-		UIWorkspace *parent;
-		vector<UIWorkspace> child;
-		vector<unsigned short> childSepY;
-		UIObject *obj;
-		char sepStyle;
-		short x, y;
-		unsigned short width, height;
-		
-		UIWorkspace(UIObject* obj, char sepStyle=UI_SEPARATION_OFF, unsigned short childSize=0, unsigned short width=0, unsigned short height=0);
-		void addChild(UIWorkspace*, unsigned short);
-		int getChild(vector<UIObject>*);
-		void trace();
-	};
-	
-	
-	class UIButton : public Bitmap {
-	  public:
-		enum STATE:char {
-			asd
-		};
-		UIButton(short x, short y, unsigned short w, unsigned short h, void *click() );
-		STATE state;
-		void *click();
-	};*/
 	
 	class UIScrollBarH :public Directory {
 	public:
@@ -223,6 +166,13 @@ namespace grEngine {
 		STATUS status;
 		bool press;
 		bool checked;
+	};
+
+	
+	class UITable;
+	class UITable :public Directory{
+	public:
+		UITable(unsigned short w, unsigned short h);
 	};
 }
 
