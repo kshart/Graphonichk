@@ -1,37 +1,27 @@
-/* 
- * File:   UIWorkspace.h
- * Author: РђСЂС‚С‘Рј РљР°С€РёСЂРёРЅ
- *
- * Created on 8 РђРІРіСѓСЃС‚ 2013 Рі., 1:45
- */
-
 #ifndef UIWORKSPACE_H
 #define	UIWORKSPACE_H
 
 #include <vector>
 #include "../grBaseTypes.h"
-#ifdef	__cplusplus
-extern "C" {
-#endif
 
 using namespace std;
 
-namespace grEngine {
+namespace Graphonichk {
 	class UIWorkspace;
 	class UIUnit;
 	class UIUnitDirectory;
 	
 	class UIUnit {
 	public:
-		UIUnit(unsigned short w, unsigned short h, Shape *sh=NULL);
+		UIUnit(unsigned short w, unsigned short h, ShapeRect *sh=NULL);
 		virtual void trace(unsigned int tab=0);
 		virtual void updateGlobalPosition();
 		virtual void resize(unsigned short w, unsigned short h);
 		virtual void drag(unsigned short x, unsigned short y);
-		virtual Directory* getRect();
-		virtual void getRect(Directory *dir);
+		virtual ShapeGroupRect* getRect();
+		virtual void getRect(ShapeGroupRect *dir);
 		
-		Shape *shape;
+		ShapeRect *shape;
 		UIUnitDirectory *parent;
 		unsigned short width, height, scaledWidth, scaledHeight, x, y, globalx, globaly;
 	};
@@ -41,21 +31,21 @@ namespace grEngine {
 			SEPARATION_WIDTH=true,
 			SEPARATION_HEIGHT=false
 		};
-		UIUnitDirectory(unsigned short w, unsigned short h, Shape *sh=NULL);
+		UIUnitDirectory(unsigned short w, unsigned short h, ShapeRect *sh=NULL);
 		
 		//void resize(unsigned short w, unsigned short h);
-		void addChild(UIUnit* unit, unsigned short pos=SHRT_MAX);
+		bool addChild(UIUnit* unit, unsigned short pos=SHRT_MAX);
 		void drag(unsigned short x, unsigned short y);
 		void resize(unsigned short w, unsigned short h);
-		Directory* getRect();
-		void getRect(Directory *dir);
+		ShapeGroupRect* getRect();
+		void getRect(ShapeGroupRect *dir);
 		void trace(unsigned int tab=0);
 		
 		vector<UIUnit*> child;
 		
 		bool separationStyle;
 	};
-	class UIWorkspace :public Directory {
+	class UIWorkspace :public ShapeGroupRect {
 	  public:
 		UIWorkspace(unsigned short width, unsigned short height);
 		UIUnitDirectory *root;
@@ -71,7 +61,7 @@ namespace grEngine {
 	class UIRadioButton;
 	class UIRadioButtonGroup;
 	
-	class UIScrollBarH :public Directory {
+	class UIScrollBarH :public ShapeGroupRect {
 	public:
 		enum{CRC32=0xE8BC50C8};
 		UIScrollBarH(unsigned short w, unsigned short h);
@@ -79,11 +69,15 @@ namespace grEngine {
 		void mouseUp (const EventMouse *e);
 		void mouseMove (const EventMouse *e);
 		
+		void (*chengePosition)(float n, void* obj);
+		void* obj;
+		
+		
 		FRect *pad, *bar;
 		float position;
 		bool scrollStarted;
 	};
-	class UIScrollBarW :public Directory {
+	class UIScrollBarW :public ShapeGroupRect {
 	public:
 		enum{CRC32=0x65B45D3D};
 		UIScrollBarW(unsigned short w, unsigned short h);
@@ -96,9 +90,9 @@ namespace grEngine {
 		bool scrollStarted;
 	};
 	
-	class UIButton :public Shape {
+	class UIButton :public ShapeRect {
 	private:
-		UIButton(int crc32, unsigned short w, unsigned short h, Shape *shPressed, Shape *shNormal, Shape *shRollOver);
+		UIButton(int crc32, unsigned short w, unsigned short h, ShapeRect *shPressed, ShapeRect *shNormal, ShapeRect *shRollOver);
 	public:
 		enum {CRC32=0x251F1AC9};
 		enum STATUS {
@@ -111,13 +105,14 @@ namespace grEngine {
 		int renderGL210();
 		void updateGlobalPosition();
 		int callEvent(EventMouseShape *e);
-		Shape *shapePressed, *shapeNormal, *shapeRollOver;
+		ShapeRect *shapePressed, *shapeNormal, *shapeRollOver;
 		STATUS status;
 		bool press;
 	};
-	class UICheckbox :public Shape {
+	class UICheckbox :public ShapeRect {
 	private:
-		UICheckbox(int crc32, unsigned short w, unsigned short h, Shape *shUnchkPressed, Shape *shUnchkNormal, Shape *shUnchkRollOver, Shape *shUnchkDisable, Shape *shChkPressed, Shape *shChkNormal, Shape *shChkRollOver, Shape *shChkDisable);
+		UICheckbox(int crc32, unsigned short w, unsigned short h, ShapeRect *shUnchkPressed, ShapeRect *shUnchkNormal, ShapeRect *shUnchkRollOver, ShapeRect *shUnchkDisable,
+				ShapeRect *shChkPressed, ShapeRect *shChkNormal, ShapeRect *shChkRollOver, ShapeRect *shChkDisable);
 	public:
 		enum {CRC32=0x4CA925F4};
 		enum STATUS {
@@ -130,15 +125,15 @@ namespace grEngine {
 		int renderGL400();
 		int renderGL330();
 		int renderGL210();
-		Shape *shUnchkPressed, *shUnchkNormal, *shUnchkRollOver, *shUnchkDisable, *shChkPressed, *shChkNormal, *shChkRollOver, *shChkDisable;
+		ShapeRect *shUnchkPressed, *shUnchkNormal, *shUnchkRollOver, *shUnchkDisable, *shChkPressed, *shChkNormal, *shChkRollOver, *shChkDisable;
 		STATUS status;
 		bool press;
 		bool checked;
 	};
 	
-	class UIRadioButtonGroup :public Directory {
+	class UIRadioButtonGroup :public ShapeGroupRect {
 	private:
-		//void addChild(Shape*);
+		//bool addChild(ShapeRect*);
 	public:
 		enum {CRC32=0xE7E01EB1};
 		UIRadioButtonGroup();
@@ -147,7 +142,7 @@ namespace grEngine {
 		bool active;
 		UIRadioButton *checked;
 	};
-	class UIRadioButton :public Shape {
+	class UIRadioButton :public ShapeRect {
 	private:
 	public:
 		enum {CRC32=0x97511BB6};
@@ -162,24 +157,87 @@ namespace grEngine {
 		int renderGL330();
 		int renderGL210();
 		UIRadioButtonGroup *group;
-		Shape *shUnchkPressed, *shUnchkNormal, *shUnchkRollOver, *shUnchkDisable, *shChkPressed, *shChkNormal, *shChkRollOver, *shChkDisable;
+		ShapeRect *shUnchkPressed, *shUnchkNormal, *shUnchkRollOver, *shUnchkDisable, *shChkPressed, *shChkNormal, *shChkRollOver, *shChkDisable;
 		STATUS status;
 		bool press;
 		bool checked;
 	};
 
 	
+	
+	
 	class UITable;
-	class UITable :public Directory{
+	class UITableRow;
+	class UITable :public ShapeGroupRect {
+	private:
+		unsigned short startRowPos, stopRowPos;
 	public:
-		UITable(unsigned short w, unsigned short h);
+		UITable(unsigned short w, unsigned short h, vector<unsigned short> *columns=NULL);
+		void addRow(UITableRow* row);
+		void updateRows();
+		void setPos(float n);
+		
+		vector<unsigned short> columnsWidth;
+		
+		ShapeRect *background;
+		unsigned short allRowsVisibleSize;
+		vector<UITableRow*> rows;
+		float viewPosition;
+		unsigned short rowsHeight;
+	};
+	class UITableRow {
+	public:
+		UITableRow(UITable *table);
+		void addCol(ShapeRect* sh);
+		unsigned short columnsUpdate(unsigned short x, unsigned short y);//return rows count
+		
+		UITable *table;
+		vector<ShapeRect*> columns;
+	};
+	
+	
+	
+	
+	class UITableDirectory;
+	class UITableDirectoryRow;
+	class UITableDirectory :public ShapeGroupRect {
+	private:
+		unsigned short startRowPos, stopRowPos;
+	public:
+		UITableDirectory(unsigned short w, unsigned short h, vector<unsigned short> *columnsWidth=NULL);
+		void addRow(UITableDirectoryRow* row);
+		void updateRows();
+		void setPos(float n);
+		
+		vector<unsigned short> columnsWidth;
+		
+		ShapeRect *background;
+		unsigned short allRowsVisibleSize;
+		vector<UITableDirectoryRow*> rows;
+		float viewPosition;
+		unsigned short rowsHeight;
+	};
+	class UITableDirectoryRow {
+	private:
+		void updateParentDepth(unsigned short i);
+	public:
+		UITableDirectoryRow(UITableDirectory *table);
+		void addCol(ShapeRect *sh);
+		void addDirectoryRow(UITableDirectoryRow* dir);
+		int render(int y);
+		
+		void hide();
+		void show();
+		
+		UITableDirectoryRow *parent;
+		UITableDirectory *table;
+		unsigned short allChildVisibleCount, allChildCount, parentDepth;
+		
+		vector<UITableDirectoryRow*> child;
+		vector<ShapeRect*> columns;
 	};
 }
 
-
-#ifdef	__cplusplus
-}
-#endif
 
 #endif	/* UIWORKSPACE_H */
 

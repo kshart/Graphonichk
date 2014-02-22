@@ -31,9 +31,9 @@
 #define WIN_CLASS_NAME "grEWin"
 #define OPENGL_GET_PROC(p,n) n=(p)wglGetProcAddress(#n); \
 	if (n==NULL){printf("Loading extension '%s' fail (%d)\n", #n,GetLastError());}
-
+//Graphonichk
 using namespace std;
-namespace grEngine {
+namespace Graphonichk {
 	class GLShader {
 	  public:
 		GLShader();
@@ -53,9 +53,24 @@ namespace grEngine {
 			VER_CORE_330,
 			VER_CORE_400
 		};
-		OPENGL_VER ver;
-		void trace();
-		void setViewportMatrix(short, short, short, short);
+		static OPENGL_VER ver;
+		static void trace();
+		
+		typedef struct {
+			short x, y, width, height;
+		} viewport;
+		static vector<viewport> viewportBuffer;
+		static void pushViewport();
+		static void popViewport();
+		static void setViewport(short, short, short, short);
+
+		typedef struct {
+			short left, top, right, bottom;
+		} viewportMatrix;
+		static vector<viewportMatrix> viewportMatrixBuffer;
+		static void pushViewportMatrix();
+		static void popViewportMatrix();
+		static void setViewportMatrix(short, short, short, short);
 		static int init(OPENGL_VER);
 	};
 	
@@ -63,7 +78,12 @@ namespace grEngine {
 	template class EventDispatcher<EventKeyboard>;
 	template class EventDispatcher<EventMouse>;
 	class Windows :public EventDispatcher<EventWindow> {
-	  public:
+	public:
+		static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+		static Windows* window;
+		static void regFirstWin();
+		static void deleteLastWin();
+		
 		Windows(short x, short y, short w, short h);
 		void close();
 		void hide();
@@ -71,14 +91,12 @@ namespace grEngine {
 		void setFocus();
 		void killFocus();
 		
+		void saveAsXML();
+		
 		void redraw();
 		void redrawFBO();
 		void resize(short, short);
-		
-		static void regFirstWin();
-		static void deleteLastWin();
 		void loop();
-		static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
 		struct {
 			EventDispatcher<EventKeyboard> keyboard;
@@ -89,12 +107,10 @@ namespace grEngine {
 		HDC hDC;
 		HANDLE winThread, renderThread;
 		DWORD winThreadID, renderThreadID;
-		OpenGL *ogl;
-		vector<Texture*> textureBuffer;
-		vector<Texture*> textureUpdateBuffer;
-		vector<Bitmap*> bitmapUpdateBuffer;
+		
+		//vector<Bitmap*> bitmapUpdateBuffer;
 		vector<Buffer*> FBOBuffer;
-		Directory *root;
+		ShapeGroupRect *root;
 		bool visible, renderComplete;
 		short x, y, width, height;
 		int dpi;
@@ -117,7 +133,6 @@ extern PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers;
 extern PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers;
 extern PFNGLBINDFRAMEBUFFEREXTPROC glBindFramebuffer;
 extern PFNGLFRAMEBUFFERTEXTURE2DEXTPROC glFramebufferTexture2D;
-//
 // Shaders
 extern PFNGLCREATEPROGRAMPROC     glCreateProgram;
 extern PFNGLDELETEPROGRAMPROC     glDeleteProgram;

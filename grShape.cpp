@@ -14,12 +14,62 @@
 #include "grShape.h"
 #include "UI/UIMain.h"
 using namespace std;
-using namespace grEngine;
+using namespace Graphonichk;
 
-grEngine::Shape::Shape(int crc32) {
+
+vector<Bitmap*> Bitmap::updateBuffer;
+
+
+
+ShapeBasic::ShapeBasic(int crc32) :crc32(crc32) {
+	
+}
+ShapeBasic::ShapeBasic() :crc32(0) {
+	
+}
+void ShapeBasic::trace() {
+	printf("<ShapeBasic empty/>\n");
+}
+int ShapeBasic::renderGLComptAll() {
+	return false;
+}
+int ShapeBasic::renderGL400() {
+	return false;
+}
+int ShapeBasic::renderGL330() {
+	return false;
+}
+int ShapeBasic::renderGL210() {
+	return false;
+}
+
+ShapeGroupBasic::ShapeGroupBasic(int crc32) :ShapeBasic(crc32) {
+	
+}
+ShapeGroupBasic::ShapeGroupBasic() :ShapeBasic(1) {
+	
+}
+void ShapeGroupBasic::trace() {
+	printf("<ShapeGroupBasic empty/>\n");
+}
+int ShapeGroupBasic::renderGLComptAll() {
+	return false;
+}
+int ShapeGroupBasic::renderGL400() {
+	return false;
+}
+int ShapeGroupBasic::renderGL330() {
+	return false;
+}
+int ShapeGroupBasic::renderGL210() {
+	return false;
+}
+
+ShapeRect::ShapeRect(int crc32) {
 	this->crc32 = crc32;
 	this->mouseEventActive = false;
 	this->mouseEventRollOver = false;
+	this->visible = true;
 	this->parent = NULL;
 	this->globalx = 0;
 	this->x = 0;
@@ -27,37 +77,29 @@ grEngine::Shape::Shape(int crc32) {
 	this->y = 0;
 	this->width = this->height = 0;
 	this->offsetPos.x = this->offsetPos.y = 0;
+	this->name.clear();
 }
-void Shape::trace() {
-	printf("Shape a='%i' x=%i, y=%i, gx=%i, gy=%i, w=%i, h=%i\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->width, this->height);
+void ShapeRect::trace() {
+	printf("ShapeRect a='%i' x=%i, y=%i, gx=%i, gy=%i, w=%i, h=%i\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->width, this->height);
 }
-void Shape::drag(short x, short y) {
+void ShapeRect::setVisible(bool vis) {
+	if (this->parent==NULL) return;
+	this->parent->updateRect();
+}
+void ShapeRect::drag(short x, short y) {
 	this->x = x;
 	this->y = y;
 	short ny, nx;
 	if (this->parent!=NULL) {
 		this->globalx = this->parent->globalx+x;
 		this->globaly = this->parent->globaly+y;
-		if (this->x+this->offsetPos.x < this->parent->offsetPos.x) {
-			nx = this->x+this->offsetPos.x;
-			this->width -= nx-this->parent->offsetPos.x;
-			this->offsetPos.x = nx;
-		}
-		if (this->y+this->offsetPos.y < this->parent->offsetPos.y) {
-			ny = this->y+this->offsetPos.y;
-			this->parent->height -= ny-this->parent->offsetPos.y;
-			this->parent->offsetPos.y = ny;
-		}
-		if (this->x+this->offsetPos.x+this->width > this->parent->offsetPos.x+this->parent->width) {
-			this->parent->width = this->x+this->offsetPos.x+this->width-this->parent->offsetPos.x;
-		}
-		if (this->y+this->offsetPos.y+this->height-this->parent->offsetPos.y > this->parent->height) {
-			this->parent->height = this->y+this->offsetPos.y+this->height-this->parent->offsetPos.y;
-		}
+		this->parent->updateRect();
 	}
-	root.window->renderComplete = false;
+	#ifdef REDRAWN_BY_THE_ACTION
+	Windows::window->renderComplete = false;
+	#endif
 }
-void Shape::updateGlobalPosition() {
+void ShapeRect::updateGlobalPosition() {
 	if (this->parent==NULL) {
 		this->globalx = this->globaly = 0;
 	}else{
@@ -65,19 +107,24 @@ void Shape::updateGlobalPosition() {
 		this->globaly = this->parent->globaly + this->y;
 	}
 }
-int Shape::renderGLComptAll() {
+int ShapeRect::renderGLComptAll() {
 	return false;
 }
-int Shape::renderGL400() {
+int ShapeRect::renderGL400() {
 	return false;
 }
-int Shape::renderGL330() {
+int ShapeRect::renderGL330() {
 	return false;
 }
-int Shape::renderGL210() {
+int ShapeRect::renderGL210() {
 	return false;
 }
-Shape* Shape::globalHitTest(short x, short y) {
+int ShapeRect::saveAsXML(FILE* str, unsigned short tab) {
+	for (int i=0; i<tab; i++) fprintf(str, "\t");
+	fprintf(str, "<ShapeRect name='%s' crc32='%i' x='%i' y='%i' width='%i' height='%i' offsetX='%i' offsetY='%i'/>\n",
+			this->name.c_str(), this->crc32, this->x, this->y, this->width, this->height, this->offsetPos.x, this->offsetPos.y);
+}
+ShapeRect* ShapeRect::globalHitTest(short x, short y) {
 	if ( x>this->globalx+this->offsetPos.x &&
 		 y>this->globaly+this->offsetPos.y &&
 		 x<this->globalx+this->offsetPos.x+this->width &&
@@ -86,7 +133,7 @@ Shape* Shape::globalHitTest(short x, short y) {
 	}
 	return NULL;
 }
-int Shape::callEvent(EventMouseShape* event) {
+int ShapeRect::callEvent(EventMouseShape* event) {
 	event->shape = this;
 	event->localx = event->globalx-this->globalx;
 	event->localy = event->globaly-this->globaly;
@@ -96,36 +143,58 @@ int Shape::callEvent(EventMouseShape* event) {
 		}
 	}
 }
-int Shape::addEventHandler( int type, void(*fun)(const EventMouseShape*)) {
+int ShapeRect::addEventHandler( int type, void(*fun)(const EventMouseShape*)) {
 	EventLinc el;
 	el.obj = this;
 	el.type = type;
 	el.fun = (void(*)(const Event*))fun;
 	this->eventList.push_back( el );
 	this->mouseEventActive = true;
-	Shape *sh = this;
+	ShapeRect *sh = this;
 	while (sh->parent != NULL) {
 		sh = sh->parent;
 		sh->mouseEventActive = true;
 	}
 }
 
-Directory::Directory() :Shape(Directory::CRC32), Buffer() {
+ShapeGroupRect::ShapeGroupRect() :ShapeRect(ShapeGroupRect::CRC32), Buffer() {
 	this->shapeCache = NULL;
 	this->totalShape = this->totalDir = 0;
 	this->parent = NULL;
+	this->cutTheRect = false;
+	this->chengeRect = true;
+	this->offsetPos.x = SHRT_MAX;
+	this->offsetPos.y = SHRT_MAX;
+	this->addChildLock = CreateMutex(NULL, FALSE, NULL);
 }
-Directory::Directory(int crc32) :Shape(crc32), Buffer() {
+ShapeGroupRect::ShapeGroupRect(int crc32) :ShapeRect(crc32), Buffer() {
 	this->shapeCache = NULL;
 	this->totalShape = this->totalDir = 0;
 	this->parent = NULL;
+	this->cutTheRect = false;
+	this->chengeRect = true;
+	this->addChildLock = CreateMutex(NULL, FALSE, NULL);
 }
-void Directory::trace() {
-	printf("<Directory mouseActive='%i' pos='%i, %i' gpos='%i, %i' rect='%i, %i, %i, %i'>\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->offsetPos.x, this->offsetPos.y, this->width, this->height);
+void ShapeGroupRect::trace() {
+	printf("<ShapeGroupRect mouseActive='%i' pos='%i, %i' gpos='%i, %i' rect='%i, %i, %i, %i'>\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->offsetPos.x, this->offsetPos.y, this->width, this->height);
 	for (int i=0; i<this->child.size(); i++) this->child[i]->trace(); 
-	printf("</Directory>\n");
+	printf("</ShapeGroupRect>\n");
 }
-int Directory::renderGLComptAll() {
+int ShapeGroupRect::renderGLComptAll() {
+	bool ctr = false;
+	if (this->cutTheRect) {
+		ctr = true;
+		OpenGL::pushViewport();
+		OpenGL::setViewport(this->globalx+this->offsetPos.x,
+				Windows::window->height-this->globaly+this->offsetPos.y-this->height,
+				this->width,
+				this->height);
+		OpenGL::pushViewportMatrix();
+		OpenGL::setViewportMatrix(this->globalx+this->offsetPos.x,
+				this->globaly+this->offsetPos.y,
+				this->globalx+this->offsetPos.x+this->width,
+				this->globaly+this->offsetPos.y+this->height);
+	}
 	if (this->bufferInit) {
 		Texture *tex = this->bufferTexture;
 		glEnable( GL_TEXTURE_2D );
@@ -140,17 +209,22 @@ int Directory::renderGLComptAll() {
 		glDisable( GL_TEXTURE_2D );
 	}else if ( this->shapeCache != NULL ) {
 		#ifdef DEBUG
-		printf("Directory shapeCache\n");
+		printf("ShapeGroupRect shapeCache\n");
 		#endif
 		for (int i=0; i<this->shapeCache->size(); i++) {
 			(this->shapeCache->at(i))->renderGLComptAll();
 		}
 	}else{
+		WaitForSingleObject(this->addChildLock, INFINITE);
 		for (int i=0; i<this->child.size(); i++) {
-			this->child[i]->renderGLComptAll();
+			if (this->child[i]->visible) this->child[i]->renderGLComptAll();
 		}
+		ReleaseMutex(this->addChildLock);
 	}
-
+	if (ctr) {
+		OpenGL::popViewport();
+		OpenGL::popViewportMatrix();
+	}
 	glLineWidth(1);
 	glColor4ub(0xFF,0,0,0xFF);
 	glBegin(GL_LINE_STRIP);// <editor-fold defaultstate="collapsed" desc="GL_LINE_STRIP">
@@ -160,17 +234,18 @@ int Directory::renderGLComptAll() {
 		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y+this->height );
 		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
 	glEnd();// </editor-fold>
+	
 	return true;
 }
-int Directory::renderGL400() {
-	printf("Directory p\n");
+int ShapeGroupRect::renderGL400() {
+	printf("ShapeGroupRect p\n");
 	for (int i=0; i<this->child.size(); i++) {
 		this->child[i]->trace();
 		this->child[i]->renderGL400();
 	}
 	return true;
 }
-int Directory::renderGL330() {
+int ShapeGroupRect::renderGL330() {
 	if (this->bufferInit) {
 		Texture *tex = this->bufferTexture;
 		glEnable( GL_TEXTURE_2D );
@@ -185,7 +260,7 @@ int Directory::renderGL330() {
 		glDisable( GL_TEXTURE_2D );
 	}else if ( this->shapeCache != NULL ) {
 		#ifdef DEBUG
-		printf("Directory shapeCache\n");
+		printf("ShapeGroupRect shapeCache\n");
 		#endif
 		for (int i=0; i<this->shapeCache->size(); i++) {
 			(this->shapeCache->at(i))->renderGL330();
@@ -208,10 +283,10 @@ int Directory::renderGL330() {
 	#endif
 	return true;
 }
-int Directory::renderGL210() {
+int ShapeGroupRect::renderGL210() {
 	if ( this->shapeCache != NULL ) {
 		#ifdef DEBUG
-		printf("Directory shapeCache\n");
+		printf("ShapeGroupRect shapeCache\n");
 		#endif
 		for (int i=0; i<this->shapeCache->size(); i++) {
 			(this->shapeCache->at(i))->renderGL210();
@@ -235,7 +310,7 @@ int Directory::renderGL210() {
 	return true;
 }
 
-int Directory::bufferGLComptAll() {
+int ShapeGroupRect::bufferGLComptAll() {
 	for(int i=0; i<this->bufChild.size(); i++) {
 		this->bufChild[i]->bufferGLComptAll();
 	}
@@ -261,19 +336,19 @@ int Directory::bufferGLComptAll() {
 	//glDeleteFramebuffers(1, &root.window->ogl->FBOGL);
 	return true;
 }
-int Directory::bufferGL400() {
+int ShapeGroupRect::bufferGL400() {
 	return false;
 }
-int Directory::bufferGL330() {
+int ShapeGroupRect::bufferGL330() {
 	return false;
 }
-int Directory::bufferGL210() {
+int ShapeGroupRect::bufferGL210() {
 	return false;
 }
-bool Directory::bufferMode(bool mode) {
+bool ShapeGroupRect::bufferMode(bool mode) {
 	if (mode && !this->bufferActivate ) {
 		this->bufferTexture = new Texture(this->width, this->height, GL_RGBA, GL_UNSIGNED_BYTE);
-		root.window->FBOBuffer.push_back(this);
+		Windows::window->FBOBuffer.push_back(this);
 		
 		this->bufferActivate = true;
 		this->bufferInit = false;
@@ -283,8 +358,18 @@ bool Directory::bufferMode(bool mode) {
 	}
 	return true;
 }
-
-void Directory::updateGlobalPosition() {
+int ShapeGroupRect::saveAsXML(FILE* str, unsigned short tab) {
+	for (int i=0; i<tab; i++) fprintf(str, "\t");
+	fprintf(str, "<ShapeGroupRect name='%s' crc32='%i' childSize='%i' x='%i' y='%i' width='%i' height='%i' offsetX='%i' offsetY='%i'>\n",
+			this->name.c_str(), this->crc32, this->child.size(), this->x, this->y, this->width, this->height, this->offsetPos.x, this->offsetPos.y);
+	for(int i=0; i<this->child.size(); i++) {
+		this->child[i]->saveAsXML(str, tab+1);
+	}
+	
+	for (int i=0; i<tab; i++) fprintf(str, "\t");
+	fprintf(str, "</ShapeGroupRect>\n");
+}
+void ShapeGroupRect::updateGlobalPosition() {
 	if (this->parent==NULL) {
 		this->globalx = this->globaly = 0;
 	}else{
@@ -295,72 +380,21 @@ void Directory::updateGlobalPosition() {
 		this->child[i]->updateGlobalPosition();
 	}
 }
-void Directory::drag(short x, short y) {
+void ShapeGroupRect::drag(short x, short y) {
 	short nx, ny;
 	this->x = x;
 	this->y = y;
-	if ( this->parent!=NULL || this==root.window->root) {
+	if ( this->parent!=NULL || this==Windows::window->root) {
 		this->updateGlobalPosition();
-		if (this->x+this->offsetPos.x < this->parent->offsetPos.x) {
-			nx = this->x+this->offsetPos.x;
-			this->width -= nx-this->parent->offsetPos.x;
-			this->offsetPos.x = nx;
-		}
-		if (this->y+this->offsetPos.y < this->parent->offsetPos.y) {
-			ny = this->y+this->offsetPos.y;
-			this->parent->height -= ny-this->parent->offsetPos.y;
-			this->parent->offsetPos.y = ny;
-		}
-		if (this->x+this->offsetPos.x+this->width > this->parent->offsetPos.x+this->parent->width) {
-			this->parent->width = this->x+this->offsetPos.x+this->width-this->parent->offsetPos.x;
-		}
-		if (this->y+this->offsetPos.y+this->height-this->parent->offsetPos.y > this->parent->height) {
-			this->parent->height = this->y+this->offsetPos.y+this->height-this->parent->offsetPos.y;
-		}
+		if (this->visible) this->parent->updateRect();
 	}
-	root.window->renderComplete = false;
+	#ifdef REDRAWN_BY_THE_ACTION
+	Windows::window->renderComplete = false;
+	#endif
 }
-vector<Shape*>* Directory::getChildShape() {
-	
-	vector<Shape*>* arr = new vector<Shape*>;
-	for (int i = 0; i<this->child.size( ); i++) {
-		if (dynamic_cast<Directory*>(this->child[i]) != NULL) {
-			((Directory*)(this->child[i]))->getChildShape(arr);
-		}else{
-			arr->push_back( this->child[i] );
-		}
-	}
-	return arr;
-}
-void Directory::getChildShape(vector<Shape*>* arr) {
-	Directory *dir;
-	for (int i = 0; i<this->child.size( ); i++) {
-		dir = dynamic_cast<Directory*>(this->child[i]);
-		if (dir == NULL) {
-			arr->push_back( this->child[i] );
-		}else{
-			dir->getChildShape(arr);
-		}
-	}
-}
-void Directory::addChild(Shape *sh) {
-	Directory *dir; 
+void ShapeGroupRect::updateRect(ShapeRect* sh) {
+	if (!this->chengeRect) return;
 	short nx, ny;
-	sh->parent = this;
-	//	y	by	bh	outB
-	//	50	-30	70	20/90
-	// by	bh	outB
-	// -50	100	ob.h-by
-	if (sh->mouseEventActive) {
-		this->mouseEventActive = true;
-		Shape *shape = this;
-		while (shape->parent != NULL) {
-			shape = shape->parent;
-			shape->mouseEventActive = true;
-		}
-	}
-	if (this->parent!=NULL || this==root.window->root) sh->updateGlobalPosition();
-	
 	if (sh->x+sh->offsetPos.x < this->offsetPos.x) {
 		nx = sh->x+sh->offsetPos.x;
 		this->width -= nx-this->offsetPos.x;
@@ -377,13 +411,93 @@ void Directory::addChild(Shape *sh) {
 	if (sh->y+sh->offsetPos.y+sh->height-this->offsetPos.y > this->height) {
 		this->height = sh->y+sh->offsetPos.y+sh->height-this->offsetPos.y;
 	}
+}
+void ShapeGroupRect::updateRect() {
+	if (this->child.empty() || !this->chengeRect) return;
+	short nx, ny;
+	ShapeRect* sh;
+	int i=0;
+	while (i<this->child.size()) {
+		if (this->child[i]->visible) break;
+	}
+	if (i>=this->child.size()) return;
+	sh = this->child[i];
+	this->offsetPos.x = sh->x+sh->offsetPos.x;
+	this->offsetPos.y = sh->y+sh->offsetPos.y;
+	this->width = sh->width;
+	this->height = sh->height;
+	for(i; i<this->child.size(); i++) {
+		sh = this->child[i];
+		if (sh->x+sh->offsetPos.x < this->offsetPos.x) {
+			nx = sh->x+sh->offsetPos.x;
+			this->width -= nx-this->offsetPos.x;
+			this->offsetPos.x = nx;
+		}
+		if (sh->y+sh->offsetPos.y < this->offsetPos.y) {
+			ny = sh->y+sh->offsetPos.y;
+			this->height -= ny-this->offsetPos.y;
+			this->offsetPos.y = ny;
+		}
+		if (sh->x+sh->offsetPos.x+sh->width > this->offsetPos.x+this->width) {
+			this->width = sh->x+sh->offsetPos.x+sh->width-this->offsetPos.x;
+		}
+		if (sh->y+sh->offsetPos.y+sh->height-this->offsetPos.y > this->height) {
+			this->height = sh->y+sh->offsetPos.y+sh->height-this->offsetPos.y;
+		}
+	}
+}
+vector<ShapeRect*>* ShapeGroupRect::getChildShape() {
+	
+	vector<ShapeRect*>* arr = new vector<ShapeRect*>;
+	for (int i = 0; i<this->child.size( ); i++) {
+		if (dynamic_cast<ShapeGroupRect*>(this->child[i]) != NULL) {
+			((ShapeGroupRect*)(this->child[i]))->getChildShape(arr);
+		}else{
+			arr->push_back( this->child[i] );
+		}
+	}
+	return arr;
+}
+void ShapeGroupRect::getChildShape(vector<ShapeRect*>* arr) {
+	ShapeGroupRect *dir;
+	for (int i = 0; i<this->child.size( ); i++) {
+		dir = dynamic_cast<ShapeGroupRect*>(this->child[i]);
+		if (dir == NULL) {
+			arr->push_back( this->child[i] );
+		}else{
+			dir->getChildShape(arr);
+		}
+	}
+}
+bool ShapeGroupRect::addChild(ShapeRect *sh) {
+	WaitForSingleObject(this->addChildLock, INFINITE);
+	ShapeGroupRect *dir;
+	sh->parent = this;
+	//	y	by	bh	outB
+	//	50	-30	70	20/90
+	// by	bh	outB
+	// -50	100	ob.h-by
+	if (sh->mouseEventActive) {
+		this->mouseEventActive = true;
+		ShapeRect *shape = this;
+		while (shape->parent != NULL) {
+			shape = shape->parent;
+			shape->mouseEventActive = true;
+		}
+	}
+	if (this->parent!=NULL || this==Windows::window->root) sh->updateGlobalPosition();
+	if (this->offsetPos.x==SHRT_MAX||this->offsetPos.y==SHRT_MAX) {
+		if (sh->visible) this->updateRect();
+	}else if (sh->visible) {
+		this->updateRect(sh);
+	}
 	this->child.push_back( sh );
-	dir = dynamic_cast<Directory*>(sh);
+	dir = dynamic_cast<ShapeGroupRect*>(sh);
 	if ( dir!=NULL ) {
 		while(dir->parent!=NULL) {
 			dir = dir->parent;
-			dir->totalShape += ((Directory*)sh)->totalShape;
-			dir->totalDir += ((Directory*)sh)->totalDir+1;
+			dir->totalShape += ((ShapeGroupRect*)sh)->totalShape;
+			dir->totalDir += ((ShapeGroupRect*)sh)->totalDir+1;
 		}
 	}else{
 		dir = this;
@@ -396,11 +510,26 @@ void Directory::addChild(Shape *sh) {
 	#ifdef DEBUG
 	printf("totalShape = %i\n", this->totalShape);
 	#endif
-	root.window->renderComplete = false;
+	#ifdef REDRAWN_BY_THE_ACTION
+	Windows::window->renderComplete = false;
+	#endif
+	ReleaseMutex(this->addChildLock);
 }
-void Directory::setBuffer(Directory::BUFFER_TYPE type, char val) {
+bool ShapeGroupRect::removeChild(ShapeRect* sh) {
+	
+}
+bool ShapeGroupRect::setChildDepth(ShapeRect* sh, unsigned short depth) {
+	
+}
+unsigned short ShapeGroupRect::getChildDepth(ShapeRect* sh) {
+	
+}
+ShapeRect* ShapeGroupRect::getChild(string str) {
+	
+}
+void ShapeGroupRect::setBuffer(ShapeGroupRect::BUFFER_TYPE type, char val) {
 	/*switch (type) {
-		case Directory::TO_TEXTURE :
+		case ShapeGroupRect::TO_TEXTURE :
 			if ( val==Texture::LOC::UNAVAILABLE ) {
 				this->buff->tex->clear();
 			}else{
@@ -422,7 +551,7 @@ void Directory::setBuffer(Directory::BUFFER_TYPE type, char val) {
 				Windows::FBOBuffer.push_back(this);
 			}
 			return;
-		case Directory::PREDEFINED_LIST_SH :
+		case ShapeGroupRect::PREDEFINED_LIST_SH :
 			if (val) {
 				this->shapeCache = this->getChildShape();
 			}else if (this->shapeCache != NULL) {
@@ -432,20 +561,20 @@ void Directory::setBuffer(Directory::BUFFER_TYPE type, char val) {
 			return;
 	}*/
 }
-Shape* Directory::globalHitTest(short x, short y) {
-	Shape* sh;
+ShapeRect* ShapeGroupRect::globalHitTest(short x, short y) {
+	ShapeRect* sh;
 	for(int i=this->child.size()-1; i>=0; i--) {
 		sh = this->child[i]->globalHitTest(x, y);
 		if (sh != NULL) return sh;
 	}
 	return NULL;
 }
-int Directory::callEvent(EventMouseShape* event) {
+int ShapeGroupRect::callEvent(EventMouseShape* event) {
 	EventMouseShape* eventRollOver;
 	event->shape = this;
 	event->localx = event->globalx - this->globalx;
 	event->localy = event->globaly - this->globaly;
-	Shape *sh;
+	ShapeRect *sh;
 	for(int i=0, s=this->eventList.size(); i<s; i++) {
 		if (this->eventList[i].type == event->type) {
 			this->eventList[i].fun(event);
@@ -478,13 +607,13 @@ int Directory::callEvent(EventMouseShape* event) {
 	}
 }
 
-Bitmap::Bitmap(Texture *tex) :Shape(Bitmap::CRC32) {
+Bitmap::Bitmap(Texture *tex) :ShapeRect(Bitmap::CRC32) {
 	this->tex = tex;
-	if (tex->type!=0 && tex->format!=0) {
+	if (tex->event == Texture::LOADED) {
 		this->width = tex->width;
 		this->height = tex->height;
 	}else{
-		root.window->bitmapUpdateBuffer.push_back(this);
+		Bitmap::updateBuffer.push_back(this);
 	}
 }
 void Bitmap::trace() {
@@ -493,6 +622,7 @@ void Bitmap::trace() {
 int Bitmap::renderGLComptAll() {
 	Texture *tex = this->tex;
 	glEnable( GL_TEXTURE_2D );
+	//printf("tex->GLID = %i", tex->GLID);
 	glBindTexture(GL_TEXTURE_2D, tex->GLID);
 	glColor4ub(0xFF,0xFF,0xFF,0xFF);
 	glBegin( GL_QUADS );// <editor-fold defaultstate="collapsed" desc="GL_QUADS">
@@ -572,6 +702,35 @@ int Bitmap::renderGL210() {
 	glDisable( GL_TEXTURE_2D );
 	return true;
 }
+int Bitmap::saveAsXML(FILE* str, unsigned short tab) {
+	for (int i=0; i<tab; i++) fprintf(str, "\t");
+	fprintf(str, "<Bitmap name='%s' crc32='%i' x='%i' y='%i' width='%i' height='%i' texture='%i'/>\n",
+			this->name.c_str(), this->crc32, this->x, this->y, this->width, this->height, this->tex);
+}
+void Bitmap::updateBitmaps() {
+	if ( !Bitmap::updateBuffer.empty() ) {
+			Bitmap *bmp;
+			int countUpdateBMP = 0;
+			for(int i=0; i<Bitmap::updateBuffer.size()-countUpdateBMP; i++) {
+				bmp = Bitmap::updateBuffer[i];
+				if (bmp->tex->GLID!=0 && bmp->tex->event==Texture::NONE) {
+					bmp->width = bmp->tex->width;
+					bmp->height = bmp->tex->height;
+					bmp->tex->trace();
+					countUpdateBMP++;
+					if (countUpdateBMP >= Bitmap::updateBuffer.size()) {
+						Bitmap::updateBuffer.clear();
+						break;
+					}
+					Bitmap::updateBuffer[i] = Bitmap::updateBuffer[ Bitmap::updateBuffer.size()-countUpdateBMP ]; 
+					Bitmap::updateBuffer[ Bitmap::updateBuffer.size()-countUpdateBMP ] = NULL;
+				}
+			}
+			if (countUpdateBMP < Bitmap::updateBuffer.size()) {
+				Bitmap::updateBuffer.resize( Bitmap::updateBuffer.size()-countUpdateBMP );
+			}
+		}
+}
 
 Buffer::Buffer() {
 	this->bufferInit = false;
@@ -605,7 +764,7 @@ int Buffer::bufferGL210() {
 	return true;
 }
 
-FPoint::FPoint(int rad, uint32_t color=0 ) :Shape(FPoint::CRC32) {
+FPoint::FPoint(int rad, uint32_t color=0 ) :ShapeRect(FPoint::CRC32) {
 	this->radius = rad;
 	this->color.color = color;
 }
@@ -620,7 +779,7 @@ int FPoint::renderGLComptAll() {
 	glEnd();
 	glPopMatrix();
 }
-FLines::FLines(void *arr, short length, short w, unsigned int color=0) :Shape(FLines::CRC32) {
+FLines::FLines(void *arr, short length, short w, unsigned int color=0) :ShapeRect(FLines::CRC32) {
 	this->arr = (short*)arr;
 	this->length = length;
 	this->lineWidth = w;
@@ -642,7 +801,7 @@ int FLines::renderGLComptAll() {
 	glPopMatrix();
 }
 
-FRect::FRect(short width, short height, uint32_t backgroundColor) :Shape(FRect::CRC32) {
+FRect::FRect(short width, short height, uint32_t backgroundColor) :ShapeRect(FRect::CRC32) {
 	this->width = width;
 	this->height = height;
 	this->radius = 0;
@@ -651,7 +810,7 @@ FRect::FRect(short width, short height, uint32_t backgroundColor) :Shape(FRect::
 	this->background = true;
 	this->backgroundColor.color = backgroundColor;
 }
-FRect::FRect(short width, short height, uint32_t borderColor, unsigned short borderSize) :Shape(FRect::CRC32) {
+FRect::FRect(short width, short height, uint32_t borderColor, unsigned short borderSize) :ShapeRect(FRect::CRC32) {
 	this->width = width;
 	this->height = height;
 	this->radius = 0;
@@ -660,7 +819,7 @@ FRect::FRect(short width, short height, uint32_t borderColor, unsigned short bor
 	this->background = false;
 	this->backgroundColor.color = 0;
 }
-FRect::FRect(short width, short height, uint32_t backgroundColor, uint32_t borderColor, unsigned short borderSize) :Shape(FRect::CRC32) {
+FRect::FRect(short width, short height, uint32_t backgroundColor, uint32_t borderColor, unsigned short borderSize) :ShapeRect(FRect::CRC32) {
 	this->width = width;
 	this->height = height;
 	this->radius = 0;

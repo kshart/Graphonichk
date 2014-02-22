@@ -16,7 +16,7 @@
 #include <GL/gl.h>
 
 using namespace std;
-namespace grEngine {
+namespace Graphonichk {
 	class TextField;
 	class TextFormat;
 	class FontFace;
@@ -37,7 +37,8 @@ namespace grEngine {
 		Array<FontGlyph> *arr;
 	};
 	class TextFormat {
-	  public:
+	public:
+		static TextFormat *defaultFormat;
 		TextFormat();
 		enum DIR:char {
 			LTR,
@@ -69,9 +70,11 @@ namespace grEngine {
 			writingMode;*/
 	};
 	class Font {
-	  public:
+	public:
 		static void trace();
 		static int init();
+		static FT_Library library;
+		static vector<Font*> buffer;
 		
 		Font(string path);
 		bool cached(unsigned short size);
@@ -81,10 +84,10 @@ namespace grEngine {
 		vector<FontFace*> cache;
 		FontFace *getFontFace(unsigned short size);
 	};
-	class TextField :public Buffer, public Shape {
-	  private:
+	class TextField :public Buffer, public ShapeRect {
+	private:
 		TextFormat *tf;
-	  public:
+	public:
 		TextField(unsigned short, unsigned short);
 		void trace();
 		int renderGLComptAll();

@@ -2,22 +2,22 @@
 #include "grBaseTypes.h"
 #include "grEvent.h"
 using namespace std;
-using namespace grEngine;
+using namespace Graphonichk;
 
 
-grEngine::Event::Event() {
+Event::Event() {
 	this->type = 1;
 	this->obj = NULL;
 }
 
-template<class TEvent> int grEngine::EventDispatcher<TEvent>::addEventHandler(int type, void(*fun)(const TEvent*), void* obj) {
+template<class TEvent> int EventDispatcher<TEvent>::addEventHandler(int type, void(*fun)(const TEvent*), void* obj) {
 	EventLinc el;
 	el.obj = obj;
 	el.type = type;
 	el.fun = (void(*)(const Event*))fun;
 	this->eventList.push_back( el );
 }
-template<class TEvent> int grEngine::EventDispatcher<TEvent>::callEvent(TEvent *event) {
+template<class TEvent> int EventDispatcher<TEvent>::callEvent(TEvent *event) {
 	for(int i=0, s=this->eventList.size(); i<s; i++) {
 		if (this->eventList[i].type == event->type) {
 			event->obj = this->eventList[i].obj;
@@ -25,26 +25,26 @@ template<class TEvent> int grEngine::EventDispatcher<TEvent>::callEvent(TEvent *
 		}
 	}
 }
-template<class TEvent> int grEngine::EventDispatcher<TEvent>::removeEventHandler( void(*fun)(const TEvent*) ) {
+template<class TEvent> int EventDispatcher<TEvent>::removeEventHandler( void(*fun)(const TEvent*) ) {
 	
 }
 
-grEngine::EventKeyboard::EventKeyboard() {
+EventKeyboard::EventKeyboard() {
 	
 }
 
-grEngine::EventMouse::EventMouse() {
+EventMouse::EventMouse() {
 	
 }
-grEngine::EventMouseShape::EventMouseShape() {
+EventMouseShape::EventMouseShape() {
 	
 }
 
-grEngine::EventWindow::EventWindow() {
+EventWindow::EventWindow() {
 	this->visible = false;
 	this->window = NULL;
 }
-grEngine::EventFileLoad::EventFileLoad() {
+EventFileLoad::EventFileLoad() {
 	this->file = NULL;
 }
 

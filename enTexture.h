@@ -1,8 +1,8 @@
 /* 
  * File:   enTexture.h
- * Author: Артем
+ * Author: РђСЂС‚РµРј
  *
- * Created on 16 Ноябрь 2013 г., 19:56
+ * Created on 16 РќРѕСЏР±СЂСЊ 2013 Рі., 19:56
  */
 
 #ifndef ENTEXTURE_H
@@ -12,10 +12,17 @@
 #include <GL/gl.h>
 
 using namespace std;
-namespace grEngine {
+namespace Graphonichk {
 	class Image {
-	  public:
-		void asd();
+	private:
+		bool load(char *data, unsigned int size);
+	public:
+		enum STATUS:char {
+			TO_DELETE,
+			TO_LOAD,
+			ERR_LOAD,
+			LOADED
+		};
 		enum TYPE:char{
 			NC,
 			BGR_24,//8 bit for pixels
@@ -45,38 +52,45 @@ namespace grEngine {
 		};
 		Image(char *data, unsigned int size);
 		Image(string path);
+		int saveAsXML(FILE *str, unsigned short tab=0);
+		
+		string name;
 		unsigned short width, height;
-		void *img;
+		STATUS status;
+		void *raw;
 		TYPE type;
+		static void loaded(const EventFileLoad* e);
 	};
 	class Texture {
-	  private:
+	private:
 		~Texture();
-	  public:
-		enum STATUS:char {
-			TO_DELETE,
-			TO_LOAD,
-			ERR_NO,
-			ERR_GENTEX
-		};
-		/*если format = 0 и type = 0 и GLID = 0 и status = TO_LOAD
-		 * то другие поля могут использоватся не по назначению
-		 *
+		static vector<Texture*> buffer;
+		static uint toUpdate, toDelete;
+	public:
+		/* format = 0 Рё type = 0 Рё GLID = 0
 		 */
-		Texture();
+		enum EVENT:char {
+			NONE,
+			TO_DELETE,
+			TO_UPDATE,
+			LOADED
+		};
 		Texture(string path);
 		Texture(Image *img);
 		Texture(unsigned short w, unsigned short h, GLuint format, GLuint type);
+		int saveAsXML(FILE *str, unsigned short tab=0);
 		void close();
 		void trace();
-
+		
+		
+		
+		EVENT event;
+		Image *img;
 		unsigned short width, height;
-		double coordX, coordY;
-		STATUS status;
-		void *img;
 		GLuint format, type, GLID;
 		
-		static void loaded(const EventFileLoad *e);
+		//static void addTexture();
+		static void texturesUpdate();
 	};
 };
 

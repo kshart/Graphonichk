@@ -16,19 +16,23 @@
 #include <math.h>
 #include <thread>
 using namespace std;
-using namespace grEngine;
+using namespace Graphonichk;//Graphonichk
 
+
+
+OpenGL::OPENGL_VER OpenGL::ver;
+vector<OpenGL::viewport> OpenGL::viewportBuffer;
+vector<OpenGL::viewportMatrix> OpenGL::viewportMatrixBuffer;
 
 DWORD WINAPI renderThread (void* sys);
 DWORD WINAPI windowThread (void* sys);
 DWORD WINAPI windowThread (void* sys) {
 	printf("windowThread\n");
-	System::threadDataSysInit(sys);
-	EventWindow *evWindow = new EventWindow();;
+	//EventWindow *evWindow = new EventWindow();
 	Windows::regFirstWin();
-	Windows *win = root.window;
-	win->hWnd = CreateWindowEx(WS_EX_COMPOSITED|WS_EX_APPWINDOW, WIN_CLASS_NAME, "111", WS_CAPTION|WS_SYSMENU|WS_SIZEBOX|WS_MINIMIZEBOX|WS_VISIBLE , win->x, win->y, win->width, win->height, NULL, NULL, root.hInstance, NULL);
-	if (!win->hWnd) {
+	Windows *win = Windows::window;
+	win->hWnd = CreateWindowEx(WS_EX_COMPOSITED|WS_EX_APPWINDOW, WIN_CLASS_NAME, "111", WS_CAPTION|WS_SYSMENU|WS_SIZEBOX|WS_MINIMIZEBOX|WS_VISIBLE , win->x, win->y, win->width, win->height, NULL, NULL, System::hInstance, NULL);
+	if (!Windows::window->hWnd) {
 		printf("<Error str='CreateWindowEx fail (%d)'/>\n", GetLastError());
 		return 0;
 	}
@@ -36,23 +40,20 @@ DWORD WINAPI windowThread (void* sys) {
 		printf("<Error str='GetDC fail (%d)'/>\n", GetLastError());
 		return 0;
 	}
-	ThreadDataSys rtd;
-	rtd.window = root.window;
-	rtd.system = &root;
-	rtd.mutex = CreateSemaphore( NULL, 1, 1, "s2" );
-	WaitForSingleObject(rtd.mutex, INFINITE);
-	root.window->renderThread = CreateThread(NULL, 0, renderThread, &rtd, 0, &root.window->renderThreadID);
-	WaitForSingleObject(rtd.mutex, INFINITE);
-	ReleaseSemaphore( ((ThreadDataSys*)sys)->mutex, 1, NULL );
-	CloseHandle(rtd.mutex);
-	
+	HANDLE mutex = CreateMutex(NULL, TRUE, NULL);
+	win->renderThread = CreateThread(NULL, 0, renderThread, &mutex, 0, &win->renderThreadID);
+	WaitForSingleObject(mutex, INFINITE);
+	CloseHandle(mutex);
 	ShowWindow(win->hWnd, SW_SHOW);
 	SetForegroundWindow(win->hWnd);
 	UpdateWindow(win->hWnd);
 	SetFocus(win->hWnd);
+#define PARENT_MUTEX ((HANDLE*)sys)[0]
+	ReleaseMutex(PARENT_MUTEX);
+#undef PARENT_MUTEX
 	MSG msg;
 	while (IsWindow(win->hWnd)) {
-		while(PeekMessage(&msg, root.window->hWnd, 0, 0, PM_REMOVE)) DispatchMessage(&msg);
+		while(PeekMessage(&msg, win->hWnd, 0, 0, PM_REMOVE)) DispatchMessage(&msg);
 		Sleep(10);
 	}
 	
@@ -61,9 +62,8 @@ DWORD WINAPI renderThread (void* sys) {
 	int format;
 	PIXELFORMATDESCRIPTOR pfd;
 	HGLRC hRCTemp;
-	System::threadDataSysInit(sys);
-	Windows *win = root.window;
-	printf("<RenderThread hDC='%i' hRC='%i'/>\n", root.window->hDC, root.window->hRC);
+	Windows *win = Windows::window;
+	printf("<RenderThread hDC='%i' hRC='%i'/>\n", win->hDC, win->hRC);
 	memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
 	pfd.nSize      = sizeof(PIXELFORMATDESCRIPTOR);
 	pfd.nVersion   = 1;
@@ -85,66 +85,25 @@ DWORD WINAPI renderThread (void* sys) {
 	int hRes = GetDeviceCaps(win->hDC,HORZRES);
 	win->dpi = round((hRes/hSize)*25.4);
 	printf("<LCD size='%i' res='%i' dpi='%i'/>\n", hSize, hRes, win->dpi );
-	ReleaseSemaphore( ((ThreadDataSys*)sys)->mutex, 1, NULL );
 	OpenGL::init(OpenGL::VER_COMPTABLE_ALL);
 	win->resize(win->width, win->height);
 	printf("SUCCESS\n");
+#define PARENT_MUTEX ((HANDLE*)sys)[0]
+	ReleaseMutex(PARENT_MUTEX);
+#undef PARENT_MUTEX
 	while (IsWindow(win->hWnd)) {
-		if ( !root.window->textureUpdateBuffer.empty() ) {
-			Texture *tex;
-			int countLoadedTex = 0;
-			for(int i=0; i<root.window->textureUpdateBuffer.size()-countLoadedTex; i++) {
-				tex = root.window->textureUpdateBuffer[i];
-				if (tex->type!=0 && tex->format!=0 && tex->GLID==0 && tex->status==Texture::ERR_NO) {
-					glGenTextures( 1, &tex->GLID );
-					glBindTexture( GL_TEXTURE_2D, tex->GLID );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-					glTexImage2D( GL_TEXTURE_2D, 0, tex->format, tex->width, tex->height, 0, tex->format, tex->type, tex->img );
-					root.window->textureBuffer.push_back(tex);
-					countLoadedTex++;
-					if (countLoadedTex >= root.window->textureUpdateBuffer.size()) {
-						root.window->textureUpdateBuffer.clear();
-						break;
-					}
-					root.window->textureUpdateBuffer[i] = root.window->textureUpdateBuffer[ root.window->textureUpdateBuffer.size()-countLoadedTex ]; 
-					root.window->textureUpdateBuffer[ root.window->textureUpdateBuffer.size()-countLoadedTex ] = NULL;
-				}
-			}
-			if (countLoadedTex>0 && countLoadedTex < root.window->textureUpdateBuffer.size()) {
-				root.window->textureUpdateBuffer.resize( root.window->textureUpdateBuffer.size()-countLoadedTex );
-			}
+		Texture::texturesUpdate();
+		Bitmap::updateBitmaps();
+		if (!win->FBOBuffer.empty()) {
+			win->redrawFBO();
 		}
-		if ( !root.window->bitmapUpdateBuffer.empty() ) {
-			Bitmap *bmp;
-			int countUpdateBMP = 0;
-			for(int i=0; i<root.window->bitmapUpdateBuffer.size()-countUpdateBMP; i++) {
-				bmp = root.window->bitmapUpdateBuffer[i];
-				if (bmp->tex->GLID!=0 && bmp->tex->status==Texture::ERR_NO) {
-					bmp->width = bmp->tex->width;
-					bmp->height = bmp->tex->height;
-					root.window->renderComplete = false;
-					countUpdateBMP++;
-					if (countUpdateBMP >= root.window->bitmapUpdateBuffer.size()) {
-						root.window->bitmapUpdateBuffer.clear();
-						break;
-					}
-					root.window->bitmapUpdateBuffer[i] = root.window->bitmapUpdateBuffer[ root.window->bitmapUpdateBuffer.size()-countUpdateBMP ]; 
-					root.window->bitmapUpdateBuffer[ root.window->bitmapUpdateBuffer.size()-countUpdateBMP ] = NULL;
-				}
-			}
-			if (countUpdateBMP < root.window->bitmapUpdateBuffer.size()) {
-				root.window->bitmapUpdateBuffer.resize( root.window->bitmapUpdateBuffer.size()-countUpdateBMP );
-			}
+		#ifdef REDRAWN_BY_THE_ACTION
+		if (!win->renderComplete) {
+			win->redraw();
 		}
-		if (!root.window->FBOBuffer.empty()) {
-			root.window->redrawFBO();
-		}
-		if (!root.window->renderComplete) {
-			root.window->redraw();
-		}
+		#else
+		win->redraw();
+		#endif
 		Sleep(10);
 	}
 }
@@ -371,8 +330,19 @@ int OpenGL::init(OPENGL_VER ver) {
 	OPENGL_GET_PROC(PFNGLGETUNIFORMLOCATIONPROC, glGetUniformLocation);
 	OPENGL_GET_PROC(PFNGLUNIFORMMATRIX4FVPROC, glUniformMatrix4fv);
 	OPENGL_GET_PROC(PFNGLUNIFORM1IPROC, glUniform1i);
-	root.window->ogl = new OpenGL();
-	root.window->ogl->ver = ver;
+	OpenGL::ver = ver;
+	viewport vp;
+	vp.x = 0;
+	vp.y = 0;
+	vp.width = 0;
+	vp.height = 0;
+	OpenGL::viewportBuffer.push_back(vp);
+	viewportMatrix vpm;
+	vpm.left = 0;
+	vpm.top = 0;
+	vpm.right = 0;
+	vpm.bottom = 0;
+	OpenGL::viewportMatrixBuffer.push_back(vpm);
 	if ( ver==VER_COMPTABLE_ALL || ver==VER_CORE_210) {
 	}else{
 		string str1 = "\
@@ -393,7 +363,6 @@ in vec2 texCoord;\n\
 		void main(void){\n\
 				color = texture(texture, fragTexCoord);\n\
 		}";
-		printf("OGL\n");
 		const char *script1 = str1.c_str(), *script2 = str2.c_str();
 		GLint length1 = str1.length(), length2 = str2.length();
 		GLShader *glsl = new GLShader();
@@ -402,22 +371,57 @@ in vec2 texCoord;\n\
 		glsl->make();
 		glUseProgram(glsl->shaderProgram);
 		glActiveTexture(GL_TEXTURE0);
-		printf("ERROR %i\n", glGetError());
 		GLShader::matrixProjection = glGetUniformLocation(glsl->shaderProgram, "matrixProjection");
-		printf("ERROR %i\n", glGetError());
 		//GLShader::matrixProjection = glGetUniformLocation(glsl->shaderProgram, "matrixProjection");
 		//if (GLShader::matrixProjection != -1)
 			//glUniformMatrix4fv(GLShader::matrixProjection, 1, GL_TRUE, matrix);
 		GLShader::colorTexture = glGetUniformLocation(glsl->shaderProgram, "texture");
 		if (GLShader::colorTexture != -1)
 			glUniform1i(GLShader::colorTexture , 0);
-		printf("Windows size %i %i\n", root.window->width, root.window->height);
+		printf("Windows size %i %i\n", Windows::window->width, Windows::window->height);
 		printf("ERROR %i\n", glGetError());
 	}
 }
+void OpenGL::pushViewport() {
+	viewport vp;
+	vp.x = OpenGL::viewportBuffer[OpenGL::viewportBuffer.size()-1].x;
+	vp.y = OpenGL::viewportBuffer[OpenGL::viewportBuffer.size()-1].y;
+	vp.width = OpenGL::viewportBuffer[OpenGL::viewportBuffer.size()-1].width;
+	vp.height = OpenGL::viewportBuffer[OpenGL::viewportBuffer.size()-1].height;
+	
+	OpenGL::viewportBuffer.push_back(vp);
+}
+void OpenGL::popViewport() {
+	OpenGL::viewportBuffer.pop_back();
+	glViewport( OpenGL::viewportBuffer[OpenGL::viewportBuffer.size()-1].x,
+			OpenGL::viewportBuffer[OpenGL::viewportBuffer.size()-1].y,
+			OpenGL::viewportBuffer[OpenGL::viewportBuffer.size()-1].width,
+			OpenGL::viewportBuffer[OpenGL::viewportBuffer.size()-1].height);
+}
+void OpenGL::setViewport(short x, short y, short width, short height) {
+	OpenGL::viewportBuffer[OpenGL::viewportBuffer.size()-1].x = x;
+	OpenGL::viewportBuffer[OpenGL::viewportBuffer.size()-1].y = y;
+	OpenGL::viewportBuffer[OpenGL::viewportBuffer.size()-1].width = width;
+	OpenGL::viewportBuffer[OpenGL::viewportBuffer.size()-1].height = height;
+	glViewport(x, y, width, height);
+}
+void OpenGL::pushViewportMatrix() {
+	OpenGL::viewportMatrixBuffer.push_back( OpenGL::viewportMatrixBuffer[OpenGL::viewportMatrixBuffer.size()-1] );
+}
+void OpenGL::popViewportMatrix() {
+	OpenGL::viewportMatrixBuffer.pop_back();
+	setViewportMatrix( OpenGL::viewportMatrixBuffer[OpenGL::viewportMatrixBuffer.size()-1].left,
+			OpenGL::viewportMatrixBuffer[OpenGL::viewportMatrixBuffer.size()-1].top,
+			OpenGL::viewportMatrixBuffer[OpenGL::viewportMatrixBuffer.size()-1].right,
+			OpenGL::viewportMatrixBuffer[OpenGL::viewportMatrixBuffer.size()-1].bottom);
+}
 void OpenGL::setViewportMatrix(short left, short top, short right, short bottom) {
 	float *matrix;
-	switch (root.window->ogl->ver) {
+	OpenGL::viewportMatrixBuffer[OpenGL::viewportMatrixBuffer.size()-1].left = left;
+	OpenGL::viewportMatrixBuffer[OpenGL::viewportMatrixBuffer.size()-1].top = top;
+	OpenGL::viewportMatrixBuffer[OpenGL::viewportMatrixBuffer.size()-1].right = right;
+	OpenGL::viewportMatrixBuffer[OpenGL::viewportMatrixBuffer.size()-1].bottom = bottom;
+	switch (OpenGL::ver) {
 		case VER_COMPTABLE_ALL:
 			glLoadIdentity( );
 			gluOrtho2D( left, right, bottom, top );
@@ -478,13 +482,13 @@ int GLShader::make() {
 }
 
 
-void grEngine::Windows::regFirstWin() {
+void Windows::regFirstWin() {
 	WNDCLASSEX wcx;
 	memset(&wcx, 0, sizeof(WNDCLASSEX));
 	wcx.cbSize        = sizeof(WNDCLASSEX);
 	wcx.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wcx.lpfnWndProc   = reinterpret_cast<WNDPROC>(Windows::WndProc);
-	wcx.hInstance     = grEngine::root.hInstance;
+	wcx.hInstance     = System::hInstance;
 	wcx.lpszClassName = WIN_CLASS_NAME;
 	wcx.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
 	wcx.hCursor       = LoadCursor(NULL, IDC_ARROW);
@@ -494,24 +498,21 @@ void grEngine::Windows::regFirstWin() {
 	}
 
 }
-grEngine::Windows::Windows(short x, short y, short width, short height) {
+Windows::Windows(short x, short y, short width, short height) {
 	printf("Windows start\n");
+	if (Windows::window!=NULL) return;
+	Windows::window = this;
 	this->visible = false;
 	this->renderComplete = false;
-	this->root = new Directory();
+	this->root = new ShapeGroupRect();
 	this->x = x;
 	this->y = y;
 	this->width = width;
 	this->height = height;
-	grEngine::root.windows.push_back(this);
-	ThreadDataSys s;
-	s.system = &grEngine::root;
-	s.mutex = CreateSemaphore( NULL, 1, 1, "s1" );
-	s.window = this;
-	WaitForSingleObject(s.mutex, INFINITE);
-	this->winThread = CreateThread(NULL, 0, windowThread, &s, 0, &this->winThreadID);
-	WaitForSingleObject(s.mutex, INFINITE);
-	CloseHandle(s.mutex);
+	HANDLE mutex = CreateMutex(NULL, TRUE, NULL);
+	this->winThread = CreateThread(NULL, 0, windowThread, &mutex, 0, &this->winThreadID);
+	WaitForSingleObject(mutex, INFINITE);
+	CloseHandle(mutex);
 	printf("Windows end\n");
 	/*int attributes[] = {
 		WGL_CONTEXT_MAJOR_VERSION_ARB,	3,
@@ -529,28 +530,7 @@ grEngine::Windows::Windows(short x, short y, short width, short height) {
 	}// </editor-fold>
 	wglDeleteContext(hRCTemp);*/
 }
-void grEngine::Windows::resize(short width, short height) {
-	this->width = width;
-	this->height = height;
-	RECT rect;
-	rect.left = this->x;
-	rect.top = this->y;
-	rect.bottom = this->y+this->height;
-	rect.right = this->x+this->width;
-	fprintf(stdout, "Win resize %i %i\n", width, height);
-	AdjustWindowRectEx (&rect, WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, FALSE, WS_EX_COMPOSITED|WS_EX_APPWINDOW|WS_EX_TOPMOST);
-	GetClientRect(this->hWnd, &rect);
-	this->width  = rect.right-rect.left;
-	this->height = rect.bottom-rect.top;
-	printf("WIDTH %i HEIGHT %i", this->width, this->height);
-	glViewport(0, 0, this->width, this->height);
-	grEngine::root.window->ogl->setViewportMatrix(0, 0, this->width, this->height);
-	EventWindow *e = new EventWindow();
-	e->window = grEngine::root.window;
-	e->type = EventWindow::WIN_SIZE;
-	grEngine::root.window->callEvent(e);
-}
-void grEngine::Windows::show() {
+void Windows::show() {
 	fprintf(stdout, "Win show\n");
 	SetWindowPos(this->hWnd, HWND_TOP, this->x, this->y, this->width+this->x, this->height+this->y, SWP_SHOWWINDOW );
 	ShowWindow(this->hWnd, SW_SHOWNORMAL);
@@ -560,46 +540,51 @@ void grEngine::Windows::show() {
 	SetFocus(this->hWnd);
 	UpdateWindow(this->hWnd);
 	EventWindow *e = new EventWindow();
-	e->window = grEngine::root.window;
+	e->window = this;
 	e->type = EventWindow::WIN_SHOW;
-	grEngine::root.window->callEvent(e);
+	this->callEvent(e);
+	delete e;
 }
-void grEngine::Windows::hide() {
+void Windows::hide() {
 	fprintf(stdout, "Win hide\n");
 	ShowWindow(this->hWnd, SW_MINIMIZE);
 	SuspendThread(this->renderThread);
 	this->visible = false;
 	EventWindow *e = new EventWindow();
-	e->window = grEngine::root.window;
+	e->window = this;
 	e->type = EventWindow::WIN_HIDE;
-	grEngine::root.window->callEvent(e);
+	this->callEvent(e);
+	delete e;
 }
-void grEngine::Windows::close() {
-	for (int i=0; i<grEngine::root.windows.size(); i++) {
-		if (this == grEngine::root.windows[i]) {
-			grEngine::root.windows.erase(grEngine::root.windows.begin()+i);
-			break;
-		}
-	}
+void Windows::close() {
 	CloseHandle(this->renderThread);
 	CloseHandle(this->winThread);
 	wglDeleteContext(this->hRC);
 	PostQuitMessage(0);
 	DestroyWindow(this->hWnd);
-	fprintf(stdout, "Win close\n");
+	Windows::window = NULL;
+	printf("Windows close\n");
+	delete this;
 }
-void grEngine::Windows::setFocus() {
+void Windows::setFocus() {
 	fprintf(stdout, "Win setFocus\n");
 }
-void grEngine::Windows::redraw() {
-	int x = 90, t;
-	#ifdef DEBUG
-	fprintf(stdout, "Win redraw\n");
-	#endif
-	//grEngine::root.window->redrawFBO();
+void Windows::saveAsXML() {
+	/*FILE *file = fopen("root.xml", "wb");
+	fprintf(file, "<?xml version='1.0' encoding='utf-8'?>\n<xml>\n\t<Textures>\n");
+	for(int i=0; i<this->texture.buffer.size(); i++) {
+		this->texture.buffer[i]->saveAsXML(file, 2);
+	}
+	fprintf(file, "\t</Textures>\n\t<WindowsRootShapes>\n");
+	this->root->saveAsXML(file, 1);
+	fprintf(file, "\t</WindowsRootShapes>\n");
+	fprintf(file, "</xml>\n");
+	fclose(file);*/
+}
+void Windows::redraw() {
 	glClearColor( 0.5, 0.5, 0.5, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT );
-	switch (grEngine::root.window->ogl->ver) {
+	switch (OpenGL::ver) {
 		case OpenGL::VER_COMPTABLE_ALL:// <editor-fold defaultstate="collapsed" desc="GL_COMPTABLE_ALL">
 			glEnable( GL_BLEND );
 			glEnable( GL_ALPHA_TEST );
@@ -607,33 +592,28 @@ void grEngine::Windows::redraw() {
 			glEnable( GL_LINE_SMOOTH );
 			//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 			glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-			grEngine::root.window->root->renderGLComptAll();
-			#ifdef DEBUG
-			grEngine::root.window->root->trace();
-			printf(" GLERRORS %i\n", glGetError());
-			#endif
+			this->root->renderGLComptAll();
 			glDisable( GL_LINE_SMOOTH );
 			glDisable( GL_POINT_SMOOTH );
 			glDisable( GL_BLEND );
 			glDisable( GL_ALPHA_TEST );
 			glFlush( );
-			//if ( glGetError() != GL_NO_ERROR ) grEngine::root.window->renderComplete = false;
 			break;// </editor-fold>
-		case OpenGL::VER_CORE_210:
+		case OpenGL::VER_CORE_210:// <editor-fold defaultstate="collapsed" desc="VER_CORE_210">
 			glEnable( GL_BLEND );
 			glEnable( GL_ALPHA_TEST );
 			glEnable( GL_POINT_SMOOTH );
 			glEnable( GL_LINE_SMOOTH );
 			//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 			glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-			grEngine::root.window->root->renderGL210();
+			this->root->renderGL210();
 			glDisable( GL_LINE_SMOOTH );
 			glDisable( GL_POINT_SMOOTH );
 			glDisable( GL_BLEND );
 			glDisable( GL_ALPHA_TEST );
 			glFlush( );
-			break;
-		case OpenGL::VER_CORE_330:
+			break;// </editor-fold>
+		case OpenGL::VER_CORE_330:// <editor-fold defaultstate="collapsed" desc="VER_CORE_330">
 			glEnable( GL_BLEND );
 			glEnable( GL_ALPHA_TEST );
 			glEnable( GL_POINT_SMOOTH );
@@ -642,13 +622,13 @@ void grEngine::Windows::redraw() {
 			glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 			glUseProgram(GLShader::glsl->shaderProgram);
 			printf("GLShader::glsl->shaderProgram %i\n", GLShader::glsl->shaderProgram);
-			grEngine::root.window->root->renderGL330();
+			this->root->renderGL330();
 			glDisable( GL_LINE_SMOOTH );
 			glDisable( GL_POINT_SMOOTH );
 			glDisable( GL_BLEND );
 			glDisable( GL_ALPHA_TEST );
 			glFlush( );
-			break;
+			break;// </editor-fold>
 	}
 	/*const int vertexCount = 6, vertexSize = 2;
 	static const unsigned short triangleMesh[vertexCount*vertexSize] = {
@@ -732,11 +712,10 @@ void grEngine::Windows::redraw() {
 	glBindVertexArray(meshVAO);
 	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
 */
-	SwapBuffers(grEngine::root.window->hDC);
+	SwapBuffers(this->hDC);
 	this->renderComplete = true;
 }
-void grEngine::Windows::redrawFBO () {
-	fprintf(stdout, "WIN redrawFBO %i\n", Windows::FBOBuffer.size());
+void Windows::redrawFBO () {
 	//Directory *dir;
 	//GLuint fb;
 	//glGenFramebuffers(1, &fb);
@@ -768,33 +747,52 @@ void grEngine::Windows::redrawFBO () {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	//glDeleteFramebuffers(1, &Windows::FBOGL);
 	glViewport(0, 0, this->width, this->height);
-	grEngine::root.window->ogl->setViewportMatrix(0, 0, this->width, this->height);
+	OpenGL::setViewportMatrix(0, 0, this->width, this->height);
+}
+void Windows::resize(short width, short height) {
+	this->width = width;
+	this->height = height;
+	RECT rect;
+	rect.left = this->x;
+	rect.top = this->y;
+	rect.bottom = this->y+this->height;
+	rect.right = this->x+this->width;
+	AdjustWindowRectEx (&rect, WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, FALSE, WS_EX_COMPOSITED|WS_EX_APPWINDOW|WS_EX_TOPMOST);
+	GetClientRect(this->hWnd, &rect);
+	this->width  = rect.right-rect.left;
+	this->height = rect.bottom-rect.top;
+	OpenGL::setViewport(0, 0, this->width, this->height);
+	OpenGL::setViewportMatrix(0, 0, this->width, this->height);
+	EventWindow *e = new EventWindow();
+	e->window = this;
+	e->type = EventWindow::WIN_SIZE;
+	this->callEvent(e);
 }
 /*
-int grEngine::Windows::addEventHandler(int type, void(*fun)(const EventWindows*)) {
+int Windows::addEventHandler(int type, void(*fun)(const EventWindows*)) {
 	EventLinc el;
 	el.type = type;
 	el.fun = (void(*)(const Event*))fun;
 	Keyboard::arr.push_back( el );
 }
-int grEngine::Windows::callEvent(const EventWindows *event) {
+int Windows::callEvent(const EventWindows *event) {
 	for(int i=0, s=Keyboard::arr.size(); i<s; i++) {
 		if (Keyboard::arr[i].type == event->type) {
 			Keyboard::arr[i].fun(event);
 		}
 	}
 }
-int grEngine::Windows::removeEventHandler( void(*fun)(const EventWindows*) ) {
+int Windows::removeEventHandler( void(*fun)(const EventWindows*) ) {
 	
 }
-vector<EventLinc> grEngine::Windows::arr;*/
+vector<EventLinc> Windows::arr;*/
 
 LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	EventKeyboard *eventKey = new EventKeyboard();
 	EventMouse *eventMouse = new EventMouse();
 	EventMouseShape *eventMouseShape = new EventMouseShape();
 	EventWindow *eventWin = new EventWindow();
-	Windows *win = grEngine::root.window;
+	Windows *win = Windows::window;
 	if (win->hWnd == hWnd) {
 		switch (msg) {
 		/*	case WM_KEYDOWN:
@@ -897,7 +895,7 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 			case WM_MOVE:
 				win->x = (short) LOWORD(lParam);
 				win->y = (short) HIWORD(lParam); 
-				eventWin->window = grEngine::root.window;
+				eventWin->window = win;
 				eventWin->type = EventWindow::WIN_MOVE;
 				win->callEvent(eventWin);
 				return 0;
@@ -906,7 +904,7 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 				win->y = (short) ((RECT*)lParam)->top; 
 				win->width = (unsigned short)((RECT*)lParam)->right - ((RECT*)lParam)->left;
 				win->height = (unsigned short)((RECT*)lParam)->bottom - ((RECT*)lParam)->top; 
-				eventWin->window = grEngine::root.window;
+				eventWin->window = win;
 				eventWin->type = EventWindow::WIN_SIZE;
 				win->callEvent(eventWin);
 				//return TRUE;

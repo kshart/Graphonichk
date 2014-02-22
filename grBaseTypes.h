@@ -50,17 +50,15 @@ enum {
 #include "grEvent.h"
 #include "grFile.h"
 typedef unsigned int uint;
-namespace grEngine {
+namespace Graphonichk {
 	class System;
 	class Windows;
 	class OpenGL;
-	class Shape;
 	class Texture;
-	//Shape
-	class Shape;
-	class Directory;
+	//<Shape>
+	//class Buffer;
+	//</Shape>
 	class Bitmap;
-	class Buffer;
 	class FPoint;
 	class FLines;
 	class FRect;
@@ -77,7 +75,6 @@ namespace grEngine {
 	class Font;
 	class TextFormat;
 	//Font
-	class Directory;
 	class Rect;
 	class Point;
 	class Point {
@@ -197,11 +194,6 @@ namespace grEngine {
 	typedef uint8_t monochrome;
 	
 	
-	typedef struct {
-		System *system;
-		Windows *window;
-		HANDLE mutex;
-	} ThreadDataSys;
 
 	typedef struct{
 		enum TYPE {
@@ -228,23 +220,19 @@ namespace grEngine {
 	//template class EventDispatcher<EventFileLoad>;
 	class System {
 	  public:
-		HINSTANCE hInstance;
-		vector<Windows*> windows;
-		vector<FileLoad*> files;
-		vector<Font*> fonts;
-		struct {
+		static HINSTANCE hInstance;
+		//static vector<FileLoad*> files;
+		//static vector<Font*> fonts;
+	/*	static struct {
 			FT_Library library;
 			TextFormat *globalTextFormat;
-		} font;
-		struct {
+		} font;*/
+		/*static struct {
 			EventDispatcher<EventFileLoad> fileLoader;
-		} events;
-		Windows *window;
+		} events;*/
 		static void init(HINSTANCE hi);
-		static void threadDataSysInit(void*);
 	};
 	
-	extern System root;
 	enum ASCII_SPEC:char {
 		NUL=0x00,//ignore
 		SOH=0x01,//ignore

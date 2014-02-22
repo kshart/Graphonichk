@@ -12,7 +12,7 @@
 #include "grBaseTypes.h"
 using namespace std;
 
-namespace grEngine {
+namespace Graphonichk {
 	class Event;
 	template<class TEvent> class EventDispatcher;//handler
 	template<class TEvent, class TObject> class EventDispatcherObject;//handler
@@ -79,7 +79,7 @@ namespace grEngine {
 		Windows *window;
 	};
 	
-	class Shape;
+	class ShapeRect;
 	class EventMouseShape :public Event {
 	  public:
 		enum :int{
@@ -93,7 +93,7 @@ namespace grEngine {
 		bool ctrlKey, shiftKey, leftKey, middleKey, rightKey, firstX, secondX;
 		char keyCode;
 		short localx, localy, globalx, globaly;
-		Shape *shape;
+		ShapeRect *shape;
 	};
 	
 	template<class TEvent> class EventDispatcher {

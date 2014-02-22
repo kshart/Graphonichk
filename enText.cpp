@@ -14,7 +14,7 @@
 #include "grWindows.h"
 #include "grShape.h"
 using namespace std;
-using namespace grEngine;
+using namespace Graphonichk;
 
 /*int ft_init () {
 	FT_Library library;
@@ -53,7 +53,15 @@ using namespace grEngine;
 }*/
 //FT_Err_Unknown_File_Format
 
-template<class Type> grEngine::Array<Type>::Array(unsigned int size) {
+
+
+vector<Font*> Font::buffer;
+FT_Library Font::library;
+
+TextFormat *TextFormat::defaultFormat = new TextFormat();
+
+
+template<class Type> Array<Type>::Array(unsigned int size) {
 	this->data = (Type*)malloc( size*sizeof(Type) );
 	if (this->data==NULL) {
 		this->size = 0;
@@ -62,7 +70,7 @@ template<class Type> grEngine::Array<Type>::Array(unsigned int size) {
 	}
 }
 
-grEngine::TextFormat::TextFormat() {
+TextFormat::TextFormat() {
 	this->fn = NULL;
 	//unsigned short strWidth, strHeight;
 	this->size = 50;
@@ -75,9 +83,9 @@ grEngine::TextFormat::TextFormat() {
 	
 }
 
-grEngine::Font::Font(string path) {
+Font::Font(string path) {
 	this->path = path;
-	this->error = FT_New_Face( root.font.library, path.c_str(), 0, &this->face );
+	this->error = FT_New_Face( Font::library, path.c_str(), 0, &this->face );
 	if (this->error != FT_Err_Ok) return;
 	//error = FT_Set_Pixel_Sizes(face, 0, 20);
 	/*
@@ -104,9 +112,9 @@ grEngine::Font::Font(string path) {
 		fgs->ramUsed+=fgs->arr[i].bmpWidth*fgs->arr[i].bmpHeight;
 	} 
 	this->cache.push_back(fgs[0]);*/
-	root.fonts.push_back(this);
+	Font::buffer.push_back(this);
 }
-bool grEngine::Font::cached(unsigned short size) {
+bool Font::cached(unsigned short size) {
 	this->error = FT_Set_Pixel_Sizes(this->face, 0, size);
 	if (this->error != FT_Err_Ok) return false;
 	int glyphCount = this->face->num_glyphs;
@@ -135,18 +143,18 @@ bool grEngine::Font::cached(unsigned short size) {
 	this->cache.push_back(fface);
 }
 void Font::trace() {
-	printf("<Fonts count='%i'>\n", root.fonts.size());
-	for(int i=0; i<root.fonts.size(); i++) {
-		printf("\t<Font path='%s' cached='%i' error='%i'>\n", root.fonts[i]->path.c_str(), root.fonts[i]->cache.size(), root.fonts[i]->error);
-		for(int t=0; t<root.fonts[i]->cache.size(); t++) {
-			printf("\t\t<FontFace size='%i' count='%i' ramUsed='%iKb'/>\n", root.fonts[i]->cache[t]->size, root.fonts[i]->cache[t]->arr->size, root.fonts[i]->cache[t]->ramUsed/1024);
+	printf("<Fonts count='%i'>\n", Font::buffer.size());
+	for(int i=0; i<Font::buffer.size(); i++) {
+		printf("\t<Font path='%s' cached='%i' error='%i'>\n", Font::buffer[i]->path.c_str(), Font::buffer[i]->cache.size(), Font::buffer[i]->error);
+		for(int t=0; t<Font::buffer[i]->cache.size(); t++) {
+			printf("\t\t<FontFace size='%i' count='%i' ramUsed='%iKb'/>\n", Font::buffer[i]->cache[t]->size, Font::buffer[i]->cache[t]->arr->size, Font::buffer[i]->cache[t]->ramUsed/1024);
 		}
 		printf("\t</Font>\n");
 	}
 	printf("</Fonts>\n");
 }
 int Font::init() {
-	FT_Init_FreeType( &(root.font.library) );
+	FT_Init_FreeType( &(Font::library) );
 }
 FontFace* Font::getFontFace(unsigned short size) {
 	for(int i=this->cache.size()-1; i>=0; i--) {
@@ -155,7 +163,7 @@ FontFace* Font::getFontFace(unsigned short size) {
 	return NULL;
 }
 
-TextField::TextField(unsigned short w, unsigned short h) :Shape(0){
+TextField::TextField(unsigned short w, unsigned short h) :ShapeRect(0){
 	this->bufferTexture = new Texture(w, h, GL_ALPHA, GL_UNSIGNED_BYTE);
 	this->padding = this->paddingLeft = this->paddingRight = this->paddingTop = this->paddingBottom = 0;
 	this->width = w;
@@ -171,7 +179,7 @@ void TextField::setString(string str) {
 }
 bool TextField::bufferMode(bool mode) {
 	if (mode && !this->bufferActivate ) {
-		root.window->FBOBuffer.push_back(this);
+		Windows::window->FBOBuffer.push_back(this);
 		
 		this->bufferActivate = true;
 		this->bufferInit = false;
@@ -189,7 +197,7 @@ int TextField::bufferGLComptAll() {
 		glBindFramebuffer(GL_FRAMEBUFFER, this->bufferFrame);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, this->bufferTexture->GLID, 0);
 		glViewport(0, 0, this->width, this->height);
-		root.window->ogl->setViewportMatrix(0, this->height, this->width, 0);
+		OpenGL::setViewportMatrix(0, this->height, this->width, 0);
 		glClearColor(0,0,0,0);
 		glClear( GL_COLOR_BUFFER_BIT );
 		
@@ -206,10 +214,10 @@ int TextField::bufferGLComptAll() {
 		Font *font;
 		FontFace *fface;
 		int lineHeight, lastID=0, id, bx, by, ch;
-		if (this->tf == NULL) {format=root.font.globalTextFormat;}else{format=this->tf;}
+		if (this->tf == NULL) {format=TextFormat::defaultFormat;}else{format=this->tf;}
 		if (format->fn == NULL) {
-			if (root.fonts.empty()) return false;
-			font = root.fonts[0];
+			if (Font::buffer.empty()) return false;
+			font = Font::buffer[0];
 		}else{
 			font = format->fn;
 		}
@@ -224,7 +232,7 @@ int TextField::bufferGLComptAll() {
 		
 	if (fface == NULL) {// <editor-fold defaultstate="collapsed" desc="CACHE OFF">
 		FontGlyph spaceGlyph, lastGlyph;
-		if ( FT_Set_Char_Size(font->face, 0, format->size*64, root.window->dpi, root.window->dpi ) != FT_Err_Ok) return false;
+		if ( FT_Set_Char_Size(font->face, 0, format->size*64, Windows::window->dpi, Windows::window->dpi ) != FT_Err_Ok) return false;
 		FT_Load_Glyph(font->face, FT_Get_Char_Index(font->face, ' '), FT_LOAD_DEFAULT);
 		FT_Render_Glyph(font->face->glyph, FT_RENDER_MODE_LIGHT);
 		spaceGlyph.bmpWidth = font->face->glyph->bitmap.width;

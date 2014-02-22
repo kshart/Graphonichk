@@ -3,17 +3,23 @@
 #include "grFile.h"
 
 using namespace std;
-using namespace grEngine;
+using namespace Graphonichk;
+
+
+vector<FileLoad*> FileLoad::buffer;
+
+
 
 DWORD WINAPI FileLoad::loaderThread (void* sys) {
 	FileLoad *fl;
 	EventFileLoad *eventFile;
 	printf("Start loaderThread\n");
-	System::threadDataSysInit(sys);
-	ReleaseSemaphore( ((ThreadDataSys*)sys)->mutex, 1, NULL );
+	#define PARENT_MUTEX ((HANDLE*)sys)[0]
+	ReleaseMutex(PARENT_MUTEX);
+	#undef PARENT_MUTEX
 	while(true) {
-		for(int i=0; i<root.files.size(); i++) {
-			fl = root.files[i];
+		for(int i=0; i<FileLoad::buffer.size(); i++) {
+			fl = FileLoad::buffer[i];
 			switch (fl->status) {
 				case FileLoad::STOP:// <editor-fold defaultstate="collapsed" desc="FileLoad::STOP">
 					printf("FileLoad::STOP\n");
@@ -61,7 +67,7 @@ DWORD WINAPI FileLoad::loaderThread (void* sys) {
 						case WAIT_OBJECT_0:
 							printf("<FileLoad size='%iKB'>\n", fl->progres/1024);
 							fl->status = STATUS::SUCCESS;
-							root.files.erase(root.files.begin()+i);
+							FileLoad::buffer.erase(FileLoad::buffer.begin()+i);
 							i--;
 							eventFile = new EventFileLoad();
 							eventFile->file = fl;
@@ -92,15 +98,10 @@ DWORD WINAPI FileLoad::loaderThread (void* sys) {
 }
 
 void FileLoad::init () {
-	ThreadDataSys s;
-	s.mutex = CreateSemaphore( NULL, 1, 1, "fileLoad" );
-	s.window = NULL;
-	s.system = &grEngine::root;
-	WaitForSingleObject(s.mutex, INFINITE);
-	//this->winThread = 
-	CreateThread(NULL, 0, FileLoad::loaderThread, &s, 0, NULL);
-	WaitForSingleObject(s.mutex, INFINITE);
-	CloseHandle(s.mutex);
+	HANDLE mutex = CreateMutex(NULL, TRUE, NULL);
+	CreateThread(NULL, 0, FileLoad::loaderThread, &mutex, 0, NULL);
+	WaitForSingleObject(mutex, INFINITE);
+	CloseHandle(mutex);
 }
 FileLoad::FileLoad(string path) {
 	this->progres = 0.0;
@@ -122,7 +123,7 @@ FileLoad::FileLoad(string path) {
 		this->path = path;
 		//this->name = get_name(path);
 		this->data = NULL;
-		root.files.push_back(this);
+		FileLoad::buffer.push_back(this);
 	}
 	printf("<FileLoad size='%i' path='%s' fileHandle='%i' />\n", this->size, this->path.c_str(), this->fileHandle);
 }

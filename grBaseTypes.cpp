@@ -1,7 +1,7 @@
 #include <string>
 #include "grBaseTypes.h"
 using namespace std;
-using namespace grEngine;
+using namespace Graphonichk;
 
 string get_ext (const string& st) {
     size_t pos = st.rfind('.');
@@ -10,7 +10,7 @@ string get_ext (const string& st) {
 }
 
 
-template<class Type> grEngine::Array<Type>::Array(unsigned int size) {
+template<class Type> Array<Type>::Array(unsigned int size) {
 	this->data = (Type*)malloc( size*sizeof(Type) );
 	if (this->data==NULL) {
 		this->size = 0;
@@ -19,90 +19,23 @@ template<class Type> grEngine::Array<Type>::Array(unsigned int size) {
 	}
 }
 
-System grEngine::root;
+HINSTANCE System::hInstance = NULL;
+
 void System::init(HINSTANCE hi) {
-	root.window = NULL;
-	root.hInstance = hi;
-	root.font.globalTextFormat = new TextFormat();
+	System::hInstance = hi;
 	Windows::regFirstWin();
 	FileLoad::init();
 	Font::init();
 }
-void System::threadDataSysInit(void *data){
-	ThreadDataSys *s = (ThreadDataSys*)data;
-	memcpy(&root, s->system, sizeof(System));
-	root.window = s->window;
-}
+
+
+Windows *Windows::window = NULL;
 
 
 /*
-Shape* grEngine::loadImageFD (int type, FILE *file, uint32_t offset, uint32_t size) {
+Shape* loadImageFD (int type, FILE *file, uint32_t offset, uint32_t size) {
 	Shape* sh = newShape();
 	fseek(file, offset, SEEK_SET);
-	if ( type==GR_IMG_I_BMP ) {// <editor-fold defaultstate="collapsed" desc="GR_TYPE_BMP_TO_CACHE">
-		bmpHead bmph;
-		fread(&bmph, sizeof(bmpHead), 1, file);
-		printf("File signature=%i size=%i, offset=%i, sizeHead=%i, width=%i, height=%i, layers=%i, ", bmph.signature, bmph.sizeFile, bmph.offsetPixels, bmph.sizeHead, bmph.width, bmph.height, bmph.layers);
-		if (bmph.null1!=0 || bmph.null2!=0 || bmph.sizeHead!=40 || bmph.layers!=1) {
-			printf("ERROR_FILE_BMP_INVALID\n");
-			return sh;
-		}
-		sh->width = bmph.width;
-		sh->height = bmph.height;
-		sh->texWidth = (bmph.width + 4-1) & ~(4-1);
-		sh->texHeight = (bmph.height + 4-1) & ~(4-1);
-		sh->type = GR_TYPE_BMP;
-		fseek(file, offset+bmph.offsetPixels, SEEK_SET);
-		if (bmph.bpp == 24) {// <editor-fold defaultstate="collapsed" desc="GR_RGB_24">
-			sh->imgType = GR_RGB_24;
-			sh->img = malloc(sh->texWidth*sh->texHeight*sizeof(rgb));
-			char *buff = (char*)malloc(3 );
-			for (int x=sh->width; x<sh->texWidth; x++) {
-				for (int y=0; y<sh->texHeight; y++) {
-					((rgb*)(sh->img))[x+sh->texWidth*y].r = 0xFF;
-					((rgb*)(sh->img))[x+sh->texWidth*y].g = 0;
-					((rgb*)(sh->img))[x+sh->texWidth*y].b = 0;
-				}
-			}
-			for (int x=0; x<sh->width; x++) {
-				for (int y=sh->height; y<sh->texHeight; y++) {
-					((rgb*)(sh->img))[x+sh->texWidth*y].r = 0xFF;
-					((rgb*)(sh->img))[x+sh->texWidth*y].g = 0;
-					((rgb*)(sh->img))[x+sh->texWidth*y].b = 0;
-				}
-			}
-			for (int y=0; y<bmph.height; y++) {
-				for (int x = 0; x<bmph.width; x++) {
-					fread(buff, 3, 1, file);
-					((rgb*)(sh->img))[x+sh->texWidth*y].r = buff[2];
-					((rgb*)(sh->img))[x+sh->texWidth*y].g = buff[1];//((rgb*)(buff))[x+bmph.width*(bmph.height-y-1)].g;
-					((rgb*)(sh->img))[x+sh->texWidth*y].b = buff[0];//((rgb*)(buff))[x+bmph.width*(bmph.height-y-1)].r;
-
-				}
-				fread(buff, ((bmph.width*3+4-1)&~(4-1))-bmph.width*3, 1, file);
-			}
-			free(buff);//</editor-fold>
-		}else if (bmph.bpp == 32) {// <editor-fold defaultstate="collapsed" desc="GR_RGBA_32">
-			sh->imgType = GR_RGBA_32;
-			sh->img = malloc(sh->texWidth*sh->texHeight*sizeof(rgba));
-			int color32;
-			for (int x=sh->width; x<sh->texWidth; x++)
-				for (int y=0; y<sh->texHeight; y++)
-					((rgba*)(sh->img))[x+sh->texWidth*y].color = 0xFF0000FF;
-			for (int x=0; x<sh->width; x++)
-				for (int y=sh->height; y<sh->texHeight; y++)
-					((rgba*)(sh->img))[x+sh->texWidth*y].color = 0xFF0000FF;
-
-			for (int y=0; y<bmph.height; y++) {
-				for (int x = 0; x<bmph.width; x++) {
-					fread(&color32, 3, 1, file);
-					((rgba*)(sh->img))[x+sh->texWidth*y].color = color32;
-
-				}
-				fread(&color32, ((bmph.width*3+4-1)&~(4-1))-bmph.width*3, 1, file);
-			}
-		}// </editor-fold>
-		//</editor-fold>
 	}else if ( type==GR_IMG_I_TGA ) {// <editor-fold defaultstate="collapsed" desc="GR_IMG_TGA">
 		tgaHead th;
 		void *buff;
@@ -208,13 +141,13 @@ Shape* grEngine::loadImageFD (int type, FILE *file, uint32_t offset, uint32_t si
 	return sh;
 }*/
 /*
-Directory* grEngine::loadDirectory (std::string str) {
+Directory* loadDirectory (std::string str) {
 	FILE *file = fopen(str.c_str(), "rb");
 	Directory* dir = loadDirectoryFD(str, file, 0, 0);
 	fclose(file);
 	return dir;
 }
-Directory* grEngine::loadDirectoryFD (std::string name, FILE *file, uint32_t offset, uint32_t size) {
+Directory* loadDirectoryFD (std::string name, FILE *file, uint32_t offset, uint32_t size) {
 	fseek(file, offset, SEEK_SET);
 	sdHead sd;
 	fread(&sd, sizeof(sdHead), 1, file);
@@ -228,7 +161,7 @@ Directory* grEngine::loadDirectoryFD (std::string name, FILE *file, uint32_t off
 
 	return dir;
 }
-Directory* grEngine::loadDirF (FILE *file, Directory* dir, short x, short y, int size) {
+Directory* loadDirF (FILE *file, Directory* dir, short x, short y, int size) {
 	Directory* dir1 = newDirectory(dir);
 	short *arr = (short*)malloc(10);
 	for (int i=0; i<size; i++) {
@@ -241,13 +174,13 @@ Directory* grEngine::loadDirF (FILE *file, Directory* dir, short x, short y, int
 	}
 }
 
-int grEngine::saveDirectory (Directory *dir, std::string path) {
+int saveDirectory (Directory *dir, std::string path) {
 	FILE *file = fopen(path.c_str(), "wb");
 	saveDirectoryFD(dir, path, file, 0, 0);
 	fclose(file);
 	return true;
 }
-int grEngine::saveDirectoryFD (Directory *dir, std::string path, FILE* file, uint32_t offset, uint32_t size) {
+int saveDirectoryFD (Directory *dir, std::string path, FILE* file, uint32_t offset, uint32_t size) {
 	sdHead head;
 	head.ver = 1;
 	head.signature = DIR_SIGN;
@@ -260,7 +193,7 @@ int grEngine::saveDirectoryFD (Directory *dir, std::string path, FILE* file, uin
 	//saveLib();
 	return true;
 }
-int grEngine::saveDirF (FILE *file, Directory *dir, uint32_t *shapeID) {
+int saveDirF (FILE *file, Directory *dir, uint32_t *shapeID) {
 	sdDir td;
 	td.type = GR_DIRECTORY;
 	td.x = dir->x;
@@ -290,7 +223,7 @@ int grEngine::saveDirF (FILE *file, Directory *dir, uint32_t *shapeID) {
 	return true;
 }
 
-int grEngine::saveShape (Shape* sh, std::string path, int type) {
+int saveShape (Shape* sh, std::string path, int type) {
 	Image item;
 	item.id = 0;
 	item.path = path.c_str();
@@ -299,13 +232,13 @@ int grEngine::saveShape (Shape* sh, std::string path, int type) {
 	item.sh = *sh;
 	return saveImage(&item);
 }
-int grEngine::saveImage (Image* item) {
+int saveImage (Image* item) {
 	FILE *file = fopen(item->path, "wb");
 	saveImageFD(item, file, 0);
 	fclose(file);
 	return true;
 }
-int grEngine::saveImageFD (Image* item, FILE* file, long offset) {
+int saveImageFD (Image* item, FILE* file, long offset) {
 	fseek(file, offset, SEEK_SET);
 	switch (item->type) {
 		case GR_IMG_I_BMP:
@@ -383,14 +316,14 @@ int grEngine::saveImageFD (Image* item, FILE* file, long offset) {
 	return 0;
 }
 
-std::vector<Shape*>* grEngine::loadLib (std::string str) {
+std::vector<Shape*>* loadLib (std::string str) {
 	FILE *file = fopen(str.c_str(), "rb");
 	std::string type = get_ext(str);
 	std::vector<Shape*>* linc = loadLibFD(file);
 	fclose(file);
 	return linc;
 }
-std::vector<Shape*>* grEngine::loadLibFD (FILE *file) {
+std::vector<Shape*>* loadLibFD (FILE *file) {
 	std::vector<Shape*> *linc = (std::vector<Shape*>*)malloc(sizeof(std::vector<Shape*>));
 	libHead lib;
 	libImgHead *libImg = (libImgHead*)malloc( sizeof(libImgHead)*lib.sizeLib );
@@ -407,13 +340,13 @@ std::vector<Shape*>* grEngine::loadLibFD (FILE *file) {
 	printf("name=%s, desc=%s\n", name, desc);
 	for (int i=0; i<lib.sizeLib; i++) {
 		printf("%i type=%i size=%i ost=%i nL=%i \n", libImg[i].id, libImg[i].type, libImg[i].size, libImg[i].offset);
-		linc->push_back(grEngine::loadImageFD(libImg[i].type, file, libImg[i].offset, libImg[i].size));
+		linc->push_back(loadImageFD(libImg[i].type, file, libImg[i].offset, libImg[i].size));
 	}
 	printf("Libe sign=%i, size=%i, items=%i, ver=%i", lib.signature, lib.sizeFile, lib.sizeLib, lib.ver);
 	return linc;
 }
 
-int grEngine::saveLib (std::string str, std::vector<Shape*> shArr) {
+int saveLib (std::string str, std::vector<Shape*> shArr) {
 	Image *arr = (Image*)malloc( sizeof(Image)* shArr.size());
 	for (int i=0; i<shArr.size(); i++) {
 		arr[i].sh = *(shArr[i]);
@@ -425,7 +358,7 @@ int grEngine::saveLib (std::string str, std::vector<Shape*> shArr) {
 	saveLibImg(str, arr, shArr.size());
 	return true;
 }
-int grEngine::saveLibFD (FILE *file, std::vector<Shape*> shArr, long offset) {
+int saveLibFD (FILE *file, std::vector<Shape*> shArr, long offset) {
 	Image *arr = (Image*)malloc( sizeof(Image)* shArr.size());
 	for (int i=0; i<shArr.size(); i++) {
 		arr[i].sh = *(shArr[i]);
@@ -437,14 +370,14 @@ int grEngine::saveLibFD (FILE *file, std::vector<Shape*> shArr, long offset) {
 	saveLibImgFD(file, arr, shArr.size(), offset);
 	return true;
 }
-int grEngine::saveLibImg (std::string str, Image* arr, int length) {
+int saveLibImg (std::string str, Image* arr, int length) {
 	FILE *file = fopen(str.c_str(), "wb");
 	std::string type = get_ext(str);
 	saveLibImgFD(file, arr, length, 0 );
 	fclose(file);
 	return true;
 }
-int grEngine::saveLibImgFD (FILE *file, Image* shArr, int length, long start) {
+int saveLibImgFD (FILE *file, Image* shArr, int length, long start) {
 	Image *img;
 	libHead lhead;
 	libImgHead ihead;
@@ -472,7 +405,7 @@ int grEngine::saveLibImgFD (FILE *file, Image* shArr, int length, long start) {
 	fwrite(&lhead, sizeof(libHead), 1, file);
 	return true;
 }
-Shape* grEngine::newShape () {
+Shape* newShape () {
 	Shape* sh = (Shape*)malloc(sizeof(Shape));
 	sh->width = 0;
 	sh->height = 0;
@@ -484,14 +417,14 @@ Shape* grEngine::newShape () {
 	sh->type = GR_TYPE_NULL;
 	return sh;
 }
-void grEngine::addShape(Shape* sh, Directory *dir) {
+void addShape(Shape* sh, Directory *dir) {
 	sh->globalx = sh->x+dir->globalx;
 	sh->globaly = sh->y+dir->globaly;
 	dir->child.push_back( {GR_SHAPE, sh} );
 }
 */
 /*
-void grEngine::Scene::redraw () {
+void Scene::redraw () {
 	Texture *tex;
 
 	glClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT );

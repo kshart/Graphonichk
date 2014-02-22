@@ -12,7 +12,7 @@
 #include "grBaseTypes.h"
 using namespace std;
 
-namespace grEngine {
+namespace Graphonichk {
 	class FileLoad;
 	class EventFileLoad;
 	//template<class TEvent> class EventDispatcher;//handler
@@ -47,6 +47,7 @@ namespace grEngine {
 		HANDLE fileHandle;
 		OVERLAPPED  ovl;
 		
+		static vector<FileLoad*> buffer;
 		static void init();
 		static DWORD WINAPI loaderThread(void*);
 		static void trace();

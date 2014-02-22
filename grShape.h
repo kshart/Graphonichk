@@ -16,16 +16,21 @@
 
 
 using namespace std;
-namespace grEngine {
+namespace Graphonichk {
 	template class EventDispatcher<EventMouseShape>;
-	class Shape;
-	class Directory;
+	class ShapeRect;
+	class ShapeBasic;
+	class ShapeMatrix2D;
+	class ShapeGroupRect;
+	class ShapeGroupMatrix2D;
+	class ShapeGroupBasic;
+
 	class Bitmap;
 	class Buffer;
 	class FPoint;
 	class FLines;
 	class FRect;
-	class FCircle;
+	//class FCircle;
 	
 	class Buffer {
 	protected:
@@ -43,73 +48,90 @@ namespace grEngine {
 		Texture *bufferTexture;
 		GLuint bufferFrame;
 	};
-	class Shape :public EventDispatcher<EventMouseShape> {
+	
+	
+	class ShapeBasic {
 	protected:
-		///Конструктор Shape (использовать только в классах наслнд) 
-		Shape(int crc32);
+		ShapeBasic(int crc32);
 	public:
-		///Конструктор Shape (использовать только в классах наслнд) 
+		ShapeBasic();
 		virtual void trace();
-		///Конструктор Shape (использовать только в классах наслнд) 
-		virtual void drag(short x, short y);
-		virtual void updateGlobalPosition();
-		///Конструктор Shape (использовать только в классах наслнд) 
-		GLuint meshVAO;
-		///Ссылка на родительскую директорию
-		Directory* parent;
-		///
-		Point offsetPos;
-		///Уникальный индетификатор классов наследников
-		int crc32;
-		///Конструктор Shape (использовать только в классах наслнд) 
-		short globalx, globaly, x, y;
-		///Конструктор Shape (использовать только в классах наслнд) 
-		unsigned short width, height;
-		///
-		bool mouseEventActive;
-		bool mouseEventRollOver;
-		
 		virtual int renderGLComptAll();
 		virtual int renderGL400();
 		virtual int renderGL330();
 		virtual int renderGL210();
+		int crc32;
+	};
+	class ShapeGroupBasic :public ShapeBasic {
+	protected:
+		ShapeGroupBasic(int crc32);
+	public:
+		ShapeGroupBasic();
+		virtual void trace();
+		virtual int renderGLComptAll();
+		virtual int renderGL400();
+		virtual int renderGL330();
+		virtual int renderGL210();
+	};
+	class ShapeRect :public EventDispatcher<EventMouseShape>, public ShapeBasic {
+	protected:
+		ShapeRect(int crc32);
+	public:
+		///Конструктор ShapeRect (использовать только в классах наслнд) 
+		virtual void trace();
+		virtual int renderGLComptAll();
+		virtual int renderGL400();
+		virtual int renderGL330();
+		virtual int renderGL210();
+		///Конструктор ShapeRect (использовать только в классах наслнд) 
+		virtual void drag(short x, short y);
+		virtual void updateGlobalPosition();
+		///Конструктор ShapeRect (использовать только в классах наслнд) 
+		GLuint meshVAO;
+		///Ссылка на родительскую директорию
+		ShapeGroupRect* parent;
+		///
+		Point offsetPos;
+		///Конструктор ShapeRect (использовать только в классах наслнд) 
+		short globalx, globaly, x, y;
+		///Конструктор ShapeRect (использовать только в классах наслнд) 
+		unsigned short width, height;
+		///
+		bool visible;
+		string name;
 		
+		bool mouseEventActive;
+		bool mouseEventRollOver;
+		
+		void setVisible(bool vis);
+		virtual int saveAsXML(FILE *str, unsigned short tab=0);
 		virtual int addEventHandler( int type, void(*)(const EventMouseShape*));
 		virtual int callEvent(EventMouseShape *e);
 		
-		virtual Shape* globalHitTest(short x, short y);
+		virtual ShapeRect* globalHitTest(short x, short y);
 	};
-	class Bitmap :public Shape {
-	  public:
-		enum {CRC32=0xEFC15B9A};
-		Bitmap(Texture*);
-		//~Bitmap();
-		void trace();
-		int renderGLComptAll();
-		int renderGL400();
-		int renderGL330();
-		int renderGL210();
-		Texture *tex;
-	};
-	class Directory :public Shape, public Buffer {
+	class ShapeGroupRect :public Buffer, public ShapeRect {
 	protected:
-		Directory(int crc32);
+		ShapeGroupRect(int crc32);
 	public:
 		enum {CRC32=0xC489C679};
 		enum BUFFER_TYPE {
 			PREDEFINED_LIST_SH,
 			TO_TEXTURE
 		};
-		Directory();
+		ShapeGroupRect();
 		virtual void trace();
-		virtual void addChild(Shape*);
+		
+		virtual bool addChild(ShapeRect *sh);
+		virtual bool removeChild(ShapeRect *sh);
+		virtual bool setChildDepth(ShapeRect *sh, unsigned short depth);
+		virtual unsigned short getChildDepth(ShapeRect *sh);
+		virtual ShapeRect* getChild(string str);
+		
 		virtual void drag(short, short);
 		virtual void updateGlobalPosition();
-		//virtual int load(string);
-		//virtual int loadFD(FILE*, long);
-		//virtual int save(string);
-		//virtual int saveFD(FILE*, long);
-		//virtual int saveFFD(FILE*, sdHead*);
+		virtual void updateRect();
+		virtual void updateRect(ShapeRect *sh);
 		virtual void setBuffer(BUFFER_TYPE, char);
 		
 		virtual int renderGLComptAll();
@@ -122,19 +144,42 @@ namespace grEngine {
 		virtual int bufferGL210();
 		virtual bool bufferMode(bool mode);
 		
-		virtual vector<Shape*>* getChildShape();
-		virtual void getChildShape(vector<Shape*>*);
-		virtual Shape* globalHitTest(short x, short y);
+		int saveAsXML(FILE *str, unsigned short tab=0);
+		
+		virtual vector<ShapeRect*>* getChildShape();
+		virtual void getChildShape(vector<ShapeRect*>*);
+		
+		virtual ShapeRect* globalHitTest(short x, short y);
 		virtual int callEvent(EventMouseShape *e);
 		
+		HANDLE addChildLock;
 		GLuint totalShapeVertexInit;
-		vector<Shape*> child;
-		vector<Shape*> *shapeCache;
+		vector<ShapeRect*> child;
+		vector<ShapeRect*> *shapeCache;
 		//Windows *window;
+		bool chengeRect;
+		bool cutTheRect;
 		unsigned int totalShape, totalDir;
 	};
 	
-	class FPoint :public Shape {
+	class Bitmap :public ShapeRect {
+	private:
+		static vector<Bitmap*> updateBuffer;
+	public:
+		enum {CRC32=0xEFC15B9A};
+		Bitmap(Texture*);
+		//~Bitmap();
+		void trace();
+		int renderGLComptAll();
+		int renderGL400();
+		int renderGL330();
+		int renderGL210();
+		int saveAsXML(FILE* str, unsigned short tab);
+		Texture *tex;
+		
+		static void updateBitmaps();
+	};
+	class FPoint :public ShapeRect {
 	  public:
 		enum {CRC32=0xD88563EF};
 		FPoint(int, uint32_t);
@@ -142,7 +187,7 @@ namespace grEngine {
 		int radius;
 		argb color;
 	};
-	class FLines :public Shape {
+	class FLines :public ShapeRect {
 	  public:
 		enum {CRC32=0x20211C5D};
 		FLines(void*, short, short, uint32_t);
@@ -151,7 +196,7 @@ namespace grEngine {
 		argb color;
 		short *arr;
 	};
-	class FRect :public Shape {
+	class FRect :public ShapeRect {
 	  public:
 		enum {CRC32=0x27311957};
 		FRect(short width, short height, uint32_t backgroundColor);
