@@ -14,8 +14,11 @@
 using namespace std;
 using namespace Graphonichk;//Graphonichk
 
+
+#ifdef WIN32
 DWORD WINAPI renderThread (void* sys);
 DWORD WINAPI windowThread (void* sys);
+
 DWORD WINAPI windowThread (void* sys) {
 	printf("windowThread\n");
 	//EventWindow *evWindow = new EventWindow();
@@ -248,7 +251,6 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 	//fprintf(stdout, "WndProc msg=%i window.size=%i\n", msg, Windows::window.size());
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
-
 
 void Windows::regFirstWin() {
 	WNDCLASSEX wcx;
@@ -551,7 +553,9 @@ void Windows::resize(short width, short height) {
 	e->type = EventWindow::WIN_SIZE;
 	this->callEvent(e);
 }
+#else
 
+#endif
 
 
 /*int Windows::addEventHandler(int type, void(*fun)(const EventWindows*)) {
