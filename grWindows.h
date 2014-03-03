@@ -12,19 +12,25 @@
 #include <vector>
 #include <string>
 #include <stdio.h>
-#include <windows.h>
-#include <windowsx.h>
 
 #include "grBaseTypes.h"
 #include "grEvent.h"
 
-#define WIN_CLASS_NAME "grEWin"
+
+#ifdef WIN32
+	#include <windows.h>
+	#include <windowsx.h>
+	#define WIN_CLASS_NAME "grEWin"
+#else
+	
+#endif
 //Graphonichk
 using namespace std;
 namespace Graphonichk {
 	template class EventDispatcher<EventWindow>;
 	template class EventDispatcher<EventKeyboard>;
 	template class EventDispatcher<EventMouse>;
+#ifdef WIN32
 	class Windows :public EventDispatcher<EventWindow> {
 	public:
 		static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -65,6 +71,9 @@ namespace Graphonichk {
 		short x, y, width, height;
 		int dpi;
 	};
+#else
+	
+#endif
 	
 }
 
