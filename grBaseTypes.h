@@ -8,7 +8,7 @@
 //add gcc -mno-ms-bitfields
 #ifndef GRBASETYPES_H
 #define	GRBASETYPES_H
-
+//123123
 
 #include <stack>
 #include <vector>
