@@ -1,25 +1,13 @@
-
-#include <stack>
-#include <vector>
-#include <string.h>
-#include <string>
-#include <stdio.h>
-#include <stdlib.h>
-#include <windows.h>
-#include <windowsx.h>
 #include "grBaseTypes.h"
 #include "grWindows.h"
 #include <math.h>
-#include <thread>
 using namespace std;
 using namespace Graphonichk;//Graphonichk
 
 
 #ifdef WIN32
-DWORD WINAPI renderThread (void* sys);
-DWORD WINAPI windowThread (void* sys);
 
-DWORD WINAPI windowThread (void* sys) {
+DWORD WINAPI Windows::threadWindow (void* sys) {
 	printf("windowThread\n");
 	//EventWindow *evWindow = new EventWindow();
 	Windows::regFirstWin();
@@ -34,7 +22,7 @@ DWORD WINAPI windowThread (void* sys) {
 		return 0;
 	}
 	HANDLE semaphore = CreateSemaphore(NULL, 0, 1, NULL);
-	win->renderThread = CreateThread(NULL, 0, renderThread, &semaphore, 0, &win->renderThreadID);
+	win->renderThread = CreateThread(NULL, 0, Windows::threadRender, &semaphore, 0, &win->renderThreadID);
 	WaitForSingleObject(semaphore, INFINITE);
 	CloseHandle(semaphore);
 	ShowWindow(win->hWnd, SW_SHOW);
@@ -51,7 +39,7 @@ DWORD WINAPI windowThread (void* sys) {
 	}
 	
 }
-DWORD WINAPI renderThread (void* sys) {
+DWORD WINAPI Windows::threadRender (void* sys) {
 	int format;
 	PIXELFORMATDESCRIPTOR pfd;
 	HGLRC hRCTemp;
@@ -252,6 +240,7 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
+Windows *Windows::window = NULL;
 void Windows::regFirstWin() {
 	WNDCLASSEX wcx;
 	memset(&wcx, 0, sizeof(WNDCLASSEX));
@@ -280,7 +269,7 @@ Windows::Windows(short x, short y, short width, short height) {
 	this->width = width;
 	this->height = height;
 	HANDLE semaphore = CreateSemaphore(NULL, 0, 1, NULL);//CreateSemaphore
-	this->winThread = CreateThread(NULL, 0, windowThread, &semaphore, 0, &this->winThreadID);
+	this->winThread = CreateThread(NULL, 0, Windows::threadWindow, &semaphore, 0, &this->winThreadID);
 	WaitForSingleObject(semaphore, INFINITE);
 	CloseHandle(semaphore);
 	printf("Windows end\n");

@@ -8,32 +8,35 @@
 #ifndef GRWINDOWS_H
 #define	GRWINDOWS_H
 
-#include <stack>
-#include <vector>
-#include <string>
-#include <stdio.h>
 
 #include "grBaseTypes.h"
 #include "grEvent.h"
 
+#define WIN_CLASS_NAME "grEWin"
 
-#ifdef WIN32
-	#include <windows.h>
-	#include <windowsx.h>
-	#define WIN_CLASS_NAME "grEWin"
-#else
-	
-#endif
 //Graphonichk
 using namespace std;
 namespace Graphonichk {
 	template class EventDispatcher<EventWindow>;
 	template class EventDispatcher<EventKeyboard>;
 	template class EventDispatcher<EventMouse>;
-#ifdef WIN32
 	class Windows :public EventDispatcher<EventWindow> {
+	private:
+		#ifdef WIN32
+			HWND hWnd;
+			HGLRC hRC;
+			HDC hDC;
+			HANDLE winThread, renderThread;
+			DWORD winThreadID, renderThreadID;
+			static DWORD WINAPI threadRender (void* sys);
+			static DWORD WINAPI threadWindow (void* sys);
+			static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+		#else
+			pthread_t winThread, renderThread;
+			static void* threadRender (void* vptr_args);
+			static void* threadWindow (void* vptr_args);
+		#endif
 	public:
-		static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 		static Windows* window;
 		static void regFirstWin();
 		static void deleteLastWin();
@@ -57,13 +60,7 @@ namespace Graphonichk {
 			EventDispatcher<EventKeyboard> keyboard;
 			EventDispatcher<EventMouse> mouse;
 		} events;
-		#ifdef WIN32
-			HWND hWnd;
-			HGLRC hRC;
-			HDC hDC;
-			HANDLE winThread, renderThread;
-			DWORD winThreadID, renderThreadID;
-		#endif
+		
 		//vector<Bitmap*> bitmapUpdateBuffer;
 		vector<Buffer*> FBOBuffer;
 		ShapeGroupRect *root;
@@ -71,9 +68,6 @@ namespace Graphonichk {
 		short x, y, width, height;
 		int dpi;
 	};
-#else
-	
-#endif
 	
 }
 

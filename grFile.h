@@ -8,7 +8,6 @@
 #ifndef GRFILE_H
 #define	GRFILE_H
 
-#include <vector>
 #include "grBaseTypes.h"
 using namespace std;
 
@@ -28,7 +27,13 @@ namespace Graphonichk {
 		FileLoad *file;
 	};
 	class FileLoad:public EventDispatcher<EventFileLoad> {
-	  public:
+	private:
+		#ifdef WIN32
+		HANDLE fileHandle;
+		OVERLAPPED  ovl;
+		static DWORD WINAPI loaderThread(void*);
+		#endif
+	public:
 		FileLoad(string path);
 		~FileLoad();
 		enum STATUS:char {
@@ -44,12 +49,8 @@ namespace Graphonichk {
 		unsigned long int size, progres;
 		void *data;
 		string name, path;
-		HANDLE fileHandle;
-		OVERLAPPED  ovl;
-		
 		static vector<FileLoad*> buffer;
 		static void init();
-		static DWORD WINAPI loaderThread(void*);
 		static void trace();
 	};
 }

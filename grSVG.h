@@ -14,12 +14,13 @@
 namespace Graphonichk {
 	class ImageSVG :public ShapeRect {
 	public:
-		ImageSVG();
+		ImageSVG(const char *filename);
 		int renderGLComptAll();
 		int renderGL400();
 		int renderGL330();
 		int renderGL210();
 		SVG::Group root;
+		ViewMatrix viewMatrix;
 	};
 }
 

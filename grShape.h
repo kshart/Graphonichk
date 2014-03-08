@@ -24,6 +24,9 @@ namespace Graphonichk {
 	class ShapeGroupRect;
 	class ShapeGroupMatrix2D;
 	class ShapeGroupBasic;
+	
+	class ShapeRectGateBasic;
+	class ShapeRectGateMatrix2D;
 
 	class Bitmap;
 	class Buffer;
@@ -72,6 +75,7 @@ namespace Graphonichk {
 		virtual int renderGL400();
 		virtual int renderGL330();
 		virtual int renderGL210();
+		vector<ShapeBasic*> child;
 	};
 	class ShapeRect :public EventDispatcher<EventMouseShape>, public ShapeBasic {
 	protected:
@@ -79,10 +83,6 @@ namespace Graphonichk {
 	public:
 		///Конструктор ShapeRect (использовать только в классах наслнд) 
 		virtual void trace();
-		virtual int renderGLComptAll();
-		virtual int renderGL400();
-		virtual int renderGL330();
-		virtual int renderGL210();
 		///Конструктор ShapeRect (использовать только в классах наслнд) 
 		virtual void drag(short x, short y);
 		virtual void updateGlobalPosition();
@@ -152,7 +152,6 @@ namespace Graphonichk {
 		virtual ShapeRect* globalHitTest(short x, short y);
 		virtual int callEvent(EventMouseShape *e);
 		
-		HANDLE addChildLock;
 		GLuint totalShapeVertexInit;
 		vector<ShapeRect*> child;
 		vector<ShapeRect*> *shapeCache;
@@ -160,7 +159,46 @@ namespace Graphonichk {
 		bool chengeRect;
 		bool cutTheRect;
 		unsigned int totalShape, totalDir;
+		#ifdef WIN32
+			HANDLE addChildLock;
+		#endif
 	};
+	
+	class ShapeMatrix2D :public ShapeBasic {
+	public:
+		ShapeMatrix2D();
+		TransformMatrix matrix;
+	};
+	class ShapeGroupMatrix2D :public ShapeMatrix2D {
+	protected:
+		ShapeGroupMatrix2D(int crc32);
+	public:
+		ShapeGroupMatrix2D();
+		//virtual void trace();
+		virtual int renderGLComptAll();
+		virtual int renderGL400();
+		virtual int renderGL330();
+		virtual int renderGL210();
+		
+		vector<ShapeMatrix2D*> child;
+	};
+	
+	class ShapeRectGateMatrix2D :public ShapeRect {
+	public:
+		ShapeRectGateMatrix2D();
+		//virtual void trace();
+		virtual int renderGLComptAll();
+		virtual int renderGL400();
+		virtual int renderGL330();
+		virtual int renderGL210();
+		ShapeGroupMatrix2D group;
+		ViewMatrix view;
+	};
+	
+	
+	
+	
+	
 	
 	class Bitmap :public ShapeRect {
 	private:

@@ -9,7 +9,7 @@ using namespace Graphonichk;
 vector<FileLoad*> FileLoad::buffer;
 
 
-
+#ifdef WIN32
 DWORD WINAPI FileLoad::loaderThread (void* sys) {
 	FileLoad *fl;
 	EventFileLoad *eventFile;
@@ -127,3 +127,4 @@ FileLoad::FileLoad(string path) {
 	}
 	printf("<FileLoad size='%i' path='%s' fileHandle='%i' />\n", this->size, this->path.c_str(), this->fileHandle);
 }
+#endif

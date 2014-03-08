@@ -1,15 +1,10 @@
-/* 
- * File:   SVG.h
- * Author: Артем
- *
- * Created on 19 Февраль 2014 г., 14:53
- */
-
 #ifndef SVG_H
 #define	SVG_H
 
 #include <vector>
+#include "grMatrix.h"
 using namespace std;
+using Graphonichk::TransformMatrix;
 
 namespace SVG {
 	class Group;
@@ -30,34 +25,31 @@ namespace SVG {
 		float value;
 	} Length, Coordinate;
 	typedef struct {
+		Coordinate x, y;
+	} BasicPoint;
+	typedef struct {
 		short type;
 		float value;
 	} Angle;
+	
 	typedef struct {
 		float value;
 	} Percentage;
-	class TransformMatrix {
-	public:
-		float a, b, c, d, e, f;
-		TransformMatrix();
-		TransformMatrix(float a, float b, float c, float d, float e, float f);
-		void trace();
-		void loadIdentity();
-		void scale(Length s);
-		void scale(Length sx, Length sy);
-		void translate(Coordinate x, Coordinate y);
-		void rotate(Angle angle);
-		
-		
-		void skewX(Angle angle);
-		void skewY(Angle angle);
-	};
 	typedef struct {
 		char *id, *xmlBase, *xmlLang, *xmlSpace;
 	} CoreAttributes;
 	typedef struct {
 		char *onfocusin, *onfocusout, *onactivate, *onclick, *onmousedown, *onmouseup, *onmouseover, *onmousemove, *onmouseout, *onload;
 	} GraphicalEventAttributes;
+	
+	class DataTypes {
+	public:
+		static float		getPixels(Length l);
+		static Length		getLength(const char *str);
+		static Coordinate	getCoordinate(const char *str);
+		static Angle		getAngle(const char *str);
+	};
+	
 	
 	class Symbol {
 	public:
@@ -80,7 +72,7 @@ namespace SVG {
 		
 		vector<Symbol*> child;
 	};
-	
+	//rect circle ellipse line polyline
 	class BasicShapeRect :public Symbol{
 	public:
 		BasicShapeRect();
@@ -110,6 +102,65 @@ namespace SVG {
 		bool externalResourcesRequired;
 		Coordinate cx, cy;
 		Length r;
+	};
+	class BasicShapeEllipse :public Symbol{
+	public:
+		BasicShapeEllipse();
+		int renderGLComptAll();
+		int renderGL400();
+		int renderGL330();
+		int renderGL210();
+		
+		//class;
+		//style;
+		//transform;
+		bool externalResourcesRequired;
+		Coordinate cx, cy;
+		Length rx, ry;
+	};
+	class BasicShapeLine :public Symbol{
+	public:
+		BasicShapeLine();
+		int renderGLComptAll();
+		int renderGL400();
+		int renderGL330();
+		int renderGL210();
+		
+		//class;
+		//style;
+		//transform;
+		bool externalResourcesRequired;
+		Coordinate x1, y1, x2, y2;
+	};
+	class BasicShapePolyline :public Symbol{
+	public:
+		BasicShapePolyline();
+		int renderGLComptAll();
+		int renderGL400();
+		int renderGL330();
+		int renderGL210();
+		
+		//class;
+		//style;
+		//transform;
+		bool externalResourcesRequired;
+		BasicPoint *points;
+		unsigned int length;
+	};
+	class BasicShapePolygon :public Symbol{
+	public:
+		BasicShapePolygon();
+		int renderGLComptAll();
+		int renderGL400();
+		int renderGL330();
+		int renderGL210();
+		
+		//class;
+		//style;
+		//transform;
+		bool externalResourcesRequired;
+		BasicPoint *points;
+		unsigned int length;
 	};
 }
 #include "SVGPresentationAttributes.h"

@@ -1,20 +1,10 @@
-#include <vector>
-#include <string.h>
-#include <string>
-#include <stdio.h>
-#include <stdlib.h>
 #include <malloc.h>
-#include <windows.h>
-#include <windowsx.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/wglext.h>
-#include <GL/glext.h>
 #include <png.h>
 #include <jpeglib.h>
 #include <jerror.h>
 #include <setjmp.h>
 #include <zlib.h>
+
 #include "grBaseTypes.h"
 
 #define ADD_TEXTURE_TO_UPDATE_BUFFER(tex) \
@@ -108,7 +98,7 @@ void Texture::texturesUpdate() {
 			tex = Texture::buffer[i];
 			if (tex->event!=EVENT::TO_UPDATE) continue; 
 			if (tex->img==NULL) {// <editor-fold defaultstate="collapsed" desc="tex->img==NULL">
-				//к текстуре не приписано изображение, создаем "пустую" текстуру;
+				//Рє С‚РµРєСЃС‚СѓСЂРµ РЅРµ РїСЂРёРїРёСЃР°РЅРѕ РёР·РѕР±СЂР°Р¶РµРЅРёРµ, СЃРѕР·РґР°РµРј "РїСѓСЃС‚СѓСЋ" С‚РµРєСЃС‚СѓСЂСѓ;
 				if (tex->GLID==0) {
 					glGenTextures( 1, &tex->GLID );
 					if (tex->GLID==0) continue;
@@ -244,14 +234,14 @@ bool Image::load(char* data, unsigned int size) {
 				this->raw = malloc( (this->width*3 + align)*this->height);
 				rowSize = ((this->width*3+3)&~3);
 				for(int y=0; y<this->height; y++) {
-					memcpy( (void*)((unsigned long int)(this->raw)+y*rowSize), data+bmph->offsetPixels+(this->height-y-1)*rowSize, rowSize);
+					memcpy( (void*)((intptr_t)(this->raw)+y*rowSize), data+bmph->offsetPixels+(this->height-y-1)*rowSize, rowSize);
 				}
 			}else if (bmph->bpp == 32) {
 				this->type = TYPE::RGBA_32;		
 				this->raw = malloc(this->width*this->height*4);
 				rowSize = this->width*4;
 				for(int y=0; y<this->height; y++) {
-					memcpy( (void*)((unsigned long int)(this->raw)+y*rowSize), data+bmph->offsetPixels+(this->height-y-1)*rowSize, rowSize);
+					memcpy( (void*)((intptr_t)(this->raw)+y*rowSize), data+bmph->offsetPixels+(this->height-y-1)*rowSize, rowSize);
 				}
 			}
 		//</editor-fold>
@@ -373,7 +363,7 @@ bool Image::load(char* data, unsigned int size) {
 
 			for(int y=0; y<this->height; y++) {
 				png_read_row(png_ptr, (png_bytep)rowData, NULL);
-				memcpy( (void*)((unsigned long int)(this->raw)+y*rowSize), rowData, bytesPerRow);
+				memcpy( (void*)((intptr_t)(this->raw)+y*rowSize), rowData, bytesPerRow);
 			}
 			png_destroy_read_struct(&png_ptr, NULL, NULL);
 			printf("Image size=%iKB w=%i h=%i depth=%i color=%i rowSize=%i\n", d1.size/1024, this->width, this->height, bitDepth, colorType, bytesPerRow);// </editor-fold>
@@ -419,7 +409,7 @@ bool Image::load(char* data, unsigned int size) {
 			unsigned char *buf = (unsigned char*)malloc(this->width*cinfo.num_components);
 			for(int y=0; cinfo.output_scanline<cinfo.output_height; y++) {
 				jpeg_read_scanlines(&cinfo, &buf, 1);
-				memcpy( (void*)((unsigned long int)(this->raw)+y*rowSize), buf, this->width*cinfo.num_components);
+				memcpy( (void*)((intptr_t)(this->raw)+y*rowSize), buf, this->width*cinfo.num_components);
 			}
 			jpeg_finish_decompress(&cinfo);
 

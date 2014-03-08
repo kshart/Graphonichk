@@ -1,15 +1,3 @@
-#include <vector>
-#include <string.h>
-#include <string>
-#include <stdio.h>
-#include <stdlib.h>
-#include <windows.h>
-#include <windowsx.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/wglext.h>
-#include <GL/glext.h>
-
 #include "grBaseTypes.h"
 #include "grWindows.h"
 #include "grShape.h"
@@ -197,7 +185,9 @@ int TextField::bufferGLComptAll() {
 		glBindFramebuffer(GL_FRAMEBUFFER, this->bufferFrame);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, this->bufferTexture->GLID, 0);
 		glViewport(0, 0, this->width, this->height);
-		OpenGL::setViewportMatrix(0, this->height, this->width, 0);
+		
+		ViewMatrix matrix(0, this->width, this->height, 0, -1, 1);
+		OpenGL::setViewMatrix(matrix);
 		glClearColor(0,0,0,0);
 		glClear( GL_COLOR_BUFFER_BIT );
 		

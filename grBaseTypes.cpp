@@ -19,18 +19,15 @@ template<class Type> Array<Type>::Array(unsigned int size) {
 	}
 }
 
+#ifdef WIN32
 HINSTANCE System::hInstance = NULL;
-
-void System::init(HINSTANCE hi) {
-	System::hInstance = hi;
+void System::init() {
+	System::hInstance = GetModuleHandle(NULL);
 	Windows::regFirstWin();
 	FileLoad::init();
 	Font::init();
 }
-
-
-Windows *Windows::window = NULL;
-
+#endif
 
 /*
 Shape* loadImageFD (int type, FILE *file, uint32_t offset, uint32_t size) {

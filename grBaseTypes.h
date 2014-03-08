@@ -9,10 +9,25 @@
 #ifndef GRBASETYPES_H
 #define	GRBASETYPES_H
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
+//#include <ft2build.h>
+//#include FT_FREETYPE_H
+#include <stack>
+#include <vector>
+#include <string.h>
 #include <string>
-#include <windows.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <GL/gl.h>
+#ifdef WIN32
+	#include <windows.h>
+	#include <windowsx.h>
+	#include <GL/glu.h>
+	#include <GL/wglext.h>
+	#include <GL/glext.h>
+#else
+	#include <GL/glew.h>
+	#include <GL/glut.h>
+#endif
 /*
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -49,6 +64,7 @@ enum {
 
 #include "grEvent.h"
 #include "grFile.h"
+#include "grMatrix.h"
 typedef unsigned int uint;
 namespace Graphonichk {
 	class System;
@@ -218,20 +234,13 @@ namespace Graphonichk {
 	} Metric;
 	void metricToPixels(Metric *m, int v1=0);
 	//template class EventDispatcher<EventFileLoad>;
+	#ifdef WIN32
 	class System {
 	  public:
 		static HINSTANCE hInstance;
-		//static vector<FileLoad*> files;
-		//static vector<Font*> fonts;
-	/*	static struct {
-			FT_Library library;
-			TextFormat *globalTextFormat;
-		} font;*/
-		/*static struct {
-			EventDispatcher<EventFileLoad> fileLoader;
-		} events;*/
-		static void init(HINSTANCE hi);
+		static void init();
 	};
+	#endif
 	
 	enum ASCII_SPEC:char {
 		NUL=0x00,//ignore
@@ -273,6 +282,7 @@ string get_ext(const string& st);
 string get_name(const string& st);
 #include "enTexture.h"
 #include "enText.h"
+#include "grOpenGL.h"
 #include "grWindows.h"
 #include "grShape.h"
 

@@ -1,15 +1,3 @@
-#include <vector>
-#include <string.h>
-#include <string>
-#include <stdio.h>
-#include <stdlib.h>
-#include <windows.h>
-#include <windowsx.h>
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/wglext.h>
-#include <GL/glext.h>
-
 #include "grBaseTypes.h"
 #include "grShape.h"
 #include "UI/UIMain.h"
@@ -18,6 +6,13 @@ using namespace Graphonichk;
 
 
 vector<Bitmap*> Bitmap::updateBuffer;
+
+
+
+
+ShapeMatrix2D::ShapeMatrix2D() :ShapeBasic(0) {
+	
+}
 
 
 
@@ -65,6 +60,57 @@ int ShapeGroupBasic::renderGL210() {
 	return false;
 }
 
+ShapeGroupMatrix2D::ShapeGroupMatrix2D() {
+}
+ShapeGroupMatrix2D::ShapeGroupMatrix2D(int crc32) {
+}
+int ShapeGroupMatrix2D::renderGLComptAll() {
+	float mat[16] = {
+		this->matrix.a,	this->matrix.d,	0,	0,
+		this->matrix.b,	this->matrix.e,	0,	0,
+		this->matrix.c,	this->matrix.f,	1,	0,
+		this->matrix.c,	this->matrix.f,	1,	1};
+	glPushMatrix();
+	glMultMatrixf(mat);
+	for(int i=0; i<this->child.size(); i++) {
+		this->child[i]->renderGLComptAll();
+	}
+	glPopMatrix();
+	return true;
+}
+int ShapeGroupMatrix2D::renderGL400() {
+	return false;
+}
+int ShapeGroupMatrix2D::renderGL330() {
+	return false;
+}
+int ShapeGroupMatrix2D::renderGL210() {
+	return false;
+}
+
+ShapeRectGateMatrix2D::ShapeRectGateMatrix2D() :ShapeRect(0) {
+}
+int ShapeRectGateMatrix2D::renderGLComptAll() {
+	glPushMatrix();
+	OpenGL::pushViewport();
+	OpenGL::setViewport(this->globalx, this->globaly, this->width, this->height);
+	glMultMatrixf(this->view.a);
+	this->group.renderGLComptAll();
+	OpenGL::popViewport();
+	glPopMatrix();
+	return true;
+}
+int ShapeRectGateMatrix2D::renderGL400() {
+	return false;
+}
+int ShapeRectGateMatrix2D::renderGL330() {
+	return false;
+}
+int ShapeRectGateMatrix2D::renderGL210() {
+	return false;
+}
+
+
 ShapeRect::ShapeRect(int crc32) {
 	this->crc32 = crc32;
 	this->mouseEventActive = false;
@@ -106,18 +152,6 @@ void ShapeRect::updateGlobalPosition() {
 		this->globalx = this->parent->globalx + this->x;
 		this->globaly = this->parent->globaly + this->y;
 	}
-}
-int ShapeRect::renderGLComptAll() {
-	return false;
-}
-int ShapeRect::renderGL400() {
-	return false;
-}
-int ShapeRect::renderGL330() {
-	return false;
-}
-int ShapeRect::renderGL210() {
-	return false;
 }
 int ShapeRect::saveAsXML(FILE* str, unsigned short tab) {
 	for (int i=0; i<tab; i++) fprintf(str, "\t");
@@ -189,11 +223,10 @@ int ShapeGroupRect::renderGLComptAll() {
 				Windows::window->height-this->globaly+this->offsetPos.y-this->height,
 				this->width,
 				this->height);
-		OpenGL::pushViewportMatrix();
-		OpenGL::setViewportMatrix(this->globalx+this->offsetPos.x,
-				this->globaly+this->offsetPos.y,
-				this->globalx+this->offsetPos.x+this->width,
-				this->globaly+this->offsetPos.y+this->height);
+		OpenGL::pushViewMatrix();
+		ViewMatrix vm(this->globalx+this->offsetPos.x, this->globalx+this->offsetPos.x+this->width, 
+				this->globaly+this->offsetPos.y+this->height, this->globaly+this->offsetPos.y, -1, 1);
+		OpenGL::setViewMatrix(vm);
 	}
 	if (this->bufferInit) {
 		Texture *tex = this->bufferTexture;
@@ -223,7 +256,7 @@ int ShapeGroupRect::renderGLComptAll() {
 	}
 	if (ctr) {
 		OpenGL::popViewport();
-		OpenGL::popViewportMatrix();
+		OpenGL::popViewMatrix();
 	}
 	glLineWidth(1);
 	glColor4ub(0xFF,0,0,0xFF);
@@ -324,14 +357,8 @@ int ShapeGroupRect::bufferGLComptAll() {
 	glClearColor( 0.1, 0, 0, 0.1 );
 	glClear( GL_COLOR_BUFFER_BIT );
 	
-	glEnable( GL_BLEND );
-	glEnable( GL_ALPHA_TEST );
-	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-	
 	this->renderGLComptAll();
 	
-	glDisable( GL_BLEND );
-	glDisable( GL_ALPHA_TEST );
 	
 	//glDeleteFramebuffers(1, &root.window->ogl->FBOGL);
 	return true;
@@ -832,7 +859,6 @@ int FRect::renderGLComptAll() {
 	glPushMatrix();
 	if (this->background) {
 		if (this->radius>0) {
-			glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 			glLineWidth(1);
 			glBegin(GL_QUADS);
 				glColor3ub(this->backgroundColor.r, this->backgroundColor.g, this->backgroundColor.b );
