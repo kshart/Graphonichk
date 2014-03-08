@@ -10,10 +10,6 @@
 
 #include "grBaseTypes.h"
 #include "grShape.h"
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include FT_GLYPH_H
-#include <GL/gl.h>
 
 using namespace std;
 namespace Graphonichk {
@@ -21,7 +17,7 @@ namespace Graphonichk {
 	class TextFormat;
 	class FontFace;
 	class Font;
-	typedef struct {//22
+	typedef struct {
 		short ch;
 		void *bmp;
 		unsigned short width, height, bmpWidth, bmpHeight;

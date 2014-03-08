@@ -9,8 +9,7 @@
 #ifndef GRBASETYPES_H
 #define	GRBASETYPES_H
 
-//#include <ft2build.h>
-//#include FT_FREETYPE_H
+
 #include <stack>
 #include <vector>
 #include <string.h>
@@ -18,22 +17,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <GL/gl.h>
-#ifdef WIN32
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_GLYPH_H
+#if defined(WIN32)
 	#include <windows.h>
 	#include <windowsx.h>
 	#include <GL/glu.h>
 	#include <GL/wglext.h>
 	#include <GL/glext.h>
-#else
-	#include <GL/glew.h>
-	#include <GL/glut.h>
+#elif defined(X11)
+	//#include <GL/glew.h>
+	//#include <GL/glut.h>
+	#include<stdio.h>
+	#include<stdlib.h>
+	#include<X11/X.h>
+	#include<X11/Xlib.h>
+	#include<GL/gl.h>
+	#include<GL/glx.h>
+	#include<GL/glu.h>
 #endif
-/*
-#include <ft2build.h>
-#include FT_FREETYPE_H
-*/
 using namespace std;
-
+//111
 
 // <editor-fold defaultstate="collapsed" desc="#define IMG_TYPE">
 #define GR_IMG_BMP "bmp"//0x4D42

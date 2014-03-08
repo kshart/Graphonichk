@@ -1,8 +1,8 @@
 /* 
  * File:   grWindows.h
- * Author: Артём Каширин
+ * Author: РђСЂС‚С‘Рј РљР°С€РёСЂРёРЅ
  *
- * Created on 25 Август 2013 г., 19:32
+ * Created on 25 РђРІРіСѓСЃС‚ 2013 Рі., 19:32
  */
 
 #ifndef GRWINDOWS_H
@@ -32,9 +32,15 @@ namespace Graphonichk {
 			static DWORD WINAPI threadWindow (void* sys);
 			static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 		#else
+			
+			Display *x11display;
+			Window x11window;
+			GLXContext x11context;
+			XEvent x11event;
 			pthread_t winThread, renderThread;
 			static void* threadRender (void* vptr_args);
 			static void* threadWindow (void* vptr_args);
+			static bool x11EventProc();
 		#endif
 	public:
 		static Windows* window;

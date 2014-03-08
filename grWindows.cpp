@@ -5,7 +5,7 @@ using namespace std;
 using namespace Graphonichk;//Graphonichk
 
 
-#ifdef WIN32
+#if defined(WIN32)
 
 DWORD WINAPI Windows::threadWindow (void* sys) {
 	printf("windowThread\n");
@@ -240,7 +240,6 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
-Windows *Windows::window = NULL;
 void Windows::regFirstWin() {
 	WNDCLASSEX wcx;
 	memset(&wcx, 0, sizeof(WNDCLASSEX));
@@ -258,7 +257,7 @@ void Windows::regFirstWin() {
 
 }
 Windows::Windows(short x, short y, short width, short height) {
-	printf("Windows start\n");
+	printf("Windows start WIN32\n");
 	if (Windows::window!=NULL) return;
 	Windows::window = this;
 	this->visible = false;
@@ -340,6 +339,89 @@ void Windows::saveAsXML() {
 	fprintf(file, "</xml>\n");
 	fclose(file);*/
 }
+void Windows::resize(short width, short height) {
+	this->width = width;
+	this->height = height;
+	RECT rect;
+	rect.left = this->x;
+	rect.top = this->y;
+	rect.bottom = this->y+this->height;
+	rect.right = this->x+this->width;
+	AdjustWindowRectEx (&rect, WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, FALSE, WS_EX_COMPOSITED|WS_EX_APPWINDOW|WS_EX_TOPMOST);
+	GetClientRect(this->hWnd, &rect);
+	this->width  = rect.right-rect.left;
+	this->height = rect.bottom-rect.top;
+	OpenGL::setViewport(0, 0, this->width, this->height);
+	ViewMatrix vm(0, this->width, 0, this->height, -1, 1);
+	OpenGL::viewMatrixBuffer[0] = vm;
+	EventWindow *e = new EventWindow();
+	e->window = this;
+	e->type = EventWindow::WIN_SIZE;
+	this->callEvent(e);
+}
+#elif defined(X11)
+Windows::Windows(short x, short y, short width, short height) {
+	printf("Windows start X11\n");
+	if (Windows::window!=NULL) return;
+	Windows::window = this;
+	this->visible = false;
+	this->renderComplete = false;
+	this->root = new ShapeGroupRect();
+	this->x = x;
+	this->y = y;
+	this->width = width;
+	this->height = height;
+	
+	pthread_mutex_t mutex;
+	pthread_mutex_init(&mutex, NULL);
+	pthread_mutex_lock(&mutex);
+	pthread_create(&Windows::winThread, NULL, Windows::threadWindow, &mutex);
+	pthread_mutex_lock(&mutex);
+	pthread_mutex_destroy(&mutex);
+	printf("Windows end\n");
+}
+/*void Windows::show() {
+	fprintf(stdout, "Win show\n");
+	XMoveWindow(this->x11display, this->x11window, this->x, this->y);
+	XMapWindow(this->x11display, this->x11window);
+	this->visible = true;
+	pthread_kill(this->renderThread, SIGCONT);
+	XSetInputFocus(this->x11display, this->x11window);
+	UpdateWindow(this->hWnd);
+	EventWindow *e = new EventWindow();
+	e->window = this;
+	e->type = EventWindow::WIN_SHOW;
+	this->callEvent(e);
+	delete e;
+}*/
+void Windows::close() {
+	pthread_exit(&this->renderThread);
+	pthread_exit(&this->winThread);
+	glXMakeCurrent( this->x11display, 0, 0 );
+	glXDestroyContext( this->x11display, this->x11context );
+	XDestroyWindow( this->x11display, this->x11window );
+	//XFreeColormap( this->x11display, cmap );
+	XCloseDisplay( this->x11display );
+	Windows::window = NULL;
+	printf("Windows close\n");
+	delete this;
+}
+void Windows::resize(short width, short height) {
+	this->width = width;
+	this->height = height;
+	XResizeWindow(this->x11display, this->x11window, width, height);
+	OpenGL::setViewport(0, 0, this->width, this->height);
+	ViewMatrix vm(0, this->width, 0, this->height, -1, 1);
+	OpenGL::viewMatrixBuffer[0] = vm;
+	EventWindow *e = new EventWindow();
+	e->window = this;
+	e->type = EventWindow::WIN_SIZE;
+	this->callEvent(e);
+}
+
+#endif
+
+Windows *Windows::window = NULL;
 void Windows::redraw() {
 	glClearColor( 0.5, 0.5, 0.5, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
@@ -489,14 +571,14 @@ void Windows::redraw() {
 	this->renderComplete = true;
 }
 void Windows::redrawFBO () {
-	//Directory *dir;
+	/*//Directory *dir;
 	//GLuint fb;
 	//glGenFramebuffers(1, &fb);
 	//glBindFramebuffer(GL_FRAMEBUFFER, fb);
 	//typeid
 	//glGenFramebuffers(1, &Windows::FBOGL);
 	//glBindFramebuffer(GL_FRAMEBUFFER, Windows::FBOGL);
-	/*unsigned int countUpdateFBO = 0;
+	unsigned int countUpdateFBO = 0;
 	Buffer *buf;
 	for(int i=0; i<this->FBOBuffer.size()-countUpdateFBO; i++) {
 		buf = this->FBOBuffer[i];
@@ -517,35 +599,11 @@ void Windows::redrawFBO () {
 		this->FBOBuffer.resize( this->FBOBuffer.size()-countUpdateFBO );
 	}
 	//Windows::FBOBuffer.clear();
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);*/
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	//glDeleteFramebuffers(1, &Windows::FBOGL);
 	//glViewport(0, 0, this->width, this->height);
-	//OpenGL::setViewMatrix(0, 0, this->width, this->height);
+	//OpenGL::setViewMatrix(0, 0, this->width, this->height);*/
 }
-void Windows::resize(short width, short height) {
-	this->width = width;
-	this->height = height;
-	RECT rect;
-	rect.left = this->x;
-	rect.top = this->y;
-	rect.bottom = this->y+this->height;
-	rect.right = this->x+this->width;
-	AdjustWindowRectEx (&rect, WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, FALSE, WS_EX_COMPOSITED|WS_EX_APPWINDOW|WS_EX_TOPMOST);
-	GetClientRect(this->hWnd, &rect);
-	this->width  = rect.right-rect.left;
-	this->height = rect.bottom-rect.top;
-	OpenGL::setViewport(0, 0, this->width, this->height);
-	ViewMatrix vm(0, this->width, 0, this->height, -1, 1);
-	OpenGL::viewMatrixBuffer[0] = vm;
-	EventWindow *e = new EventWindow();
-	e->window = this;
-	e->type = EventWindow::WIN_SIZE;
-	this->callEvent(e);
-}
-#else
-
-#endif
-
 
 /*int Windows::addEventHandler(int type, void(*fun)(const EventWindows*)) {
 	EventLinc el;
