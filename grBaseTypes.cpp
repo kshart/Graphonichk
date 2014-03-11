@@ -1,4 +1,3 @@
-#include <string>
 #include "grBaseTypes.h"
 using namespace std;
 using namespace Graphonichk;

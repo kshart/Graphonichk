@@ -1,8 +1,7 @@
 #ifndef SVG_H
 #define	SVG_H
 
-#include <vector>
-#include "grMatrix.h"
+#include "grBaseTypes.h"
 using namespace std;
 using Graphonichk::TransformMatrix;
 
@@ -87,6 +86,8 @@ namespace SVG {
 		bool externalResourcesRequired;
 		Coordinate x, y;
 		Length width, height;
+		
+		GLuint vao, vbo;
 	};
 	class BasicShapeCircle :public Symbol{
 	public:

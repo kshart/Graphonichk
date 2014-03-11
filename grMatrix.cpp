@@ -130,22 +130,22 @@ ViewMatrix::ViewMatrix() {
 }
 ViewMatrix::ViewMatrix(float l, float r, float t, float b, float f, float n) {
 	this->a[0] = 2/(r-l);
-	this->a[1] = 0;
-	this->a[2] = 0;
-	this->a[3] = 0;
-	
 	this->a[4] = 0;
-	this->a[5] = 2/(t-b);
-	this->a[6] = 0;
-	this->a[7] = 0;
-	
 	this->a[8] = 0;
-	this->a[9] = 0;
-	this->a[10] = -2/(f-n);
-	this->a[11] = 0;
+	this->a[12] = 0;
 	
-	this->a[12] = -(r+l)/(r-l);
-	this->a[13] = -(t+b)/(t-b);
-	this->a[14] = -(f+n)/(f-n);
+	this->a[1] = 0;
+	this->a[5] = 2/(t-b);
+	this->a[9] = 0;
+	this->a[13] = 0;
+	
+	this->a[2] = 0;
+	this->a[6] = 0;
+	this->a[10] = -2/(f-n);
+	this->a[14] = 0;
+	
+	this->a[3] = -(r+l)/(r-l);
+	this->a[7] = -(t+b)/(t-b);
+	this->a[11] = -(f+n)/(f-n);
 	this->a[15] = 1;
 }

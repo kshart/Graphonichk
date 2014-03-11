@@ -67,7 +67,6 @@ namespace Graphonichk {
 			EventDispatcher<EventMouse> mouse;
 		} events;
 		
-		//vector<Bitmap*> bitmapUpdateBuffer;
 		vector<Buffer*> FBOBuffer;
 		ShapeGroupRect *root;
 		bool visible, renderComplete;

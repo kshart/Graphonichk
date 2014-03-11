@@ -215,6 +215,7 @@ namespace Graphonichk {
 		int saveAsXML(FILE* str, unsigned short tab);
 		Texture *tex;
 		
+		GLuint vao, vbo1, vbo2;
 		static void updateBitmaps();
 	};
 	class FPoint :public ShapeRect {

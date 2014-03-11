@@ -61,12 +61,31 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 		printf("<Error str='Сreating temp render context fail (%d)'/>\n", GetLastError());
 		return 0;
 	}
+	/*
+	int attributes[] = {
+		WGL_CONTEXT_MAJOR_VERSION_ARB,	3,
+		WGL_CONTEXT_MINOR_VERSION_ARB,	3,
+		//WGL_CONTEXT_FLAGS_ARB,         WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+        //WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,//WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+		0};
+	OPENGL_GET_PROC(PFNWGLCREATECONTEXTATTRIBSARBPROC, wglCreateContextAttribsARB);
+	if (!wglCreateContextAttribsARB) {
+		printf("wglCreateContextAttribsARB fail (%d)\n", GetLastError());
+		return 0;
+	}
+	win->hRC = wglCreateContextAttribsARB(win->hDC, 0, attributes);
+	if (!win->hRC|| !wglMakeCurrent(win->hDC, win->hRC)) {
+		printf("Creating render context fail (%d)\n", GetLastError());
+		return 0;
+	}
+	wglDeleteContext(hRCTemp);
+	*/
 	win->hRC = hRCTemp;
 	int hSize = GetDeviceCaps(win->hDC,HORZSIZE);
 	int hRes = GetDeviceCaps(win->hDC,HORZRES);
 	win->dpi = round((hRes/hSize)*25.4);
 	printf("<LCD size='%i' res='%i' dpi='%i'/>\n", hSize, hRes, win->dpi );
-	OpenGL::init(OpenGL::VER_COMPTABLE_ALL);
+	OpenGL::init(OpenGL::VER_CORE_330);
 	win->resize(win->width, win->height);
 #define PARENT_SEMAPHORE ((HANDLE*)sys)[0]
 	ReleaseSemaphore(PARENT_SEMAPHORE, 1, NULL);
@@ -424,7 +443,7 @@ void Windows::resize(short width, short height) {
 Windows *Windows::window = NULL;
 void Windows::redraw() {
 	glClearColor( 0.5, 0.5, 0.5, 1.0 );
-	glClear( GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+	glClear( GL_COLOR_BUFFER_BIT );
 	OpenGL::clearViewMatrix();
 	switch (OpenGL::ver) {
 		case OpenGL::VER_COMPTABLE_ALL:// <editor-fold defaultstate="collapsed" desc="GL_COMPTABLE_ALL">
@@ -470,19 +489,14 @@ void Windows::redraw() {
 			break;// </editor-fold>
 		case OpenGL::VER_CORE_330:// <editor-fold defaultstate="collapsed" desc="VER_CORE_330">
 			glEnable( GL_BLEND );
-			glEnable( GL_ALPHA_TEST );
-			glEnable( GL_POINT_SMOOTH );
-			glEnable( GL_LINE_SMOOTH );
 			//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 			glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-			glUseProgram(GLShader::glsl->shaderProgram);
-			printf("GLShader::glsl->shaderProgram %i\n", GLShader::glsl->shaderProgram);
+			//glUseProgram(GLShader::glsl->shaderProgram);
+			//printf("GLShader::glsl->shaderProgram %i\n", GLShader::glsl->shaderProgram);
 			this->root->renderGL330();
-			glDisable( GL_LINE_SMOOTH );
-			glDisable( GL_POINT_SMOOTH );
 			glDisable( GL_BLEND );
-			glDisable( GL_ALPHA_TEST );
-			glFlush( );
+			glFlush();
+			glFinish();
 			break;// </editor-fold>
 	}
 	/*const int vertexCount = 6, vertexSize = 2;

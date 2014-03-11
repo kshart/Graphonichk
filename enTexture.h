@@ -8,8 +8,6 @@
 #ifndef ENTEXTURE_H
 #define	ENTEXTURE_H
 #include "grBaseTypes.h"
-#include <vector>
-#include <GL/gl.h>
 
 using namespace std;
 namespace Graphonichk {

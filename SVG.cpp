@@ -1,4 +1,3 @@
-#include <GL/gl.h>
 #include <math.h>
 #include "SVG.h"
 #define M_PI 3.14159265358979323846
@@ -245,7 +244,27 @@ int BasicShapeRect::renderGL400() {
 	return false;
 }
 int BasicShapeRect::renderGL330() {
-	return false;
+	if (GLShader::shader->crc32!=ShaderSVGmain::CRC32) GLShader::setShader(ShaderSVGmain::prog);
+	if (this->vao==0) {
+		float vertex[8] = {
+			this->x.value,						this->y.value,
+			this->x.value+this->width.value,	this->y.value,
+			this->x.value+this->width.value,	this->y.value+this->height.value,
+			this->x.value,						this->y.value+this->height.value,
+		};
+		glGenVertexArrays(1, &this->vao);
+		glBindVertexArray(this->vao);
+		
+		glGenBuffers(1, &this->vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
+		glBufferData(GL_ARRAY_BUFFER, 8*sizeof(float), vertex, GL_STATIC_DRAW);
+		glVertexAttribPointer(ShaderBitmap::prog->position, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+		glEnableVertexAttribArray(ShaderBitmap::prog->position);
+	}
+	glBindVertexArray(this->vao);
+	glDrawArrays(GL_LINE_LOOP, 0, 4);
+	puts("asdasdasd");
+	return true;
 }
 int BasicShapeRect::renderGL210() {
 	return false;

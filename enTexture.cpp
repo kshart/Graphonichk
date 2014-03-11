@@ -21,8 +21,6 @@ using namespace Graphonichk;
 vector<Texture*> Texture::buffer;
 uint Texture::toUpdate, Texture::toDelete;
 
-
-
 Texture::Texture(unsigned short w, unsigned short h, GLuint format, GLuint type) {
 	this->event = Texture::TO_UPDATE;
 	this->img = NULL;

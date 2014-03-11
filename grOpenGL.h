@@ -23,15 +23,42 @@
 using namespace std;
 namespace Graphonichk {
 	class GLShader {
-	  public:
-		GLShader();
-		int setVertexShader(const char *str, size_t size);
-		int setFragmentShader(const char *str, size_t size);
-		int make();
-		static GLShader *glsl;
-		static GLint matrixProjection, colorTexture;
+	protected:
+		GLShader(int crc32);
+	public:
+		//int setVertexShader(const char *str, size_t size);
+		//int setFragmentShader(const char *str, size_t size);
+		//int make();
+		
+		//static stack<GLShader*> glslBuffer;
+		//static void clearShader();
+		//static void pushShader(GLShader *shader);
+		//static void popShader();
+		static GLShader* shader;
+		static void setShader(GLShader *shader);
+		int crc32;
 		GLuint shaderProgram, vertexShader, fragmentShader;
-		bool fragment, vertex;
+		//bool fragment, vertex;
+	};
+	class ShaderBitmap :public GLShader {
+	public:
+		enum {CRC32=0x587213EC};
+		ShaderBitmap();
+		static void init();
+		static void init33();
+		static ShaderBitmap* prog;
+		
+		GLint position, texCoord, texture, viewMatrix;
+	};
+	class ShaderSVGmain :public GLShader {
+	public:
+		enum {CRC32=0x51};
+		ShaderSVGmain();
+		static void init();
+		static void init33();
+		static ShaderSVGmain* prog;
+		
+		GLint position, viewMatrix;
 	};
 	class OpenGL {
 	  public:
@@ -57,55 +84,10 @@ namespace Graphonichk {
 		static void pushViewMatrix();
 		static void popViewMatrix();
 		static void setViewMatrix(ViewMatrix view);
+		static GLuint viewMatrix;
 		static int init(OPENGL_VER);
 	};
 };
-#ifdef WIN32
-// VAO
-extern PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB;
-extern PFNGLGENVERTEXARRAYSPROC    glGenVertexArrays;
-extern PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays;
-extern PFNGLBINDVERTEXARRAYPROC    glBindVertexArray;
-// VBO
-extern PFNGLGENBUFFERSPROC    glGenBuffers;
-extern PFNGLDELETEBUFFERSPROC glDeleteBuffers;
-extern PFNGLBINDBUFFERPROC    glBindBuffer;
-extern PFNGLBUFFERDATAPROC    glBufferData;
-extern PFNGLBUFFERSUBDATAPROC glBufferSubData;
-extern PFNGLACTIVETEXTUREPROC glActiveTexture;
-// FBO
-extern PFNGLGENFRAMEBUFFERSPROC glGenFramebuffers;
-extern PFNGLDELETEFRAMEBUFFERSPROC glDeleteFramebuffers;
-extern PFNGLBINDFRAMEBUFFEREXTPROC glBindFramebuffer;
-extern PFNGLFRAMEBUFFERTEXTURE2DEXTPROC glFramebufferTexture2D;
-// Shaders
-extern PFNGLCREATEPROGRAMPROC     glCreateProgram;
-extern PFNGLDELETEPROGRAMPROC     glDeleteProgram;
-extern PFNGLLINKPROGRAMPROC       glLinkProgram;
-extern PFNGLVALIDATEPROGRAMPROC   glValidateProgram;
-extern PFNGLUSEPROGRAMPROC        glUseProgram;
-extern PFNGLGETPROGRAMIVPROC      glGetProgramiv;
-extern PFNGLGETPROGRAMINFOLOGPROC glGetProgramInfoLog;
-extern PFNGLCREATESHADERPROC      glCreateShader;
-extern PFNGLDELETESHADERPROC      glDeleteShader;
-extern PFNGLSHADERSOURCEPROC      glShaderSource;
-extern PFNGLCOMPILESHADERPROC     glCompileShader;
-extern PFNGLATTACHSHADERPROC      glAttachShader;
-extern PFNGLDETACHSHADERPROC      glDetachShader;
-extern PFNGLGETSHADERIVPROC       glGetShaderiv;
-extern PFNGLGETSHADERINFOLOGPROC  glGetShaderInfoLog;
-// Shaders attributes
-extern PFNGLGETATTRIBLOCATIONPROC		glGetAttribLocation;
-extern PFNGLBINDATTRIBLOCATIONPROC		glBindAttribLocation;
-extern PFNGLVERTEXATTRIBPOINTERPROC		glVertexAttribPointer;
-extern PFNGLENABLEVERTEXATTRIBARRAYPROC	glEnableVertexAttribArray;
-extern PFNGLDISABLEVERTEXATTRIBARRAYPROC glDisableVertexAttribArray;
-// Shaders uniforms
-extern PFNGLGETUNIFORMLOCATIONPROC glGetUniformLocation;
-extern PFNGLUNIFORMMATRIX4FVPROC   glUniformMatrix4fv;
-extern PFNGLUNIFORM1IPROC glUniform1i;
-//
-#endif
 
 #endif	/* GROPENGL_H */
 

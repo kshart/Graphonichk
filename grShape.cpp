@@ -8,13 +8,9 @@ using namespace Graphonichk;
 vector<Bitmap*> Bitmap::updateBuffer;
 
 
-
-
 ShapeMatrix2D::ShapeMatrix2D() :ShapeBasic(0) {
 	
 }
-
-
 
 ShapeBasic::ShapeBasic(int crc32) :crc32(crc32) {
 	
@@ -279,32 +275,11 @@ int ShapeGroupRect::renderGL400() {
 	return true;
 }
 int ShapeGroupRect::renderGL330() {
-	if (this->bufferInit) {
-		Texture *tex = this->bufferTexture;
-		glEnable( GL_TEXTURE_2D );
-		glBindTexture(GL_TEXTURE_2D, tex->GLID);
-		glColor4ub(0xFF,0xFF,0xFF,0xFF);
-		glBegin( GL_QUADS );// <editor-fold defaultstate="collapsed" desc="GL_QUADS">
-					glTexCoord2d( 0.0, 0.0 );	glVertex2i(this->globalx+offsetPos.x, this->globaly+offsetPos.y );
-					glTexCoord2d( 0.0, 1.0 );	glVertex2i(this->globalx+offsetPos.x, this->globaly+offsetPos.y+tex->height );
-					glTexCoord2d( 1.0, 1.0 );	glVertex2i(this->globalx+offsetPos.x+tex->width, this->globaly+offsetPos.y+tex->height );
-					glTexCoord2d( 1.0, 0.0 );	glVertex2i(this->globalx+offsetPos.x+tex->width, this->globaly+offsetPos.y );
-				glEnd();// </editor-fold>
-		glDisable( GL_TEXTURE_2D );
-	}else if ( this->shapeCache != NULL ) {
-		#ifdef DEBUG
-		printf("ShapeGroupRect shapeCache\n");
-		#endif
-		for (int i=0; i<this->shapeCache->size(); i++) {
-			(this->shapeCache->at(i))->renderGL330();
-		}
-	}else{
-		for (int i=0; i<this->child.size(); i++) {
-			this->child[i]->renderGL330();
-		}
+	for (int i=0; i<this->child.size(); i++) {
+		this->child[i]->renderGL330();
 	}
 	#ifdef DEBUG
-	glLineWidth(1);
+/*	glLineWidth(1);
 	glColor4ub(0xFF,0,0,0xFF);
 	glBegin(GL_LINE_STRIP);// <editor-fold defaultstate="collapsed" desc="GL_LINE_STRIP">
 		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
@@ -312,7 +287,7 @@ int ShapeGroupRect::renderGL330() {
 		glVertex2s( this->globalx+this->offsetPos.x+this->width, this->globaly+this->offsetPos.y+this->height );
 		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y+this->height );
 		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
-	glEnd();// </editor-fold>
+	glEnd();// </editor-fold>*/
 	#endif
 	return true;
 }
@@ -634,7 +609,7 @@ int ShapeGroupRect::callEvent(EventMouseShape* event) {
 	}
 }
 
-Bitmap::Bitmap(Texture *tex) :ShapeRect(Bitmap::CRC32) {
+Bitmap::Bitmap(Texture *tex) :ShapeRect(Bitmap::CRC32), vao(0) {
 	this->tex = tex;
 	if (tex->event == Texture::LOADED) {
 		this->width = tex->width;
@@ -648,10 +623,11 @@ void Bitmap::trace() {
 }
 int Bitmap::renderGLComptAll() {
 	Texture *tex = this->tex;
-	glEnable( GL_TEXTURE_2D );
 	//printf("tex->GLID = %i", tex->GLID);
+	if (GLShader::shader!=NULL && GLShader::shader->crc32!=1) GLShader::setShader(ShaderBitmap::prog);
 	glBindTexture(GL_TEXTURE_2D, tex->GLID);
 	glColor4ub(0xFF,0xFF,0xFF,0xFF);
+	glEnable( GL_TEXTURE_2D );
 	glBegin( GL_QUADS );// <editor-fold defaultstate="collapsed" desc="GL_QUADS">
 		glTexCoord2d( 0.0, 0.0 );	glVertex2s(this->globalx, this->globaly );
 		glTexCoord2d( 0.0, 1.0 );	glVertex2s(this->globalx, this->globaly+tex->height );
@@ -665,7 +641,43 @@ int Bitmap::renderGL400() {
 	return false;
 }
 int Bitmap::renderGL330() {
-	//glEnable( GL_TEXTURE_2D );
+	if (GLShader::shader->crc32!=ShaderBitmap::CRC32) GLShader::setShader(ShaderBitmap::prog);
+	if (this->vao==0 && this->tex->event==Texture::LOADED) {
+		short vertex[12] = {
+			(short)(this->globalx),				(short)(this->globaly),
+			(short)(this->globalx+this->width),	(short)(this->globaly),
+			(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
+			(short)(this->globalx),				(short)(this->globaly),
+			(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
+			(short)(this->globalx),				(short)(this->globaly+this->height),
+		};
+		short texCoord[12] = {
+			0, 0,
+			1, 0,
+			1, 1,
+			0, 0,
+			1, 1,
+			0, 1
+		};
+		glGenVertexArrays(1, &this->vao);
+		glBindVertexArray(this->vao);
+		
+		glGenBuffers(1, &this->vbo1);
+		glGenBuffers(1, &this->vbo2);
+		glBindBuffer(GL_ARRAY_BUFFER, this->vbo1);
+		glBufferData(GL_ARRAY_BUFFER, 12*2, vertex, GL_STATIC_DRAW);
+		glVertexAttribPointer(ShaderBitmap::prog->position, 2, GL_SHORT, GL_FALSE, 0, NULL);
+		glEnableVertexAttribArray(ShaderBitmap::prog->position);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, this->vbo2);
+		glBufferData(GL_ARRAY_BUFFER, 12*2, texCoord, GL_STATIC_DRAW);
+		glVertexAttribPointer(ShaderBitmap::prog->texCoord, 2, GL_SHORT, GL_FALSE, 0, NULL);
+		glEnableVertexAttribArray(ShaderBitmap::prog->texCoord);
+	}
+	glBindVertexArray(this->vao);
+	glBindTexture(GL_TEXTURE_2D, tex->GLID);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	/**glEnable( GL_TEXTURE_2D );
 	printf("renderGL330\n");
 	short vertex[12] = {
 		(short)(this->globalx),				(short)(this->globaly),
@@ -690,18 +702,18 @@ int Bitmap::renderGL330() {
 	glGenBuffers(1, &meshVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
 	glBufferData(GL_ARRAY_BUFFER, 12*2, vertex, GL_STATIC_DRAW);
-	GLint positionLocation = glGetAttribLocation(GLShader::glsl->shaderProgram, "position");
-	glVertexAttribPointer(positionLocation, 2, GL_SHORT, GL_FALSE, 0, NULL);
+	//GLint positionLocation = glGetAttribLocation(GLShader::glsl->shaderProgram, "position");
+	/*glVertexAttribPointer(positionLocation, 2, GL_SHORT, GL_FALSE, 0, NULL);
 	glEnableVertexAttribArray(positionLocation);
 	glGenBuffers(1, &meshVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
 	glBufferData(GL_ARRAY_BUFFER, 12*2, texCoord, GL_STATIC_DRAW);
-	positionLocation = glGetAttribLocation(GLShader::glsl->shaderProgram, "texCoord");
+	//positionLocation = glGetAttribLocation(GLShader::glsl->shaderProgram, "texCoord");
 	glVertexAttribPointer(positionLocation, 2, GL_SHORT, GL_FALSE, 0, NULL);
 	glEnableVertexAttribArray(positionLocation);
 	glBindVertexArray(meshVAO);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
-	//glDisable(GL_TEXTURE_2D);
+	//glDisable(GL_TEXTURE_2D);*/
 	return true;
 }
 int Bitmap::renderGL210() {
@@ -740,7 +752,7 @@ void Bitmap::updateBitmaps() {
 			int countUpdateBMP = 0;
 			for(int i=0; i<Bitmap::updateBuffer.size()-countUpdateBMP; i++) {
 				bmp = Bitmap::updateBuffer[i];
-				if (bmp->tex->GLID!=0 && bmp->tex->event==Texture::NONE) {
+				if (bmp->tex->GLID!=0 && bmp->tex->event==Texture::LOADED) {
 					bmp->width = bmp->tex->width;
 					bmp->height = bmp->tex->height;
 					bmp->tex->trace();
@@ -758,7 +770,6 @@ void Bitmap::updateBitmaps() {
 			}
 		}
 }
-
 Buffer::Buffer() {
 	this->bufferInit = false;
 	this->bufferActivate = false;

@@ -16,26 +16,23 @@
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
-#include <GL/gl.h>
+
+#include <GL/glew.h>
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 #if defined(WIN32)
 	#include <windows.h>
 	#include <windowsx.h>
-	#include <GL/glu.h>
 	#include <GL/wglext.h>
 	#include <GL/glext.h>
 #elif defined(X11)
-	//#include <GL/glew.h>
-	//#include <GL/glut.h>
 	#include<stdio.h>
 	#include<stdlib.h>
 	#include<X11/X.h>
 	#include<X11/Xlib.h>
-	#include<GL/gl.h>
 	#include<GL/glx.h>
-	#include<GL/glu.h>
 #endif
 using namespace std;
 //111
@@ -74,7 +71,7 @@ typedef unsigned int uint;
 namespace Graphonichk {
 	class System;
 	class Windows;
-	class OpenGL;
+	class GLShader;
 	class Texture;
 	//<Shape>
 	//class Buffer;
@@ -285,11 +282,11 @@ namespace Graphonichk {
 }
 string get_ext(const string& st);
 string get_name(const string& st);
+#include "grOpenGL.h"
+#include "grShape.h"
+#include "grWindows.h"
 #include "enTexture.h"
 #include "enText.h"
-#include "grOpenGL.h"
-#include "grWindows.h"
-#include "grShape.h"
 
 
 #endif	/* GRBASETYPES_H */
