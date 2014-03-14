@@ -173,6 +173,30 @@ void OpenGL::setViewMatrix(ViewMatrix matrix) {
 			return;
 	}
 }
+void OpenGL::multViewMatrix(ViewMatrix mulmatrix) {
+	ViewMatrix *matrix = &OpenGL::viewMatrixBuffer[OpenGL::viewMatrixBuffer.size()-1];
+	float copyM1[16];
+	memcpy(copyM1, matrix->a, 16*sizeof(float));
+
+	matrix->a[0] = copyM1[0]*mulmatrix.a[0] +copyM1[1]*mulmatrix.a[4] +copyM1[2]*mulmatrix.a[8] +copyM1[3]*mulmatrix.a[12];
+	matrix->a[1] = copyM1[0]*mulmatrix.a[1] +copyM1[1]*mulmatrix.a[5] +copyM1[2]*mulmatrix.a[9] +copyM1[3]*mulmatrix.a[13];
+	matrix->a[2] = copyM1[0]*mulmatrix.a[2] +copyM1[1]*mulmatrix.a[6] +copyM1[2]*mulmatrix.a[10] +copyM1[3]*mulmatrix.a[14];
+	matrix->a[3] = copyM1[0]*mulmatrix.a[3] +copyM1[1]*mulmatrix.a[7] +copyM1[2]*mulmatrix.a[11] +copyM1[3]*mulmatrix.a[15];
+	matrix->a[4] = copyM1[4]*mulmatrix.a[0] +copyM1[5]*mulmatrix.a[4] +copyM1[6]*mulmatrix.a[8] +copyM1[7]*mulmatrix.a[12];
+	matrix->a[5] = copyM1[4]*mulmatrix.a[1] +copyM1[5]*mulmatrix.a[5] +copyM1[6]*mulmatrix.a[9] +copyM1[7]*mulmatrix.a[13];
+	matrix->a[6] = copyM1[4]*mulmatrix.a[2] +copyM1[5]*mulmatrix.a[6] +copyM1[6]*mulmatrix.a[10] +copyM1[7]*mulmatrix.a[14];
+	matrix->a[7] = copyM1[4]*mulmatrix.a[3] +copyM1[5]*mulmatrix.a[7] +copyM1[6]*mulmatrix.a[11] +copyM1[7]*mulmatrix.a[15];
+	matrix->a[8] = copyM1[8]*mulmatrix.a[0] +copyM1[9]*mulmatrix.a[4] +copyM1[10]*mulmatrix.a[8] +copyM1[11]*mulmatrix.a[12];
+	matrix->a[9] = copyM1[8]*mulmatrix.a[1] +copyM1[9]*mulmatrix.a[5] +copyM1[10]*mulmatrix.a[9] +copyM1[11]*mulmatrix.a[13];
+	matrix->a[10] = copyM1[8]*mulmatrix.a[2] +copyM1[9]*mulmatrix.a[6] +copyM1[10]*mulmatrix.a[10] +copyM1[11]*mulmatrix.a[14];
+	matrix->a[11] = copyM1[8]*mulmatrix.a[3] +copyM1[9]*mulmatrix.a[7] +copyM1[10]*mulmatrix.a[11] +copyM1[11]*mulmatrix.a[15];
+	matrix->a[12] = copyM1[12]*mulmatrix.a[0] +copyM1[13]*mulmatrix.a[4] +copyM1[14]*mulmatrix.a[8] +copyM1[15]*mulmatrix.a[12];
+	matrix->a[13] = copyM1[12]*mulmatrix.a[1] +copyM1[13]*mulmatrix.a[5] +copyM1[14]*mulmatrix.a[9] +copyM1[15]*mulmatrix.a[13];
+	matrix->a[14] = copyM1[12]*mulmatrix.a[2] +copyM1[13]*mulmatrix.a[6] +copyM1[14]*mulmatrix.a[10] +copyM1[15]*mulmatrix.a[14];
+	matrix->a[15] = copyM1[12]*mulmatrix.a[3] +copyM1[13]*mulmatrix.a[7] +copyM1[14]*mulmatrix.a[11] +copyM1[15]*mulmatrix.a[15];
+	
+	OpenGL::setViewMatrix(matrix[0]);
+}
 void OpenGL::trace() {
 	int major, minor;
 	glGetIntegerv(GL_MAJOR_VERSION, &major);

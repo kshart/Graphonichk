@@ -58,7 +58,7 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 		return 0;
 	}
 	if (!(hRCTemp = wglCreateContext(win->hDC)) || !wglMakeCurrent(win->hDC, hRCTemp)) {
-		printf("<Error str='Сreating temp render context fail (%d)'/>\n", GetLastError());
+		printf("<Error str='РЎreating temp render context fail (%d)'/>\n", GetLastError());
 		return 0;
 	}
 	/*

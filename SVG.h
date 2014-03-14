@@ -47,6 +47,7 @@ namespace SVG {
 		static Length		getLength(const char *str);
 		static Coordinate	getCoordinate(const char *str);
 		static Angle		getAngle(const char *str);
+		static TransformMatrix	getTransformMatrix(const char *str);
 	};
 	
 	

@@ -137,7 +137,10 @@ Coordinate DataTypes::getCoordinate(const char *str) {
 Angle DataTypes::getAngle(const char *str) {
 	
 }
-
+TransformMatrix	DataTypes::getTransformMatrix(const char *str) {
+	TransformMatrix matrix;
+	return matrix;
+}
 
 
 Symbol::Symbol() :matrix() {
@@ -244,6 +247,20 @@ int BasicShapeRect::renderGL400() {
 	return false;
 }
 int BasicShapeRect::renderGL330() {
+	ViewMatrix mat;
+	mat.a[0] = this->matrix.a;
+	mat.a[1] = this->matrix.b;
+	mat.a[2] = this->matrix.c;
+	mat.a[3] = this->matrix.c;
+	
+	mat.a[4] = this->matrix.d;
+	mat.a[5] = this->matrix.e;
+	mat.a[6] = this->matrix.f;
+	mat.a[7] = this->matrix.f;
+	
+	mat.a[11] = 1;
+	OpenGL::pushViewMatrix();
+	OpenGL::multViewMatrix(mat);
 	if (GLShader::shader->crc32!=ShaderSVGmain::CRC32) GLShader::setShader(ShaderSVGmain::prog);
 	if (this->vao==0) {
 		float vertex[8] = {
@@ -263,7 +280,7 @@ int BasicShapeRect::renderGL330() {
 	}
 	glBindVertexArray(this->vao);
 	glDrawArrays(GL_LINE_LOOP, 0, 4);
-	puts("asdasdasd");
+	OpenGL::popViewMatrix();
 	return true;
 }
 int BasicShapeRect::renderGL210() {

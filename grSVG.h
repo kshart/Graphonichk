@@ -9,10 +9,15 @@
 #define	GRSVG_H
 
 #include "grBaseTypes.h"
-#include <GL/gl.h>
+
+#include <libxml/tree.h>
+#include <libxml/parser.h>
 #include "SVG.h"
 namespace Graphonichk {
 	class ImageSVG :public ShapeRect {
+	private:
+		void loadGroup(xmlNodePtr node, SVG::Group *group);
+		void loadShapeRect(xmlNodePtr node, SVG::Group *group);
 	public:
 		ImageSVG(const char *filename);
 		int renderGLComptAll();

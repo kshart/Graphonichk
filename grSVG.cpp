@@ -4,14 +4,10 @@
  * 
  * Created on 18 Февраль 2014 г., 23:31
  */
-#include <libxml/tree.h>
-#include <libxml/parser.h>
-
 #include "grSVG.h"
+
 using namespace Graphonichk;
 ImageSVG::ImageSVG(const char *filename) :ShapeRect(0) {
-	
-	
 	xmlDocPtr doc;
 	xmlAttr *attr;
 	xmlNodePtr node;
@@ -55,26 +51,7 @@ ImageSVG::ImageSVG(const char *filename) :ShapeRect(0) {
 	while(node != NULL) {
 		name = (char*)node->name;
 		if ( strcmp("rect", name)==0 ) {
-			SVG::BasicShapeRect *rect = new SVG::BasicShapeRect();
-			attr = node->properties;
-			while(attr != NULL) {
-				attrName = (char*)attr->name;
-				attrValue = (char*)xmlNodeListGetString(node->doc, attr->children, 1);
-				printf("|%s %s|", attrName, attrValue);
-				if ( strcmp("width", attrName)==0 ) {
-					rect->width = SVG::DataTypes::getLength(attrValue);
-				}else if ( strcmp("height", attrName)==0 ) {
-					rect->height = SVG::DataTypes::getLength(attrValue);
-				}else if ( strcmp("x", attrName)==0 ) {
-					rect->x = SVG::DataTypes::getLength(attrValue);
-				}else if ( strcmp("y", attrName)==0 ) {
-					rect->y = SVG::DataTypes::getLength(attrValue);
-				}else{
-				}
-				attr = attr->next;
-			}
-			printf("rect w=%f h=%f x=%f y=%f\n", rect->width.value, rect->height.value, rect->x.value, rect->y.value);
-			this->root.child.push_back(rect);
+			ImageSVG::loadShapeRect(node, &this->root);
 		}else if ( strcmp("circle", name)==0 ) {
 			SVG::BasicShapeCircle *circle = new SVG::BasicShapeCircle();
 			circle->cx.value = 100;
@@ -153,6 +130,44 @@ ImageSVG::ImageSVG(const char *filename) :ShapeRect(0) {
 	this->root.child.push_back(polyline);
 	this->root.child.push_back(polygon);*/
 }
+void ImageSVG::loadGroup(xmlNodePtr node, SVG::Group* group) {
+	char *name, *value, *attrName, *attrValue;
+	xmlAttr *attr = node->properties;
+	
+	while(attr != NULL) {
+		name = (char*)attr->name;
+		value = (char*)xmlNodeListGetString(node->doc, attr->children, 1);
+		if ( strcmp("transform", name)==0 ) {
+			group->matrix = SVG::DataTypes::getTransformMatrix(value);
+			printf("transform=%s ", value);
+		}
+		printf("\n");
+		attr = attr->next;
+		
+	}
+}
+void ImageSVG::loadShapeRect(xmlNodePtr node, SVG::Group* group) {
+	SVG::BasicShapeRect *rect = new SVG::BasicShapeRect();
+	xmlAttr *attr;
+	char *name, *value, *attrName, *attrValue;
+	attr = node->properties;
+	while(attr != NULL) {
+		attrName = (char*)attr->name;
+		attrValue = (char*)xmlNodeListGetString(node->doc, attr->children, 1);
+		if ( strcmp("width", attrName)==0 ) {
+			rect->width = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("height", attrName)==0 ) {
+			rect->height = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("x", attrName)==0 ) {
+			rect->x = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("y", attrName)==0 ) {
+			rect->y = SVG::DataTypes::getLength(attrValue);
+		}else{
+		}
+		attr = attr->next;
+	}
+	group->child.push_back(rect);
+}
 int ImageSVG::renderGLComptAll() {
 	OpenGL::pushViewport();
 	OpenGL::pushViewMatrix();
@@ -162,7 +177,6 @@ int ImageSVG::renderGLComptAll() {
 	OpenGL::setViewMatrix(this->viewMatrix);
 	
 	this->root.renderGLComptAll();
-	
 	
 	OpenGL::popViewMatrix();
 	OpenGL::popViewport();
@@ -178,11 +192,51 @@ int ImageSVG::renderGLComptAll() {
 	glEnd();// </editor-fold>
 }
 int ImageSVG::renderGL400() {
+	OpenGL::pushViewport();
+	OpenGL::pushViewMatrix();
+	OpenGL::setViewport(this->globalx+this->offsetPos.x, 
+			Windows::window->height-this->globaly+this->offsetPos.y-this->height,
+			this->width, this->height);
+	OpenGL::setViewMatrix(this->viewMatrix);
+	
 	this->root.renderGL400();
+	
+	OpenGL::popViewMatrix();
+	OpenGL::popViewport();
 }
 int ImageSVG::renderGL330() {
+	OpenGL::pushViewport();
+	OpenGL::pushViewMatrix();
+	OpenGL::setViewport(this->globalx+this->offsetPos.x, 
+			Windows::window->height-this->globaly+this->offsetPos.y-this->height,
+			this->width, this->height);
+	OpenGL::setViewMatrix(this->viewMatrix);
+	
 	this->root.renderGL330();
+	
+	OpenGL::popViewMatrix();
+	OpenGL::popViewport();
 }
 int ImageSVG::renderGL210() {
+	OpenGL::pushViewport();
+	OpenGL::pushViewMatrix();
+	OpenGL::setViewport(this->globalx+this->offsetPos.x, 
+			Windows::window->height-this->globaly+this->offsetPos.y-this->height,
+			this->width, this->height);
+	OpenGL::setViewMatrix(this->viewMatrix);
+	
 	this->root.renderGL210();
+	
+	OpenGL::popViewMatrix();
+	OpenGL::popViewport();
+	
+	glLineWidth(1);
+	glColor4ub(0xFF,0,0,0xFF);
+	glBegin(GL_LINE_STRIP);// <editor-fold defaultstate="collapsed" desc="GL_LINE_STRIP">
+		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
+		glVertex2s( this->globalx+this->offsetPos.x+this->width, this->globaly+this->offsetPos.y );
+		glVertex2s( this->globalx+this->offsetPos.x+this->width, this->globaly+this->offsetPos.y+this->height );
+		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y+this->height );
+		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
+	glEnd();// </editor-fold>
 }
