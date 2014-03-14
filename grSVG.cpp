@@ -46,8 +46,8 @@ ImageSVG::ImageSVG(const char *filename) :ShapeRect(0) {
 	
 	
 	
-	
-	node = node->xmlChildrenNode;
+	ImageSVG::loadGroup(node, &this->root);
+	/*node = node->xmlChildrenNode;
 	while(node != NULL) {
 		name = (char*)node->name;
 		if ( strcmp("rect", name)==0 ) {
@@ -69,7 +69,7 @@ ImageSVG::ImageSVG(const char *filename) :ShapeRect(0) {
 			printf("%s=%s ", name, value);
 		}
 		node = node->next;
-	}
+	}*/
 	
     xmlFreeDoc(doc);
 	
@@ -131,6 +131,7 @@ ImageSVG::ImageSVG(const char *filename) :ShapeRect(0) {
 	this->root.child.push_back(polygon);*/
 }
 void ImageSVG::loadGroup(xmlNodePtr node, SVG::Group* group) {
+	xmlNodePtr child;
 	char *name, *value, *attrName, *attrValue;
 	xmlAttr *attr = node->properties;
 	
@@ -143,8 +144,33 @@ void ImageSVG::loadGroup(xmlNodePtr node, SVG::Group* group) {
 		}
 		printf("\n");
 		attr = attr->next;
-		
 	}
+	
+	child = node->xmlChildrenNode;
+	while(child != NULL) {
+		name = (char*)child->name;
+		if ( strcmp("rect", name)==0 ) {
+			ImageSVG::loadShapeRect(child, group);
+		}else if ( strcmp("circle", name)==0 ) {
+			ImageSVG::loadShapeCircle(child, group);
+		}else if ( strcmp("ellipse", name)==0 ) {
+			ImageSVG::loadShapeEllipse(child, group);
+		}else if ( strcmp("line", name)==0 ) {
+			ImageSVG::loadShapeLine(child, group);
+		}else if ( strcmp("polyline", name)==0 ) {
+			ImageSVG::loadShapePolyline(child, group);
+		}else if ( strcmp("polygon", name)==0 ) {
+			ImageSVG::loadShapePolygon(child, group);
+		}else if ( name[0]=='g' ) {
+			SVG::Group *newgr = new SVG::Group();
+			group->child.push_back(newgr);
+			ImageSVG::loadGroup(child, newgr);
+		}else{
+			printf("%s=%s \n", name, value);
+		}
+		child = child->next;
+	}
+	
 }
 void ImageSVG::loadShapeRect(xmlNodePtr node, SVG::Group* group) {
 	SVG::BasicShapeRect *rect = new SVG::BasicShapeRect();
@@ -167,6 +193,116 @@ void ImageSVG::loadShapeRect(xmlNodePtr node, SVG::Group* group) {
 		attr = attr->next;
 	}
 	group->child.push_back(rect);
+}
+void ImageSVG::loadShapeCircle(xmlNodePtr node, SVG::Group* group) {
+	SVG::BasicShapeCircle *circle = new SVG::BasicShapeCircle();
+	xmlAttr *attr;
+	char *name, *value, *attrName, *attrValue;
+	attr = node->properties;
+	while(attr != NULL) {
+		attrName = (char*)attr->name;
+		attrValue = (char*)xmlNodeListGetString(node->doc, attr->children, 1);
+		if ( strcmp("cx", attrName)==0 ) {
+			circle->cx = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("cy", attrName)==0 ) {
+			circle->cy = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("r", attrName)==0 ) {
+			circle->r = SVG::DataTypes::getLength(attrValue);
+		}else{
+		}
+		attr = attr->next;
+	}
+	group->child.push_back(circle);
+}
+void ImageSVG::loadShapeEllipse(xmlNodePtr node, SVG::Group* group) {
+	SVG::BasicShapeEllipse *ellipse = new SVG::BasicShapeEllipse();
+	xmlAttr *attr;
+	char *name, *value, *attrName, *attrValue;
+	attr = node->properties;
+	while(attr != NULL) {
+		attrName = (char*)attr->name;
+		attrValue = (char*)xmlNodeListGetString(node->doc, attr->children, 1);
+		if ( strcmp("cx", attrName)==0 ) {
+			ellipse->cx = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("cy", attrName)==0 ) {
+			ellipse->cy = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("rx", attrName)==0 ) {
+			ellipse->rx = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("ry", attrName)==0 ) {
+			ellipse->ry = SVG::DataTypes::getLength(attrValue);
+		}else{
+		}
+		attr = attr->next;
+	}
+	group->child.push_back(ellipse);
+}
+void ImageSVG::loadShapeLine(xmlNodePtr node, SVG::Group* group) {
+	SVG::BasicShapeLine *line = new SVG::BasicShapeLine();
+	xmlAttr *attr;
+	char *name, *value, *attrName, *attrValue;
+	attr = node->properties;
+	while(attr != NULL) {
+		attrName = (char*)attr->name;
+		attrValue = (char*)xmlNodeListGetString(node->doc, attr->children, 1);
+		if ( strcmp("x1", attrName)==0 ) {
+			line->x1 = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("x2", attrName)==0 ) {
+			line->x2 = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("y1", attrName)==0 ) {
+			line->y1 = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("y2", attrName)==0 ) {
+			line->y2 = SVG::DataTypes::getLength(attrValue);
+		}else{
+		}
+		attr = attr->next;
+	}
+	group->child.push_back(line);
+}
+void ImageSVG::loadShapePolyline(xmlNodePtr node, SVG::Group* group) {
+	SVG::BasicShapePolyline *polyline = new SVG::BasicShapePolyline();
+	polyline->length = 0;
+	/*xmlAttr *attr;
+	char *name, *value, *attrName, *attrValue;
+	attr = node->properties;
+	while(attr != NULL) {
+		attrName = (char*)attr->name;
+		attrValue = (char*)xmlNodeListGetString(node->doc, attr->children, 1);
+		if ( strcmp("x1", attrName)==0 ) {
+			line->x1 = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("x2", attrName)==0 ) {
+			line->x2 = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("y1", attrName)==0 ) {
+			line->y1 = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("y2", attrName)==0 ) {
+			line->y2 = SVG::DataTypes::getLength(attrValue);
+		}else{
+		}
+		attr = attr->next;
+	}*/
+	group->child.push_back(polyline);
+}
+void ImageSVG::loadShapePolygon(xmlNodePtr node, SVG::Group* group) {
+	SVG::BasicShapePolygon *polygon = new SVG::BasicShapePolygon();
+	polygon->length = 0;
+	/*xmlAttr *attr;
+	char *name, *value, *attrName, *attrValue;
+	attr = node->properties;
+	while(attr != NULL) {
+		attrName = (char*)attr->name;
+		attrValue = (char*)xmlNodeListGetString(node->doc, attr->children, 1);
+		if ( strcmp("x1", attrName)==0 ) {
+			line->x1 = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("x2", attrName)==0 ) {
+			line->x2 = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("y1", attrName)==0 ) {
+			line->y1 = SVG::DataTypes::getLength(attrValue);
+		}else if ( strcmp("y2", attrName)==0 ) {
+			line->y2 = SVG::DataTypes::getLength(attrValue);
+		}else{
+		}
+		attr = attr->next;
+	}*/
+	group->child.push_back(polygon);
 }
 int ImageSVG::renderGLComptAll() {
 	OpenGL::pushViewport();
