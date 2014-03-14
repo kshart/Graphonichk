@@ -18,6 +18,11 @@ namespace Graphonichk {
 	private:
 		void loadGroup(xmlNodePtr node, SVG::Group *group);
 		void loadShapeRect(xmlNodePtr node, SVG::Group *group);
+		void loadShapeCircle(xmlNodePtr node, SVG::Group *group);
+		void loadShapeEllipse(xmlNodePtr node, SVG::Group *group);
+		void loadShapeLine(xmlNodePtr node, SVG::Group *group);
+		void loadShapePolyline(xmlNodePtr node, SVG::Group *group);
+		void loadShapePolygon(xmlNodePtr node, SVG::Group *group);
 	public:
 		ImageSVG(const char *filename);
 		int renderGLComptAll();
