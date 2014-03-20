@@ -7,8 +7,6 @@
 
 #ifndef GREVENT_H
 #define	GREVENT_H
-
-#include <vector>
 #include "grBaseTypes.h"
 using namespace std;
 
@@ -99,9 +97,23 @@ namespace Graphonichk {
 	template<class TEvent> class EventDispatcher {
 	  public:
 		vector<EventLinc> eventList;
-		virtual int callEvent(TEvent*);
-		virtual int addEventHandler( int type, void(*)(const TEvent*), void* obj=NULL);
-		virtual int removeEventHandler( void(*)(const TEvent*) );
+		virtual int callEvent(TEvent *event) {
+			for(int i=0, s=this->eventList.size(); i<s; i++) {
+				if (this->eventList[i].type == event->type) {
+					event->obj = this->eventList[i].obj;
+					this->eventList[i].fun(event);
+				}
+			}
+		}
+		virtual int addEventHandler(int type, void(*fun)(const TEvent*), void* obj=NULL) {
+			EventLinc el;
+			el.obj = obj;
+			el.type = type;
+			el.fun = (void(*)(const Event*))fun;
+			this->eventList.push_back( el );
+		}
+		virtual int removeEventHandler( void(*fun)(const TEvent*) ) {
+		}
 	};
 	template<class TEvent, class TObject> class EventDispatcherObject {
 	  public:

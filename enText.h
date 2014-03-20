@@ -1,15 +1,7 @@
-/* 
- * File:   enText.h
- * Author: Артём Каширин
- *
- * Created on 16 Ноябрь 2013 г., 15:10
- */
-
-#ifndef ENTEXT_H
-#define	ENTEXT_H
+#ifndef GRTEXT_H
+#define	GRTEXT_H
 
 #include "grBaseTypes.h"
-#include "grShape.h"
 
 using namespace std;
 namespace Graphonichk {
@@ -129,5 +121,5 @@ namespace Graphonichk {
 	
 }
 
-#endif	/* ENTEXT_H */
+#endif	/* GRTEXT_H */
 

@@ -23,6 +23,7 @@ namespace Graphonichk {
 		void loadShapeLine(xmlNodePtr node, SVG::Group *group);
 		void loadShapePolyline(xmlNodePtr node, SVG::Group *group);
 		void loadShapePolygon(xmlNodePtr node, SVG::Group *group);
+		void loadVisualProperties(xmlNodePtr node, SVG::Group *group);
 	public:
 		ImageSVG(const char *filename);
 		int renderGLComptAll();

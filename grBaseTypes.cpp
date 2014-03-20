@@ -9,15 +9,6 @@ string get_ext (const string& st) {
 }
 
 
-template<class Type> Array<Type>::Array(unsigned int size) {
-	this->data = (Type*)malloc( size*sizeof(Type) );
-	if (this->data==NULL) {
-		this->size = 0;
-	}else{
-		this->size = size;
-	}
-}
-
 #ifdef WIN32
 HINSTANCE System::hInstance = NULL;
 void System::init() {

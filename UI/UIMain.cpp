@@ -1,7 +1,3 @@
-
-#include <vector>
-#include <math.h>
-
 #include "../grBaseTypes.h"
 #include "UIMain.h"
 
@@ -362,9 +358,6 @@ UIButton::UIButton(unsigned short w, unsigned short h) :ShapeRect(UIButton::CRC3
 	this->shapePressed = new FRect(w, h, 0xFF16A085);
 	this->shapeNormal = new FRect(w, h, 0xFF1ABC9C);
 	this->shapeRollOver = new FRect(w, h, 0xFF48C9B0);
-	((FRect*)this->shapePressed)->radius = 20;
-	((FRect*)this->shapeNormal)->radius = 20;
-	((FRect*)this->shapeRollOver)->radius = 20;
 	Windows::window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, ButtonMouseUp, this);
 }
 void UIButton::updateGlobalPosition() {
@@ -564,22 +557,19 @@ UICheckbox::UICheckbox(int crc32, unsigned short w, unsigned short h, ShapeRect*
 	Windows::window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, UICheckboxMouseUp, this);
 }
 UICheckbox::UICheckbox(unsigned short w, unsigned short h) :ShapeRect(UIButton::CRC32) {
-	Texture *tex1 = new Texture("FlatUICheckBox.png");
-	Texture *tex2 = new Texture("FlatUICheckBoxRollOver.png");
-	Texture *tex3 = new Texture("FlatUICheckBoxCheck.png");
 	this->width = w;
 	this->height = h;
 	this->press = false;
 	this->checked = false;
 	this->status = UICheckbox::UNCHECKED_NORMAL;
-	this->shUnchkPressed = new Bitmap(tex2);
-	this->shUnchkNormal = new Bitmap(tex1);
-	this->shUnchkRollOver = new Bitmap(tex2);
-	this->shUnchkDisable = new FRect(w, h, 0xFFAAAAAA);
-	this->shChkPressed = new Bitmap(tex3);
-	this->shChkNormal = new Bitmap(tex3);
-	this->shChkRollOver = new Bitmap(tex3);
-	this->shChkDisable = new FRect(w, h, 0xFF444444);
+	this->shUnchkPressed =	new FRect(w, h, 0xFF00AAAA);
+	this->shUnchkNormal =	new FRect(w, h, 0xFFAA00AA);
+	this->shUnchkRollOver = new FRect(w, h, 0xFFFF0000);
+	this->shUnchkDisable =	new FRect(w, h, 0xFF117700);
+	this->shChkPressed =	new FRect(w, h, 0xFFFF0000);
+	this->shChkNormal =		new FRect(w, h, 0xFF00FF00);
+	this->shChkRollOver =	new FRect(w, h, 0xFF0000FF);
+	this->shChkDisable =	new FRect(w, h, 0xFF117766);
 	this->addEventHandler(EventMouseShape::MOUSE_DOWN, UICheckboxMouseDown);
 	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, UICheckboxMouseOut);
 	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OVER, UICheckboxMouseOver);
@@ -833,23 +823,20 @@ void UIRadioButtonMouseOut (const EventMouseShape *e) {
 }
 
 UIRadioButton::UIRadioButton(unsigned short w, unsigned short h, UIRadioButtonGroup *gr) :ShapeRect(UIRadioButton::CRC32) {
-	Texture *tex1 = new Texture("FlatUIRadioButton.png");
-	Texture *tex2 = new Texture("FlatUIRadioButtonRollOver.png");
-	Texture *tex3 = new Texture("FlatUIRadioButtonCheck.png");
 	this->width = w;
 	this->height = h;
 	this->group = gr;
 	this->press = false;
 	this->checked = false;
 	this->status = UIRadioButton::UNCHECKED_NORMAL;
-	this->shUnchkPressed = new Bitmap(tex2);
-	this->shUnchkNormal = new Bitmap(tex1);
-	this->shUnchkRollOver = new Bitmap(tex2);
-	this->shUnchkDisable = new FRect(w, h, 0xFFAAAAAA);
-	this->shChkPressed = new Bitmap(tex3);
-	this->shChkNormal = new Bitmap(tex3);
-	this->shChkRollOver = new Bitmap(tex3);
-	this->shChkDisable = new FRect(w, h, 0xFF444444);
+	this->shUnchkPressed =	new FRect(w, h, 0xFF00AAAA);
+	this->shUnchkNormal =	new FRect(w, h, 0xFFAA00AA);
+	this->shUnchkRollOver = new FRect(w, h, 0xFFFF0000);
+	this->shUnchkDisable =	new FRect(w, h, 0xFF117700);
+	this->shChkPressed =	new FRect(w, h, 0xFFFF0000);
+	this->shChkNormal =		new FRect(w, h, 0xFF00FF00);
+	this->shChkRollOver =	new FRect(w, h, 0xFF0000FF);
+	this->shChkDisable =	new FRect(w, h, 0xFF117766);
 	this->addEventHandler(EventMouseShape::MOUSE_DOWN, UIRadioButtonMouseDown);
 	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, UIRadioButtonMouseOut);
 	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OVER, UIRadioButtonMouseOver);

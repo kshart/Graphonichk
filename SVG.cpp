@@ -1,9 +1,166 @@
-#include <math.h>
+#include "grBaseTypes.h"
 #include "SVG.h"
-#define M_PI 3.14159265358979323846
+
 using namespace SVG;
 using namespace std;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+const DataTypes::ColorWord DataTypes::colorWords[147] = {
+	{"aliceblue",		240, 248, 255},
+	{"antiquewhite",	250, 235, 215},
+	{"aqua",			  0, 255, 255},
+	{"aquamarine",		127, 255, 212},
+	{"azure",			240, 255, 255},
+	{"beige",			245, 245, 220},
+	{"bisque",			255, 228, 196},
+	{"black",			  0,   0,   0},
+	{"blanchedalmond",	255, 235, 205},
+	{"blue",			  0,   0, 255},
+	{"blueviolet",		138,  43, 226},
+	{"brown",			165,  42,  42},
+	{"burlywood",		222, 184, 135},
+	{"cadetblue",		 95, 158, 160},
+	{"chartreuse",		127, 255,   0},
+	{"chocolate",		210, 105,  30},
+	{"coral",			255, 127,  80},
+	{"cornflowerblue",	100, 149, 237},
+	{"cornsilk",		255, 248, 220},
+	{"crimson",			220,  20,  60},
+	{"cyan",			  0, 255, 255},
+	{"darkblue",		  0,   0, 139},
+	{"darkcyan",		  0, 139, 139},
+	{"darkgoldenrod",	184, 134,  11},
+	{"darkgray",		169, 169, 169},
+	{"darkgreen",		  0, 100,   0},
+	{"darkgrey",		169, 169, 169},
+	{"darkkhaki",		189, 183, 107},
+	{"darkmagenta",		139,   0, 139},
+	{"darkolivegreen",	 85, 107,  47},
+	{"darkorange",		255, 140,   0},
+	{"darkorchid",		153,  50, 204},
+	{"darkred",			139,   0,   0},
+	{"darksalmon",		233, 150, 122},
+	{"darkseagreen",	143, 188, 143},
+	{"darkslateblue",	 72,  61, 139},
+	{"darkslategray",	 47,  79,  79},
+	{"darkslategrey",	 47,  79,  79},
+	{"darkturquoise",	  0, 206, 209},
+	{"darkviolet",		148,   0, 211},
+	{"deeppink",		255,  20, 147},
+	{"deepskyblue",		  0, 191, 255},
+	{"dimgray",			105, 105, 105},
+	{"dimgrey",			105, 105, 105},
+	{"dodgerblue",		 30, 144, 255},
+	{"firebrick",		178,  34,  34},
+	{"floralwhite",		255, 250, 240},
+	{"forestgreen",		 34, 139,  34},
+	{"fuchsia",			255,   0, 255},
+	{"gainsboro",		220, 220, 220},
+	{"ghostwhite",		248, 248, 255},
+	{"gold",			255, 215,   0},
+	{"goldenrod",		218, 165,  32},
+	{"gray",			128, 128, 128},
+	{"grey",			128, 128, 128},
+	{"green",			  0, 128,   0},
+	{"greenyellow",		173, 255,  47},
+	{"honeydew",		240, 255, 240},
+	{"hotpink",			255, 105, 180},
+	{"indianred",		205,  92,  92},
+	{"indigo",			 75,   0, 130},
+	{"ivory",			255, 255, 240},
+	{"khaki",			240, 230, 140},
+	{"lavender",		230, 230, 250},
+	{"lavenderblush",	255, 240, 245},
+	{"lawngreen",		124, 252,   0},
+	{"lemonchiffon",	255, 250, 205},
+	{"lightblue",		173, 216, 230},
+	{"lightcoral",		240, 128, 128},
+	{"lightcyan",		224, 255, 255},
+	{"lightgoldenrodyellow",250, 250, 210},
+	{"lightgray",		211, 211, 211},
+	{"lightgreen",		144, 238, 144},
+	{"lightgrey",		211, 211, 211},
+	{"lightpink",		255, 182, 193},
+	{"lightsalmon",		255, 160, 122},
+	{"lightseagreen",	 32, 178, 170},
+	{"lightskyblue",	135, 206, 250},
+	{"lightslategray",	119, 136, 153},
+	{"lightslategrey",	119, 136, 153},
+	{"lightsteelblue",	176, 196, 222},
+	{"lightyellow",		255, 255, 224},
+	{"lime",			  0, 255,   0},
+	{"limegreen",		 50, 205,  50},
+	{"linen",			250, 240, 230},
+	{"magenta",			255,   0, 255},
+	{"maroon",			128,   0,   0},
+	{"mediumaquamarine",102, 205, 170},
+	{"mediumblue",		  0,   0, 205},
+	{"mediumorchid",	186,  85, 211},
+	{"mediumpurple",	147, 112, 219},
+	{"mediumseagreen",	 60, 179, 113},
+	{"mediumslateblue",	123, 104, 238},
+	{"mediumspringgreen", 0, 250, 154},
+	{"mediumturquoise",	 72, 209, 204},
+	{"mediumvioletred",	199,  21, 133},
+	{"midnightblue",	 25,  25, 112},
+	{"mintcream",		245, 255, 250},
+	{"mistyrose",		255, 228, 225},
+	{"moccasin",		255, 228, 181},
+	{"navajowhite",		255, 222, 173},
+	{"navy",			  0,   0, 128},
+	{"oldlace",			253, 245, 230},
+	{"olive",			128, 128,   0},
+	{"olivedrab",		107, 142,  35},
+	{"orange",			255, 165,   0},
+	{"orangered",		255,  69,   0},
+	{"orchid",			218, 112, 214},
+	{"palegoldenrod",	238, 232, 170},
+	{"palegreen",		152, 251, 152},
+	{"paleturquoise",	175, 238, 238},
+	{"palevioletred",	219, 112, 147},
+	{"papayawhip",		255, 239, 213},
+	{"peachpuff",		255, 218, 185},
+	{"peru",			205, 133,  63},
+	{"pink",			255, 192, 203},
+	{"plum",			221, 160, 221},
+	{"powderblue",		176, 224, 230},
+	{"purple",			128,   0, 128},
+	{"red",				255,   0,   0},
+	{"rosybrown",		188, 143, 143},
+	{"royalblue",		 65, 105, 225},
+	{"saddlebrown",		139,  69,  19},
+	{"salmon",			250, 128, 114},
+	{"sandybrown",		244, 164,  96},
+	{"seagreen",		 46, 139,  87},
+	{"seashell",		255, 245, 238},
+	{"sienna",			160,  82,  45},
+	{"silver",			192, 192, 192},
+	{"skyblue",			135, 206, 235},
+	{"slateblue",		106,  90, 205},
+	{"slategray",		112, 128, 144},
+	{"slategrey",		112, 128, 144},
+	{"snow",			255, 250, 250},
+	{"springgreen",		  0, 255, 127},
+	{"steelblue",		 70, 130, 180},
+	{"tan",				210, 180, 140},
+	{"teal",			  0, 128, 128},
+	{"thistle",			216, 191, 216},
+	{"tomato",			255,  99,  71},
+	{"turquoise",		 64, 224, 208},
+	{"violet",			238, 130, 238},
+	{"wheat",			245, 222, 179},
+	{"white",			255, 255, 255},
+	{"whitesmoke",		245, 245, 245},
+	{"yellow",			255, 255,   0},
+	{"yellowgreen",		154, 205,  50},
+};
+#pragma GCC diagnostic pop
+
+
+#define STRCHAR_TO_INT(ch, value) if ( ch>=0x30&&ch<=0x39 ) {	value = ch-0x30;\
+							}else if ( ch>=0x41&&ch<=0x46 ) {	value = ch-0x37;\
+							}else if ( ch>=0x61&&ch<=0x66 ) {	value = ch-0x57;}
 float DataTypes::getPixels(Length l) {
 	switch (l.type) {//win->dpi = round((hRes/hSize)*25.4);
 		case Length::_PX: return l.value;
@@ -17,12 +174,163 @@ float DataTypes::getPixels(Length l) {
 	}
 	return 0;
 }
-
+Color DataTypes::getColor(const char* str) {
+	size_t strLength = strlen(str), i=0;
+	Color color;
+	color.type = 0;
+	// "__rgb" 5
+	while ( i<strLength && str[i]<=0x20 ) i++;
+	if ( (i+3)>strLength ) return color;
+	if ( str[i]=='#' ) {// <editor-fold defaultstate="collapsed" desc="#FFFFFF">
+		i++;
+		if ( (i+3)>strLength ) return color;
+		size_t newStr=0;
+		while ( i<strLength ) {
+			if ( !((str[i]>=0x30&&str[i]<=0x39) || (str[i]>=0x41&&str[i]<=0x46) || (str[i]>=0x61&&str[i]<=0x66)) ) break;
+			newStr++;
+			i++;
+		}
+		if ( i>=strLength ) return color;
+		if ( newStr==3 ) {
+			char c3=str[i-1], c2=str[i-2], c1=str[i-3];
+			STRCHAR_TO_INT(c1, color.r);
+			STRCHAR_TO_INT(c2, color.g);
+			STRCHAR_TO_INT(c3, color.b);
+			color.r = color.r*16+color.r;
+			color.g = color.g*16+color.g;
+			color.b = color.b*16+color.b;
+			color.idColorWord = 0;
+			color.type = 0xFF;
+			return color;
+		}else if (newStr==6) {
+			char c6=str[i-1], c5=str[i-2], c4=str[i-3], c3=str[i-4], c2=str[i-5], c1=str[i-6];
+			unsigned char rr, gg, bb;
+			STRCHAR_TO_INT(c2, color.r);
+			STRCHAR_TO_INT(c4, color.g);
+			STRCHAR_TO_INT(c6, color.b);
+			STRCHAR_TO_INT(c1, rr);
+			STRCHAR_TO_INT(c3, gg);
+			STRCHAR_TO_INT(c5, bb);
+			color.r += rr*16;
+			color.g += gg*16;
+			color.b += bb*16;
+			color.idColorWord = 0;
+			color.type = 0xFE;
+			return color;
+		}else{
+			return color;
+		}// </editor-fold>
+	}else if ( (str[i]=='r' || str[i]=='R') &&
+				(str[i+1]=='g' || str[i+1]=='G') &&
+				(str[i+2]=='b' || str[i+2]=='B')) {// <editor-fold defaultstate="collapsed" desc="rgb">
+		size_t newStr;
+		bool polys;
+		i+=3;//1,2,3
+		if ( (i+2+5)>strLength ) return color;
+		i++;
+		while ( i<strLength && str[i]<=0x20 ) i++;
+		if ( (i+1)>=strLength ) return color;
+		polys = true;
+		newStr = 0;
+		if (str[i]=='+') {
+			i++;
+		}else if (str[i]=='-') {
+			polys = false;
+			i++;
+		}
+		while ( i<strLength && (str[i]>=0x30&&str[i]<=0x39) ) {
+			newStr++;
+			i++;
+		}
+		if ( i>=strLength ) return color;
+		if (!polys) {
+			color.r = 0;
+		}else if (newStr>0) {
+			color.r = str[i-1]-0x30;
+			if (newStr>1) {
+				color.r += (str[i-2]-0x30)*10;
+				if (newStr>2) {
+					if ( (int)color.r+(str[i-3]-0x30)*100 > 0xFF ) {
+						color.r = 0xFF;
+					}else{
+						color.r += (str[i-3]-0x30)*100;
+					}
+					if (newStr>3) color.r = 0xFF;
+				}
+			}
+		}
+		while ( i<strLength && (str[i]<=0x20 || str[i]==',') ) i++;
+		if ( (i+1)>=strLength ) return color;
+		polys = true;
+		newStr = 0;
+		if (str[i]=='+') {
+			i++;
+		}else if (str[i]=='-') {
+			polys = false;
+			i++;
+		}
+		while ( i<strLength && (str[i]>=0x30&&str[i]<=0x39) ) {
+			newStr++;
+			i++;
+		}
+		if ( i>=strLength ) return color;
+		if (!polys) {
+			color.g = 0;
+		}else if (newStr>0) {
+			color.g = str[i-1]-0x30;
+			if (newStr>1) {
+				color.g += (str[i-2]-0x30)*10;
+				if (newStr>2) {
+					if ( (int)color.g+(str[i-3]-0x30)*100 > 0xFF ) {
+						color.g = 0xFF;
+					}else{
+						color.g += (str[i-3]-0x30)*100;
+					}
+					if (newStr>3) color.g = 0xFF;
+				}
+			}
+		}
+		while ( i<strLength && (str[i]<=0x20 || str[i]==',') ) i++;
+		if ( (i+1)>=strLength ) return color;
+		polys = true;
+		newStr = 0;
+		if (str[i]=='+') {
+			i++;
+		}else if (str[i]=='-') {
+			polys = false;
+			i++;
+		}
+		while ( i<strLength && (str[i]>=0x30&&str[i]<=0x39) ) {
+			newStr++;
+			i++;
+		}
+		if ( i>=strLength ) return color;
+		if (!polys) {
+			color.b = 0;
+		}else if (newStr>0) {
+			color.b = str[i-1]-0x30;
+			if (newStr>1) {
+				color.b += (str[i-2]-0x30)*10;
+				if (newStr>2) {
+					if ( (int)color.b+(str[i-3]-0x30)*100 > 0xFF ) {
+						color.b = 0xFF;
+					}else{
+						color.b += (str[i-3]-0x30)*100;
+					}
+					if (newStr>3) color.b = 0xFF;
+				}
+			}
+		}// </editor-fold>
+	}
+	
+	
+	return color;
+}
 Length DataTypes::getLength(const char* str) {
+	size_t strLength = strlen(str);
 	Length length;
 	length.type = Length::_PX;
 	length.value = 0;
-	size_t strLength = strlen(str);
 	bool dot = false, plus = true;
 	unsigned int leftNumber=0, rightNumber=0, rightNumberPos=1;
 	char ext[2];
@@ -264,10 +572,10 @@ int BasicShapeRect::renderGL330() {
 	if (GLShader::shader->crc32!=ShaderSVGmain::CRC32) GLShader::setShader(ShaderSVGmain::prog);
 	if (this->vao==0) {
 		float vertex[8] = {
-			this->x.value,						this->y.value,
-			this->x.value+this->width.value,	this->y.value,
-			this->x.value+this->width.value,	this->y.value+this->height.value,
-			this->x.value,						this->y.value+this->height.value,
+			DataTypes::getPixels(this->x),										DataTypes::getPixels(this->y),
+			DataTypes::getPixels(this->x)+DataTypes::getPixels(this->width),	DataTypes::getPixels(this->y),
+			DataTypes::getPixels(this->x)+DataTypes::getPixels(this->width),	DataTypes::getPixels(this->y)+DataTypes::getPixels(this->height),
+			DataTypes::getPixels(this->x),										DataTypes::getPixels(this->y)+DataTypes::getPixels(this->height),
 		};
 		glGenVertexArrays(1, &this->vao);
 		glBindVertexArray(this->vao);
@@ -279,7 +587,9 @@ int BasicShapeRect::renderGL330() {
 		glEnableVertexAttribArray(ShaderBitmap::prog->position);
 	}
 	glBindVertexArray(this->vao);
-	glDrawArrays(GL_LINE_LOOP, 0, 4);
+	glUniform1i(ShaderSVGmain::prog->typeShape, BasicShapeRect::CRC32);
+	//glUniform4f(ShaderSVGmain::prog->fillColor, (float)this->color.r/0xFF, (float)this->color.g/0xFF, (float)this->color.b/0xFF, 1.0);
+	glDrawArrays(GL_QUADS, 0, 4);
 	OpenGL::popViewMatrix();
 	return true;
 }
@@ -345,7 +655,36 @@ int BasicShapeCircle::renderGL400() {
 	return false;
 }
 int BasicShapeCircle::renderGL330() {
-	return false;
+	ViewMatrix mat;
+	mat.a[0] = this->matrix.a;
+	mat.a[1] = this->matrix.b;
+	mat.a[2] = this->matrix.c;
+	mat.a[3] = this->matrix.c;
+	
+	mat.a[4] = this->matrix.d;
+	mat.a[5] = this->matrix.e;
+	mat.a[6] = this->matrix.f;
+	mat.a[7] = this->matrix.f;
+	
+	mat.a[11] = 1;
+	OpenGL::pushViewMatrix();
+	OpenGL::multViewMatrix(mat);
+	if (GLShader::shader->crc32!=ShaderSVGmain::CRC32) GLShader::setShader(ShaderSVGmain::prog);
+	if (this->vao==0) {
+		glGenVertexArrays(1, &this->vao);
+		glBindVertexArray(this->vao);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, OpenGL::circleBuffer);
+		glVertexAttribPointer(ShaderBitmap::prog->position, 2, GL_FLOAT, GL_TRUE, 32*2*sizeof(float), 0);//256*sizeof(float)
+		glEnableVertexAttribArray(ShaderBitmap::prog->position);
+	}
+	glBindVertexArray(this->vao);
+	glUniform1i(ShaderSVGmain::prog->typeShape, BasicShapeCircle::CRC32);
+	glUniform4f(ShaderSVGmain::prog->fillColor, 1, 1, 0, 1);
+	glUniform4f(ShaderSVGmain::prog->circleTransform, DataTypes::getPixels(this->cx), DataTypes::getPixels(this->cy), DataTypes::getPixels(this->r), DataTypes::getPixels(this->r));
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 130);
+	OpenGL::popViewMatrix();
+	return true;
 }
 int BasicShapeCircle::renderGL210() {
 	return false;
@@ -470,7 +809,40 @@ int BasicShapeLine::renderGL400() {
 	return false;
 }
 int BasicShapeLine::renderGL330() {
-	return false;
+	ViewMatrix mat;
+	mat.a[0] = this->matrix.a;
+	mat.a[1] = this->matrix.b;
+	mat.a[2] = this->matrix.c;
+	mat.a[3] = this->matrix.c;
+	
+	mat.a[4] = this->matrix.d;
+	mat.a[5] = this->matrix.e;
+	mat.a[6] = this->matrix.f;
+	mat.a[7] = this->matrix.f;
+	
+	mat.a[11] = 1;
+	OpenGL::pushViewMatrix();
+	OpenGL::multViewMatrix(mat);
+	if (GLShader::shader->crc32!=ShaderSVGmain::CRC32) GLShader::setShader(ShaderSVGmain::prog);
+	if (this->vao==0) {
+		float vertex[4] = {
+			DataTypes::getPixels(this->x1),	DataTypes::getPixels(this->y1),
+			DataTypes::getPixels(this->x2),	DataTypes::getPixels(this->y2),
+		};
+		glGenVertexArrays(1, &this->vao);
+		glBindVertexArray(this->vao);
+		
+		glGenBuffers(1, &this->vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
+		glBufferData(GL_ARRAY_BUFFER, 4*sizeof(float), vertex, GL_STATIC_DRAW);
+		glVertexAttribPointer(ShaderBitmap::prog->position, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+		glEnableVertexAttribArray(ShaderBitmap::prog->position);
+	}
+	glBindVertexArray(this->vao);
+	glUniform1i(ShaderSVGmain::prog->typeShape, BasicShapeLine::CRC32);
+	glDrawArrays(GL_LINES, 0, 2);
+	OpenGL::popViewMatrix();
+	return true;
 }
 int BasicShapeLine::renderGL210() {
 	return false;

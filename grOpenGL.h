@@ -1,10 +1,3 @@
-/* 
- * File:   grOpenGL.h
- * Author: Артем
- *
- * Created on 3 Март 2014 г., 21:47
- */
-
 #ifndef GROPENGL_H
 #define	GROPENGL_H
 
@@ -37,7 +30,7 @@ namespace Graphonichk {
 		static GLShader* shader;
 		static void setShader(GLShader *shader);
 		int crc32;
-		GLuint shaderProgram, vertexShader, fragmentShader;
+		GLuint shaderProgram, vertexShader, fragmentShader, geometryShader;
 		//bool fragment, vertex;
 	};
 	class ShaderBitmap :public GLShader {
@@ -58,7 +51,17 @@ namespace Graphonichk {
 		static void init33();
 		static ShaderSVGmain* prog;
 		
-		GLint position, viewMatrix;
+		GLint position, fillColor, typeShape, circleTransform, viewMatrix, transformMatrix;
+	};
+	class ShaderFPrimitiv :public GLShader {
+	public:
+		enum {CRC32=0x5123};
+		ShaderFPrimitiv();
+		static void init();
+		static void init33();
+		static ShaderFPrimitiv* prog;
+		
+		GLint position, fillColor, viewMatrix;
 	};
 	class OpenGL {
 	  public:
@@ -85,7 +88,7 @@ namespace Graphonichk {
 		static void popViewMatrix();
 		static void setViewMatrix(ViewMatrix view);
 		static void multViewMatrix(ViewMatrix view);
-		static GLuint viewMatrix;
+		static GLuint viewMatrix, circleBuffer;
 		static int init(OPENGL_VER);
 	};
 };

@@ -1,6 +1,4 @@
 #include "grBaseTypes.h"
-#include "grWindows.h"
-#include "grShape.h"
 using namespace std;
 using namespace Graphonichk;
 
@@ -48,15 +46,6 @@ FT_Library Font::library;
 
 TextFormat *TextFormat::defaultFormat = new TextFormat();
 
-
-template<class Type> Array<Type>::Array(unsigned int size) {
-	this->data = (Type*)malloc( size*sizeof(Type) );
-	if (this->data==NULL) {
-		this->size = 0;
-	}else{
-		this->size = size;
-	}
-}
 
 TextFormat::TextFormat() {
 	this->fn = NULL;

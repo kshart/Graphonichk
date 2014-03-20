@@ -1,25 +1,15 @@
-/* 
- * File:   grWindows.h
- * Author: РђСЂС‚С‘Рј РљР°С€РёСЂРёРЅ
- *
- * Created on 25 РђРІРіСѓСЃС‚ 2013 Рі., 19:32
- */
-
 #ifndef GRWINDOWS_H
 #define	GRWINDOWS_H
 
 
 #include "grBaseTypes.h"
-#include "grEvent.h"
 
 #define WIN_CLASS_NAME "grEWin"
 
 //Graphonichk
 using namespace std;
 namespace Graphonichk {
-	template class EventDispatcher<EventWindow>;
-	template class EventDispatcher<EventKeyboard>;
-	template class EventDispatcher<EventMouse>;
+	//class ProcessingQueue<ProcessingTask>;
 	class Windows :public EventDispatcher<EventWindow> {
 	private:
 		#ifdef WIN32
@@ -66,7 +56,9 @@ namespace Graphonichk {
 			EventDispatcher<EventKeyboard> keyboard;
 			EventDispatcher<EventMouse> mouse;
 		} events;
-		
+		//Graphonichk::ProcessingQueue<Graphonichk::VBOUpdateTask> asd;
+		//ProcessingQueue<VBOUpdateTask> VBOupdate;
+		//ProcessingQueue<ProcessingTask> sss;
 		vector<Buffer*> FBOBuffer;
 		ShapeGroupRect *root;
 		bool visible, renderComplete;

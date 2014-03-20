@@ -1,22 +1,15 @@
-/*
- * File:   grBaseTypes.h
- * Author: kshart
- *
- * Created on 10 Июль 2013 г., 1:37
- */
-
 //add gcc -mno-ms-bitfields
 #ifndef GRBASETYPES_H
 #define	GRBASETYPES_H
-//123123
 
 #include <stack>
+#include <queue>
 #include <vector>
 #include <string.h>
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <math.h>
 #include <GL/glew.h>
 
 #include <ft2build.h>
@@ -34,6 +27,8 @@
 	#include<X11/Xlib.h>
 	#include<GL/glx.h>
 #endif
+
+#define M_PI 3.14159265358979323846
 using namespace std;
 //111
 
@@ -64,10 +59,12 @@ enum {
 #define LIB_SIGN 0x5247
 // </editor-fold>
 
+typedef unsigned int uint;
+
 #include "grEvent.h"
+#include "grProcessingQueue.h"
 #include "grFile.h"
 #include "grMatrix.h"
-typedef unsigned int uint;
 namespace Graphonichk {
 	class System;
 	class Windows;
@@ -107,12 +104,23 @@ namespace Graphonichk {
 	};
 	
 
-	template<class Type> class Array {
+	template<typename Type> class Array {
 	public:
-		Array(unsigned int size);
-		~Array();
 		Type *data;
 		unsigned int size;
+		
+		Array(unsigned int size) {
+			this->data = (Type*)malloc( size*sizeof(Type) );
+			if (this->data==NULL) {
+				this->size = 0;
+			}else{
+				this->size = size;
+			}
+		}
+		~Array() {
+			this->size = 0;
+			free(this->data);
+		}
 	};
 	typedef struct __attribute__((packed)) {
 		uint16_t	signature;
@@ -253,12 +261,12 @@ namespace Graphonichk {
 		ENQ=0x05,//ignore
 		ACK=0x06,//ignore
 		BEL=0x07,//ignore
-		BS=0x08,//возврат на один символ
-		TAB=0x09,//горизонтальная табуляция
-		LF=0x0A,//перевод строки
-		VT=0x0B,//вертикальная табуляция
+		BS=0x08,//РІРѕР·РІСЂР°С‚ РЅР° РѕРґРёРЅ СЃРёРјРІРѕР»
+		TAB=0x09,//РіРѕСЂРёР·РѕРЅС‚Р°Р»СЊРЅР°СЏ С‚Р°Р±СѓР»СЏС†РёСЏ
+		LF=0x0A,//РїРµСЂРµРІРѕРґ СЃС‚СЂРѕРєРё
+		VT=0x0B,//РІРµСЂС‚РёРєР°Р»СЊРЅР°СЏ С‚Р°Р±СѓР»СЏС†РёСЏ
 		FF=0x0C,//ignore
-		CR=0x0D,//ignore возврат каретки
+		CR=0x0D,//ignore РІРѕР·РІСЂР°С‚ РєР°СЂРµС‚РєРё
 		SO=0x0E,//
 		SI=0x0F,//
 		DLE=0x10,//ignore

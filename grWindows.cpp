@@ -1,6 +1,4 @@
-#include "grBaseTypes.h"
 #include "grWindows.h"
-#include <math.h>
 using namespace std;
 using namespace Graphonichk;//Graphonichk
 

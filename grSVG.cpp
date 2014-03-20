@@ -1,9 +1,3 @@
-/* 
- * File:   grSVG.cpp
- * Author: Артем
- * 
- * Created on 18 Февраль 2014 г., 23:31
- */
 #include "grSVG.h"
 
 using namespace Graphonichk;
@@ -29,11 +23,11 @@ ImageSVG::ImageSVG(const char *filename) :ShapeRect(0) {
 		if ( strcmp("width", name)==0 ) {
 			SVG::Length w = SVG::DataTypes::getLength(value);
 			this->width = SVG::DataTypes::getPixels(w);
-			printf("width=%s %f ", value, w.value);
+			printf("width=%s %i ", value, this->width);
 		}else if ( strcmp("height", name)==0 ) {
 			SVG::Length h = SVG::DataTypes::getLength(value);
 			this->height = SVG::DataTypes::getPixels(h);
-			printf("height=%s %f ", value, h.value);
+			printf("height=%s %i ", value, this->height);
 		}else{
 			printf("%s=%s ", name, value);
 		}
@@ -189,7 +183,7 @@ void ImageSVG::loadShapeRect(xmlNodePtr node, SVG::Group* group) {
 		}else if ( strcmp("y", attrName)==0 ) {
 			rect->y = SVG::DataTypes::getLength(attrValue);
 		}else{
-		}
+		}//getColor
 		attr = attr->next;
 	}
 	group->child.push_back(rect);

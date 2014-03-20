@@ -1,6 +1,7 @@
 #include "grBaseTypes.h"
 #include "grShape.h"
 #include "UI/UIMain.h"
+#include "grProcessingQueue.h"
 using namespace std;
 using namespace Graphonichk;
 
@@ -129,14 +130,31 @@ void ShapeRect::setVisible(bool vis) {
 	this->parent->updateRect();
 }
 void ShapeRect::drag(short x, short y) {
+	VBOUpdateTask update;
+	update.bufferID = this->meshVBO;
+	update.data = this->meshVertex;
+	update.dataSize = 24;
+	short ny, nx;
 	this->x = x;
 	this->y = y;
-	short ny, nx;
 	if (this->parent!=NULL) {
 		this->globalx = this->parent->globalx+x;
 		this->globaly = this->parent->globaly+y;
 		this->parent->updateRect();
 	}
+	this->meshVertex[0] = (short)(this->globalx);
+	this->meshVertex[1] = (short)(this->globaly);
+	this->meshVertex[2] = (short)(this->globalx+this->width);
+	this->meshVertex[3] = (short)(this->globaly);
+	this->meshVertex[4] = (short)(this->globalx+this->width);
+	this->meshVertex[5] = (short)(this->globaly+this->height);
+	this->meshVertex[6] = (short)(this->globalx);
+	this->meshVertex[7] = (short)(this->globaly);
+	this->meshVertex[8] = (short)(this->globalx+this->width);
+	this->meshVertex[9] = (short)(this->globaly+this->height);
+	this->meshVertex[10] = (short)(this->globalx);
+	this->meshVertex[11] = (short)(this->globaly+this->height);
+	//Windows::window->VBOupdate.addTask(update, 0);
 	#ifdef REDRAWN_BY_THE_ACTION
 	Windows::window->renderComplete = false;
 	#endif
@@ -643,77 +661,21 @@ int Bitmap::renderGL400() {
 int Bitmap::renderGL330() {
 	if (GLShader::shader->crc32!=ShaderBitmap::CRC32) GLShader::setShader(ShaderBitmap::prog);
 	if (this->vao==0 && this->tex->event==Texture::LOADED) {
-		short vertex[12] = {
-			(short)(this->globalx),				(short)(this->globaly),
-			(short)(this->globalx+this->width),	(short)(this->globaly),
-			(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
-			(short)(this->globalx),				(short)(this->globaly),
-			(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
-			(short)(this->globalx),				(short)(this->globaly+this->height),
-		};
-		short texCoord[12] = {
-			0, 0,
-			1, 0,
-			1, 1,
-			0, 0,
-			1, 1,
-			0, 1
+		short vertex[2] = {
+			this->globalx, this->globaly
 		};
 		glGenVertexArrays(1, &this->vao);
 		glBindVertexArray(this->vao);
 		
-		glGenBuffers(1, &this->vbo1);
-		glGenBuffers(1, &this->vbo2);
-		glBindBuffer(GL_ARRAY_BUFFER, this->vbo1);
-		glBufferData(GL_ARRAY_BUFFER, 12*2, vertex, GL_STATIC_DRAW);
+		glGenBuffers(1, &this->vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
+		glBufferData(GL_ARRAY_BUFFER, 4, vertex, GL_STATIC_DRAW);
 		glVertexAttribPointer(ShaderBitmap::prog->position, 2, GL_SHORT, GL_FALSE, 0, NULL);
 		glEnableVertexAttribArray(ShaderBitmap::prog->position);
-		
-		glBindBuffer(GL_ARRAY_BUFFER, this->vbo2);
-		glBufferData(GL_ARRAY_BUFFER, 12*2, texCoord, GL_STATIC_DRAW);
-		glVertexAttribPointer(ShaderBitmap::prog->texCoord, 2, GL_SHORT, GL_FALSE, 0, NULL);
-		glEnableVertexAttribArray(ShaderBitmap::prog->texCoord);
 	}
 	glBindVertexArray(this->vao);
-	glBindTexture(GL_TEXTURE_2D, tex->GLID);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	/**glEnable( GL_TEXTURE_2D );
-	printf("renderGL330\n");
-	short vertex[12] = {
-		(short)(this->globalx),				(short)(this->globaly),
-		(short)(this->globalx+this->width),	(short)(this->globaly),
-		(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
-		(short)(this->globalx),				(short)(this->globaly),
-		(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
-		(short)(this->globalx),				(short)(this->globaly+this->height)
-	};
-	short texCoord[12] = {
-		0, 0,
-		1, 0,
-		1, 1,
-		0, 0,
-		1, 1,
-		0, 1
-	};
-	glBindTexture(GL_TEXTURE_2D, tex->GLID);
-	GLuint meshVAO, meshVBO;
-	glGenVertexArrays(1, &meshVAO);
-	glBindVertexArray(meshVAO);
-	glGenBuffers(1, &meshVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
-	glBufferData(GL_ARRAY_BUFFER, 12*2, vertex, GL_STATIC_DRAW);
-	//GLint positionLocation = glGetAttribLocation(GLShader::glsl->shaderProgram, "position");
-	/*glVertexAttribPointer(positionLocation, 2, GL_SHORT, GL_FALSE, 0, NULL);
-	glEnableVertexAttribArray(positionLocation);
-	glGenBuffers(1, &meshVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, meshVBO);
-	glBufferData(GL_ARRAY_BUFFER, 12*2, texCoord, GL_STATIC_DRAW);
-	//positionLocation = glGetAttribLocation(GLShader::glsl->shaderProgram, "texCoord");
-	glVertexAttribPointer(positionLocation, 2, GL_SHORT, GL_FALSE, 0, NULL);
-	glEnableVertexAttribArray(positionLocation);
-	glBindVertexArray(meshVAO);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-	//glDisable(GL_TEXTURE_2D);*/
+	glBindTexture(GL_TEXTURE_2D, this->tex->GLID);
+	glDrawArrays(GL_POINTS, 0, 1);
 	return true;
 }
 int Bitmap::renderGL210() {
@@ -842,82 +804,43 @@ int FLines::renderGLComptAll() {
 FRect::FRect(short width, short height, uint32_t backgroundColor) :ShapeRect(FRect::CRC32) {
 	this->width = width;
 	this->height = height;
-	this->radius = 0;
-	this->borderSize = 0;
-	this->borderColor.color = 0;
-	this->background = true;
-	this->backgroundColor.color = backgroundColor;
-}
-FRect::FRect(short width, short height, uint32_t borderColor, unsigned short borderSize) :ShapeRect(FRect::CRC32) {
-	this->width = width;
-	this->height = height;
-	this->radius = 0;
-	this->borderSize = borderSize;
-	this->borderColor.color = borderColor;
-	this->background = false;
-	this->backgroundColor.color = 0;
-}
-FRect::FRect(short width, short height, uint32_t backgroundColor, uint32_t borderColor, unsigned short borderSize) :ShapeRect(FRect::CRC32) {
-	this->width = width;
-	this->height = height;
-	this->radius = 0;
-	this->borderSize = borderSize;
-	this->borderColor.color = borderColor;
-	this->background = true;
 	this->backgroundColor.color = backgroundColor;
 }
 int FRect::renderGLComptAll() {
 	glPushMatrix();
-	if (this->background) {
-		if (this->radius>0) {
-			glLineWidth(1);
-			glBegin(GL_QUADS);
-				glColor3ub(this->backgroundColor.r, this->backgroundColor.g, this->backgroundColor.b );
-				glVertex2s(this->globalx+this->radius,				this->globaly);
-				glVertex2s(this->globalx+this->width-this->radius,	this->globaly);
-				glVertex2s(this->globalx+this->width-this->radius,	this->globaly+this->height);
-				glVertex2s(this->globalx+this->radius,				this->globaly+this->height);
-				
-				glVertex2s(this->globalx,				this->globaly+this->radius);
-				glVertex2s(this->globalx+this->width,	this->globaly+this->radius);
-				glVertex2s(this->globalx+this->width,	this->globaly+this->height-this->radius);
-				glVertex2s(this->globalx,				this->globaly+this->height-this->radius);
-			glEnd();
-			glPointSize(this->radius*2);
-			glBegin(GL_POINTS);
-				glColor3ub(this->backgroundColor.r, this->backgroundColor.g, this->backgroundColor.b );
-				glVertex2s(this->globalx+this->radius, this->globaly+this->radius);
-				glVertex2s(this->globalx+this->width-this->radius, this->globaly+this->radius);
-				glVertex2s(this->globalx+this->width-this->radius, this->globaly+this->height-this->radius);
-				glVertex2s(this->globalx+this->radius, this->globaly+this->height-this->radius);
-			glEnd();
-		}else{
-			glBegin(GL_QUADS);
-				glColor3ub(this->backgroundColor.r, this->backgroundColor.g, this->backgroundColor.b );
-				glVertex2s(this->globalx, this->globaly);
-				glVertex2s(this->globalx+this->width, this->globaly);
-				glVertex2s(this->globalx+this->width, this->globaly+this->height);
-				glVertex2s(this->globalx, this->globaly+this->height);
-			glEnd();
-		}
-	}
-	if (this->borderSize) {
-		glLineWidth(this->borderSize);
-		glPointSize(this->borderSize);
-		glBegin(GL_LINE_LOOP);
-			glColor3ub(this->borderColor.r, this->borderColor.g, this->borderColor.b );
-			glVertex2s(this->globalx, this->globaly);
-			glVertex2s(this->globalx+this->width, this->globaly);
-			glVertex2s(this->globalx+this->width, this->globaly+this->height);
-			glVertex2s(this->globalx, this->globaly+this->height);
-		glEnd();
-		glBegin(GL_POINTS);
-			glColor3ub(this->borderColor.r, this->borderColor.g, this->borderColor.b );
-			glVertex2s(this->globalx, this->globaly);
-			glVertex2s(this->globalx+this->width, this->globaly);
-			glVertex2s(this->globalx+this->width, this->globaly+this->height);
-			glVertex2s(this->globalx, this->globaly+this->height);
-		glEnd();
-	}
+	glBegin(GL_QUADS);
+		glColor3ub(this->backgroundColor.r, this->backgroundColor.g, this->backgroundColor.b );
+		glVertex2s(this->globalx, this->globaly);
+		glVertex2s(this->globalx+this->width, this->globaly);
+		glVertex2s(this->globalx+this->width, this->globaly+this->height);
+		glVertex2s(this->globalx, this->globaly+this->height);
+	glEnd();
 	glPopMatrix();
+}
+int FRect::renderGL330() {
+	//glUseProgram();
+	if (GLShader::shader->crc32!=ShaderFPrimitiv::CRC32) GLShader::setShader(ShaderFPrimitiv::prog);
+	if (this->vao==0) {
+		short vertex[4] = {
+			this->globalx, this->globaly, (short)this->width, (short)this->height
+		};
+		glGenVertexArrays(1, &this->vao);
+		if (this->vao==0) printf("VAO_NULL");
+		glBindVertexArray(this->vao);
+		
+		glGenBuffers(1, &this->vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
+		glBufferData(GL_ARRAY_BUFFER, 4*2, vertex, GL_STATIC_DRAW);
+		glVertexAttribPointer(ShaderBitmap::prog->position, 4, GL_SHORT, GL_FALSE, 0, NULL);
+		glEnableVertexAttribArray(ShaderBitmap::prog->position);
+	}
+	glBindVertexArray(this->vao);
+	//printf("color %i %i %i %i\n", backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+	glUniform4f(ShaderFPrimitiv::prog->fillColor, 
+			backgroundColor.r/255.0, 
+			backgroundColor.g/255.0, 
+			backgroundColor.b/255.0, 
+			backgroundColor.a/255.0);
+	glDrawArrays(GL_POINTS, 0, 1);
+	return true;
 }

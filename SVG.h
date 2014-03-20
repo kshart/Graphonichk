@@ -3,6 +3,7 @@
 
 #include "grBaseTypes.h"
 using namespace std;
+using Graphonichk::Array;
 using Graphonichk::TransformMatrix;
 
 namespace SVG {
@@ -24,6 +25,10 @@ namespace SVG {
 		float value;
 	} Length, Coordinate;
 	typedef struct {
+		unsigned char type, idColorWord;
+		unsigned char r, g, b;
+	} Color;
+	typedef struct {
 		Coordinate x, y;
 	} BasicPoint;
 	typedef struct {
@@ -41,9 +46,50 @@ namespace SVG {
 		char *onfocusin, *onfocusout, *onactivate, *onclick, *onmousedown, *onmouseup, *onmouseover, *onmousemove, *onmouseout, *onload;
 	} GraphicalEventAttributes;
 	
+	typedef struct {
+		void* font;
+		void* fontFamily;
+		void* fontSize;
+		void* fontSizeAdjust;
+		void* fontStretch;
+		void* fontStyle;
+		void* fontVariant;
+		void* fontWeight;
+	} FontProperties;
+	typedef struct {
+		void* direction;
+		void* letterSpacing;
+		void* textDecoration;
+		void* unicodeBidi;
+		void* wordSpacing;
+	} TextProperties;
+	typedef struct {
+		void* clip;
+		void* color;
+		
+		Color fill;
+		void* stroke;
+		void* stopColor;
+		void* floodColor;
+		void* lightingColor;
+		
+		void* cursor;
+		void* display;
+		void* overflow;
+		bool visibility;
+	} VisualProperties;
+	
+	//class Array<ColorWord>;
 	class DataTypes {
 	public:
+		typedef struct {
+			char *str;
+			uint8_t r, g, b;
+		} ColorWord;
+		static const ColorWord colorWords[147];
+		static void init();
 		static float		getPixels(Length l);
+		static Color		getColor(const char *str);
 		static Length		getLength(const char *str);
 		static Coordinate	getCoordinate(const char *str);
 		static Angle		getAngle(const char *str);
@@ -75,6 +121,7 @@ namespace SVG {
 	//rect circle ellipse line polyline
 	class BasicShapeRect :public Symbol{
 	public:
+		enum :GLuint {CRC32=0xB7D63381};
 		BasicShapeRect();
 		int renderGLComptAll();
 		int renderGL400();
@@ -87,11 +134,12 @@ namespace SVG {
 		bool externalResourcesRequired;
 		Coordinate x, y;
 		Length width, height;
-		
+		//Color color;
 		GLuint vao, vbo;
 	};
 	class BasicShapeCircle :public Symbol{
 	public:
+		enum :GLuint {CRC32=0xD4B76579};
 		BasicShapeCircle();
 		int renderGLComptAll();
 		int renderGL400();
@@ -104,6 +152,8 @@ namespace SVG {
 		bool externalResourcesRequired;
 		Coordinate cx, cy;
 		Length r;
+		
+		GLuint vao;
 	};
 	class BasicShapeEllipse :public Symbol{
 	public:
@@ -122,6 +172,7 @@ namespace SVG {
 	};
 	class BasicShapeLine :public Symbol{
 	public:
+		enum :GLuint {CRC32=0xD114B4F6};
 		BasicShapeLine();
 		int renderGLComptAll();
 		int renderGL400();
@@ -133,6 +184,8 @@ namespace SVG {
 		//transform;
 		bool externalResourcesRequired;
 		Coordinate x1, y1, x2, y2;
+		
+		GLuint vao, vbo;
 	};
 	class BasicShapePolyline :public Symbol{
 	public:

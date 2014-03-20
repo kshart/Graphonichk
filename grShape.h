@@ -1,8 +1,8 @@
 /* 
  * File:   grShape.h
- * Author: Артём Каширин
+ * Author: РђСЂС‚С‘Рј РљР°С€РёСЂРёРЅ
  *
- * Created on 25 Август 2013 г., 19:10
+ * Created on 25 РђРІРіСѓСЃС‚ 2013 Рі., 19:10
  */
 
 #ifndef GRSHAPE_H
@@ -78,23 +78,24 @@ namespace Graphonichk {
 		vector<ShapeBasic*> child;
 	};
 	class ShapeRect :public EventDispatcher<EventMouseShape>, public ShapeBasic {
+		short meshVertex[12];
 	protected:
 		ShapeRect(int crc32);
 	public:
-		///Конструктор ShapeRect (использовать только в классах наслнд) 
+		///РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ ShapeRect (РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ С‚РѕР»СЊРєРѕ РІ РєР»Р°СЃСЃР°С… РЅР°СЃР»РЅРґ) 
 		virtual void trace();
-		///Конструктор ShapeRect (использовать только в классах наслнд) 
+		///РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ ShapeRect (РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ С‚РѕР»СЊРєРѕ РІ РєР»Р°СЃСЃР°С… РЅР°СЃР»РЅРґ) 
 		virtual void drag(short x, short y);
 		virtual void updateGlobalPosition();
-		///Конструктор ShapeRect (использовать только в классах наслнд) 
-		GLuint meshVAO;
-		///Ссылка на родительскую директорию
+		///РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ ShapeRect (РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ С‚РѕР»СЊРєРѕ РІ РєР»Р°СЃСЃР°С… РЅР°СЃР»РЅРґ) 
+		GLuint meshVAO, meshVBO;
+		///РЎСЃС‹Р»РєР° РЅР° СЂРѕРґРёС‚РµР»СЊСЃРєСѓСЋ РґРёСЂРµРєС‚РѕСЂРёСЋ
 		ShapeGroupRect* parent;
 		///
 		Point offsetPos;
-		///Конструктор ShapeRect (использовать только в классах наслнд) 
+		///РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ ShapeRect (РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ С‚РѕР»СЊРєРѕ РІ РєР»Р°СЃСЃР°С… РЅР°СЃР»РЅРґ) 
 		short globalx, globaly, x, y;
-		///Конструктор ShapeRect (использовать только в классах наслнд) 
+		///РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ ShapeRect (РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ С‚РѕР»СЊРєРѕ РІ РєР»Р°СЃСЃР°С… РЅР°СЃР»РЅРґ) 
 		unsigned short width, height;
 		///
 		bool visible;
@@ -215,7 +216,7 @@ namespace Graphonichk {
 		int saveAsXML(FILE* str, unsigned short tab);
 		Texture *tex;
 		
-		GLuint vao, vbo1, vbo2;
+		GLuint vao, vbo;
 		static void updateBitmaps();
 	};
 	class FPoint :public ShapeRect {
@@ -239,13 +240,10 @@ namespace Graphonichk {
 	  public:
 		enum {CRC32=0x27311957};
 		FRect(short width, short height, uint32_t backgroundColor);
-		FRect(short width, short height, uint32_t borderColor, unsigned short borderSize);
-		FRect(short width, short height, uint32_t backgroundColor, uint32_t borderColor, unsigned short borderSize);
 		int renderGLComptAll();
-		short radius;
-		short borderSize;
-		char background;
-		argb borderColor, backgroundColor;
+		int renderGL330();
+		argb backgroundColor;
+		GLuint vao, vbo;
 	};
 
 	

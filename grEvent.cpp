@@ -9,7 +9,7 @@ Event::Event() {
 	this->type = 1;
 	this->obj = NULL;
 }
-
+/*
 template<class TEvent> int EventDispatcher<TEvent>::addEventHandler(int type, void(*fun)(const TEvent*), void* obj) {
 	EventLinc el;
 	el.obj = obj;
@@ -28,7 +28,7 @@ template<class TEvent> int EventDispatcher<TEvent>::callEvent(TEvent *event) {
 template<class TEvent> int EventDispatcher<TEvent>::removeEventHandler( void(*fun)(const TEvent*) ) {
 	
 }
-
+*/
 EventKeyboard::EventKeyboard() {
 	
 }
