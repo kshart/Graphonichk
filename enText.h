@@ -118,7 +118,6 @@ namespace Graphonichk {
 		} style;*/
 	};
 	
-	
 }
 
 #endif	/* GRTEXT_H */

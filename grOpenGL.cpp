@@ -6,6 +6,7 @@ using namespace Graphonichk;
 
 GLuint OpenGL::viewMatrix = 0;
 GLuint OpenGL::circleBuffer = 0;
+GLuint OpenGL::textureGLID = 0;
 OpenGL::OPENGL_VER OpenGL::ver;
 vector<OpenGL::viewport> OpenGL::viewportBuffer;
 vector<ViewMatrix> OpenGL::viewMatrixBuffer;
@@ -228,7 +229,7 @@ int GLShader::make() {
 }*/
 
 ShaderBitmap* ShaderBitmap::prog = NULL;
-ShaderBitmap::ShaderBitmap() :GLShader(1) {
+ShaderBitmap::ShaderBitmap() :GLShader(ShaderBitmap::CRC32) {
 	
 }
 void ShaderBitmap::init() {
@@ -329,6 +330,7 @@ void ShaderBitmap::init33() {
 			
 			"gl_Position = vec4(Pos.x+texSize.x, Pos.y+texSize.y, 0.0, 1.0)*viewMatrixValue;"
 			"TexCoord = vec2(1.0, 1.0);"
+			//"gl_PointSize = 10.0;"
 			"EmitVertex();"
 			"EndPrimitive();"
 		"}";

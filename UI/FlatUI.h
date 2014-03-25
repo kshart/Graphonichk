@@ -1,21 +1,28 @@
-/* 
- * File:   FlatUI.h
- * Author: Артем
- *
- * Created on 5 Декабрь 2013 г., 19:48
- */
-
 #ifndef FLATUI_H
 #define	FLATUI_H
 
-#include "grBaseTypes.h"
+#include "../grBaseTypes.h"
+#include "UIMain.h"
 
 namespace FlatUI {
-	class UIButton;
-	class UICheckbox;
-	class UIRadioButton;
+	class FlatUIButton;
+	class FlatUICheckbox;
+	class FlatUIRadioButton;
 	
-	static int FlatUIInit();
+	class MainFlatUI {
+	public:
+		static int init();
+		static Graphonichk::Texture *flRB, *flRBChk, *flRBRollOver,
+				*flCB, *flCBChk, *flCBRollOver;
+	};
+	class FlatUICheckbox :public Graphonichk::UICheckbox {
+	public:
+		FlatUICheckbox();
+	};
+	class FlatUIRadioButton :public Graphonichk::UIRadioButton {
+	public:
+		FlatUIRadioButton(Graphonichk::UIRadioButtonGroup *gr);
+	};
 }
 
 #endif	/* FLATUI_H */

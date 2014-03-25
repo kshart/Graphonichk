@@ -9,7 +9,6 @@
 //Graphonichk
 using namespace std;
 namespace Graphonichk {
-	//class ProcessingQueue<ProcessingTask>;
 	class Windows :public EventDispatcher<EventWindow> {
 	private:
 		#ifdef WIN32
@@ -58,14 +57,13 @@ namespace Graphonichk {
 		} events;
 		//Graphonichk::ProcessingQueue<Graphonichk::VBOUpdateTask> asd;
 		//ProcessingQueue<VBOUpdateTask> VBOupdate;
-		//ProcessingQueue<ProcessingTask> sss;
+		ProcessingQueue<EachFrameTask> eachFrame;
 		vector<Buffer*> FBOBuffer;
 		ShapeGroupRect *root;
 		bool visible, renderComplete;
 		short x, y, width, height;
 		int dpi;
 	};
-	
 }
 
 #endif	/* GRWINDOWS_H */

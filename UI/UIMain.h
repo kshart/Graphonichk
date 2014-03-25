@@ -91,7 +91,7 @@ namespace Graphonichk {
 	};
 	
 	class UIButton :public ShapeRect {
-	private:
+	protected:
 		UIButton(int crc32, unsigned short w, unsigned short h, ShapeRect *shPressed, ShapeRect *shNormal, ShapeRect *shRollOver);
 	public:
 		enum {CRC32=0x251F1AC9};
@@ -110,9 +110,16 @@ namespace Graphonichk {
 		bool press;
 	};
 	class UICheckbox :public ShapeRect {
-	private:
-		UICheckbox(int crc32, unsigned short w, unsigned short h, ShapeRect *shUnchkPressed, ShapeRect *shUnchkNormal, ShapeRect *shUnchkRollOver, ShapeRect *shUnchkDisable,
-				ShapeRect *shChkPressed, ShapeRect *shChkNormal, ShapeRect *shChkRollOver, ShapeRect *shChkDisable);
+	protected:
+		UICheckbox(int crc32, unsigned short w, unsigned short h, 
+				ShapeRect *shUnchkPressed, 
+				ShapeRect *shUnchkNormal, 
+				ShapeRect *shUnchkRollOver, 
+				ShapeRect *shUnchkDisable,
+				ShapeRect *shChkPressed, 
+				ShapeRect *shChkNormal, 
+				ShapeRect *shChkRollOver, 
+				ShapeRect *shChkDisable);
 	public:
 		enum {CRC32=0x4CA925F4};
 		enum STATUS {
@@ -132,7 +139,7 @@ namespace Graphonichk {
 	};
 	
 	class UIRadioButtonGroup :public ShapeGroupRect {
-	private:
+	protected:
 		//bool addChild(ShapeRect*);
 	public:
 		enum {CRC32=0xE7E01EB1};
@@ -143,7 +150,7 @@ namespace Graphonichk {
 		UIRadioButton *checked;
 	};
 	class UIRadioButton :public ShapeRect {
-	private:
+	protected:
 	public:
 		enum {CRC32=0x97511BB6};
 		enum STATUS {

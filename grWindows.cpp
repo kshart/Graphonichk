@@ -88,12 +88,14 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 #define PARENT_SEMAPHORE ((HANDLE*)sys)[0]
 	ReleaseSemaphore(PARENT_SEMAPHORE, 1, NULL);
 #undef PARENT_SEMAPHORE
+	
+	LARGE_INTEGER frequencyStruct;
+	float frequency, time;
+	printf("QueryPerformanceFrequency %i\n", QueryPerformanceFrequency(&frequencyStruct));
+	frequency = (float)frequencyStruct.QuadPart;
 	while (IsWindow(win->hWnd)) {
-		Texture::texturesUpdate();
-		Bitmap::updateBitmaps();
-		if (!win->FBOBuffer.empty()) {
-			win->redrawFBO();
-		}
+		LARGE_INTEGER time1, time2;
+		QueryPerformanceCounter(&time1);
 		#ifdef REDRAWN_BY_THE_ACTION
 		if (!win->renderComplete) {
 			win->redraw();
@@ -101,7 +103,15 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 		#else
 		win->redraw();
 		#endif
-		Sleep(10);
+		win->eachFrame.performTasks();
+		QueryPerformanceCounter(&time2);
+		time = (float)(time2.QuadPart-time1.QuadPart)/frequency;
+		
+		Bitmap::updateBitmaps();
+		
+		if ( time<TIME_IN_FRAME_MS ) {
+			Sleep( (int)( 1000*(TIME_IN_FRAME_MS - time) ) );
+		}
 	}
 }
 LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -440,7 +450,7 @@ void Windows::resize(short width, short height) {
 
 Windows *Windows::window = NULL;
 void Windows::redraw() {
-	glClearColor( 0.5, 0.5, 0.5, 1.0 );
+	glClearColor( 0.9, 0.9, 0.9, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT );
 	OpenGL::clearViewMatrix();
 	switch (OpenGL::ver) {

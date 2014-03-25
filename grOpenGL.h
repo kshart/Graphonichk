@@ -88,7 +88,7 @@ namespace Graphonichk {
 		static void popViewMatrix();
 		static void setViewMatrix(ViewMatrix view);
 		static void multViewMatrix(ViewMatrix view);
-		static GLuint viewMatrix, circleBuffer;
+		static GLuint viewMatrix, circleBuffer, textureGLID;
 		static int init(OPENGL_VER);
 	};
 };

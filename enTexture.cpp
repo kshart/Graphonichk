@@ -8,9 +8,13 @@
 #include "grBaseTypes.h"
 
 #define ADD_TEXTURE_TO_UPDATE_BUFFER(tex) \
-	Texture::buffer.push_back(tex);\
-	Texture::toUpdate++;
-#define ADD_TEXTURE_TO_DELETE_BUFFER(tex) \
+	TextureToUpdateTask *task = new TextureToUpdateTask(tex);\
+	Windows::window->eachFrame.addTask(task, 0);\
+	//Texture::buffer.push_back(tex);
+	//Texture::toUpdate++;
+#define ADD_TEXTURE_TO_DELETE_BUFFER(glid) \
+	TextureToDeleteTask *task = new TextureToDeleteTask(glid);\
+	Windows::window->eachFrame.addTask(task, 0);\
 	//Texture::buffer.push_back(tex);\
 	//Texture::toDelete++;
 using namespace std;
@@ -31,7 +35,6 @@ Texture::Texture(unsigned short w, unsigned short h, GLuint format, GLuint type)
 	this->GLID = 0;
 	ADD_TEXTURE_TO_UPDATE_BUFFER(this);
 }
-
 Texture::Texture(string path) {
 	this->type = 0;
 	this->width = this->height = 0;
@@ -71,12 +74,9 @@ Texture::Texture(Image *img) {
 	ADD_TEXTURE_TO_UPDATE_BUFFER(this);
 }
 Texture::~Texture() {
-	glDeleteTextures(1, &this->GLID);
-}
-void Texture::close() {
 	if (this->img!=NULL) free(this->img);
 	this->event = EVENT::TO_DELETE;
-	ADD_TEXTURE_TO_DELETE_BUFFER(this);
+	ADD_TEXTURE_TO_DELETE_BUFFER(this->GLID);
 }
 void Texture::trace() {
 	printf("\t<Texture w='%i' h='%i' event='%i' type='%i' format='%i' texId='%i' GLID='%i'/>\n", 
@@ -96,7 +96,6 @@ void Texture::texturesUpdate() {
 			tex = Texture::buffer[i];
 			if (tex->event!=EVENT::TO_UPDATE) continue; 
 			if (tex->img==NULL) {// <editor-fold defaultstate="collapsed" desc="tex->img==NULL">
-				//Рє С‚РµРєСЃС‚СѓСЂРµ РЅРµ РїСЂРёРїРёСЃР°РЅРѕ РёР·РѕР±СЂР°Р¶РµРЅРёРµ, СЃРѕР·РґР°РµРј "РїСѓСЃС‚СѓСЋ" С‚РµРєСЃС‚СѓСЂСѓ;
 				if (tex->GLID==0) {
 					glGenTextures( 1, &tex->GLID );
 					if (tex->GLID==0) continue;

@@ -28,6 +28,7 @@
 	#include<GL/glx.h>
 #endif
 
+#define TIME_IN_FRAME_MS (float)1/60
 #define M_PI 3.14159265358979323846
 using namespace std;
 //111
@@ -60,24 +61,15 @@ enum {
 // </editor-fold>
 
 typedef unsigned int uint;
-
-#include "grEvent.h"
-#include "grProcessingQueue.h"
-#include "grFile.h"
-#include "grMatrix.h"
 namespace Graphonichk {
 	class System;
 	class Windows;
 	class GLShader;
+	class Image;
 	class Texture;
 	//<Shape>
 	//class Buffer;
 	//</Shape>
-	class Bitmap;
-	class FPoint;
-	class FLines;
-	class FRect;
-	class FCircle;
 	//Shape
 	//Event
 	class EventKeyboard;
@@ -288,13 +280,7 @@ namespace Graphonichk {
 		DEL=0x7F//ignore
 	};
 }
-string get_ext(const string& st);
-string get_name(const string& st);
-#include "grOpenGL.h"
-#include "grShape.h"
-#include "grWindows.h"
-#include "enTexture.h"
-#include "enText.h"
 
+#include "grTypes.h"
 
 #endif	/* GRBASETYPES_H */

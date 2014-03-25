@@ -374,7 +374,8 @@ bool ShapeGroupRect::bufferMode(bool mode) {
 		this->bufferInit = false;
 	}else if ( !mode && this->bufferActivate ) {
 		this->bufferActivate = false;
-		this->bufferTexture->close();
+		delete this->bufferTexture;
+		this->bufferTexture = NULL;
 	}
 	return true;
 }
@@ -660,6 +661,10 @@ int Bitmap::renderGL400() {
 }
 int Bitmap::renderGL330() {
 	if (GLShader::shader->crc32!=ShaderBitmap::CRC32) GLShader::setShader(ShaderBitmap::prog);
+	if (OpenGL::textureGLID!=this->tex->GLID) {
+		glBindTexture(GL_TEXTURE_2D, this->tex->GLID);
+		OpenGL::textureGLID = this->tex->GLID;
+	}
 	if (this->vao==0 && this->tex->event==Texture::LOADED) {
 		short vertex[2] = {
 			this->globalx, this->globaly
@@ -674,7 +679,6 @@ int Bitmap::renderGL330() {
 		glEnableVertexAttribArray(ShaderBitmap::prog->position);
 	}
 	glBindVertexArray(this->vao);
-	glBindTexture(GL_TEXTURE_2D, this->tex->GLID);
 	glDrawArrays(GL_POINTS, 0, 1);
 	return true;
 }
@@ -710,27 +714,27 @@ int Bitmap::saveAsXML(FILE* str, unsigned short tab) {
 }
 void Bitmap::updateBitmaps() {
 	if ( !Bitmap::updateBuffer.empty() ) {
-			Bitmap *bmp;
-			int countUpdateBMP = 0;
-			for(int i=0; i<Bitmap::updateBuffer.size()-countUpdateBMP; i++) {
-				bmp = Bitmap::updateBuffer[i];
-				if (bmp->tex->GLID!=0 && bmp->tex->event==Texture::LOADED) {
-					bmp->width = bmp->tex->width;
-					bmp->height = bmp->tex->height;
-					bmp->tex->trace();
-					countUpdateBMP++;
-					if (countUpdateBMP >= Bitmap::updateBuffer.size()) {
-						Bitmap::updateBuffer.clear();
-						break;
-					}
-					Bitmap::updateBuffer[i] = Bitmap::updateBuffer[ Bitmap::updateBuffer.size()-countUpdateBMP ]; 
-					Bitmap::updateBuffer[ Bitmap::updateBuffer.size()-countUpdateBMP ] = NULL;
+		Bitmap *bmp;
+		int countUpdateBMP = 0;
+		for(int i=0; i<Bitmap::updateBuffer.size()-countUpdateBMP; i++) {
+			bmp = Bitmap::updateBuffer[i];
+			if (bmp->tex->GLID!=0 && bmp->tex->event==Texture::LOADED) {
+				bmp->width = bmp->tex->width;
+				bmp->height = bmp->tex->height;
+				bmp->tex->trace();
+				countUpdateBMP++;
+				if (countUpdateBMP >= Bitmap::updateBuffer.size()) {
+					Bitmap::updateBuffer.clear();
+					break;
 				}
-			}
-			if (countUpdateBMP < Bitmap::updateBuffer.size()) {
-				Bitmap::updateBuffer.resize( Bitmap::updateBuffer.size()-countUpdateBMP );
+				Bitmap::updateBuffer[i] = Bitmap::updateBuffer[ Bitmap::updateBuffer.size()-countUpdateBMP ]; 
+				Bitmap::updateBuffer[ Bitmap::updateBuffer.size()-countUpdateBMP ] = NULL;
 			}
 		}
+		if (countUpdateBMP < Bitmap::updateBuffer.size()) {
+			Bitmap::updateBuffer.resize( Bitmap::updateBuffer.size()-countUpdateBMP );
+		}
+	}
 }
 Buffer::Buffer() {
 	this->bufferInit = false;

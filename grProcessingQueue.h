@@ -1,15 +1,44 @@
 #ifndef GRPROCESSINGQUEUE_H
 #define	GRPROCESSINGQUEUE_H
-#include "grBaseTypes.h"
-
+#include <stack>
+#include <queue>
+#include <string.h>
+#include <string>
+#include <stdio.h>
+#include <stdlib.h>
+#include <GL/glew.h>
+#include <windows.h>
+#include <windowsx.h>
 using namespace std;
 
 namespace Graphonichk {
+	class Image;
+	class Texture;
+	
 	class ProcessingTask {
 	public:
 		int processExecute();
 		int info;
 	};
+	class EachFrameTask {
+	public:
+		EachFrameTask();
+		virtual int processExecute();
+		int info;
+	};
+	class TextureToUpdateTask :public EachFrameTask {
+	public:
+		TextureToUpdateTask(Texture *t);
+		int processExecute();
+		Texture *tex;
+	};
+	class TextureToDeleteTask :public EachFrameTask {
+	public:
+		TextureToDeleteTask(GLuint GLID);
+		int processExecute();
+		GLuint GLID;
+	};
+	
 	class HeapFreeTask {
 	public:
 		int processExecute();
@@ -22,31 +51,49 @@ namespace Graphonichk {
 		void* data;
 		size_t dataSize;
 	};
-	//template class ProcessingQueue<VBOUpdateTask>;
-	// class ProcessingQueue<VBOUpdateTask>;
+	
+	
 	template<class TTask> class ProcessingQueue {
-		queue<TTask> essentialTasks;
+		queue<TTask*> essentialTasks1;
+		queue<TTask*> essentialTasks2;
+		char queueIsUse;
 		CRITICAL_SECTION accessPush;
 	public:
-		ProcessingQueue() {
+		ProcessingQueue(){
+			this->queueIsUse = 0;
 			InitializeCriticalSection(&this->accessPush);
 		}
-		int addTask(TTask task, int type) {
-			//int size = 0;
+		int addTask(TTask *task, int type) {
 			EnterCriticalSection(&this->accessPush);
-			this->essentialTasks.push(task);
-			//size = this->essentialTasks.size();
+			if (this->queueIsUse == 1) {
+				this->essentialTasks2.push(task);
+			}else{
+				this->essentialTasks1.push(task);
+			}
 			LeaveCriticalSection(&this->accessPush);
 			return true;
 		}
 		int performTasks() {
 			EnterCriticalSection(&this->accessPush);
-			printf("performTasks %i\n", this->essentialTasks.size());
-			while ( !this->essentialTasks.empty() ) {
-				this->essentialTasks.front().processExecute();
-				this->essentialTasks.pop();
-			}
+			this->queueIsUse = !this->queueIsUse;
 			LeaveCriticalSection(&this->accessPush);
+			if (this->queueIsUse == 1) {
+				//printf("performTasks %i\n", this->essentialTasks1.size());
+				while ( !this->essentialTasks1.empty() ) {
+					this->essentialTasks1.front()->processExecute();
+					delete this->essentialTasks1.front();
+					this->essentialTasks1.pop();
+				}
+			}else{
+				//printf("performTasks %i\n", this->essentialTasks2.size());
+				while ( !this->essentialTasks2.empty() ) {
+					this->essentialTasks2.front()->processExecute();
+					delete this->essentialTasks2.front();
+					this->essentialTasks2.pop();
+				}
+			}
+			
+			
 			return true;
 		}
 	};

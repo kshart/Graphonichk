@@ -162,7 +162,8 @@ bool TextField::bufferMode(bool mode) {
 		this->bufferInit = false;
 	}else if ( !mode && this->bufferActivate ) {
 		this->bufferActivate = false;
-		this->bufferTexture->close();
+		delete this->bufferTexture;
+		this->bufferTexture = NULL;
 	}
 	return true;
 }

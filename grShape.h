@@ -1,10 +1,3 @@
-/* 
- * File:   grShape.h
- * Author: РђСЂС‚С‘Рј РљР°С€РёСЂРёРЅ
- *
- * Created on 25 РђРІРіСѓСЃС‚ 2013 Рі., 19:10
- */
-
 #ifndef GRSHAPE_H
 #define	GRSHAPE_H
 

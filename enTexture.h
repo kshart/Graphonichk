@@ -1,12 +1,5 @@
-/* 
- * File:   enTexture.h
- * Author: РђСЂС‚РµРј
- *
- * Created on 16 РќРѕСЏР±СЂСЊ 2013 Рі., 19:56
- */
-
-#ifndef ENTEXTURE_H
-#define	ENTEXTURE_H
+#ifndef GRTEXTURE_H
+#define	GRTEXTURE_H
 #include "grBaseTypes.h"
 
 using namespace std;
@@ -61,7 +54,6 @@ namespace Graphonichk {
 	};
 	class Texture {
 	private:
-		~Texture();
 		static vector<Texture*> buffer;
 		static uint toUpdate, toDelete;
 	public:
@@ -73,11 +65,11 @@ namespace Graphonichk {
 			TO_UPDATE,
 			LOADED
 		};
+		~Texture();
 		Texture(string path);
 		Texture(Image *img);
 		Texture(unsigned short w, unsigned short h, GLuint format, GLuint type);
 		int saveAsXML(FILE *str, unsigned short tab=0);
-		void close();
 		void trace();
 		
 		
@@ -92,5 +84,5 @@ namespace Graphonichk {
 	};
 };
 
-#endif	/* ENTEXTURE_H */
+#endif	/* GRTEXTURE_H */
 
