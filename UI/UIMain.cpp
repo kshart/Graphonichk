@@ -324,7 +324,7 @@ UIScrollBarW::UIScrollBarW(unsigned short w, unsigned short h) :ShapeGroupRect(U
 }
 
 
-
+/*
 void ButtonMouseUp (const EventMouse *e) {
 	UIButton *sb = (UIButton*)(e->obj);
 	sb->press = false;
@@ -336,44 +336,10 @@ void ButtonMouseUp (const EventMouse *e) {
 	#ifdef REDRAWN_BY_THE_ACTION
 	Windows::window->renderComplete = false;
 	#endif
-}
-
-UIButton::UIButton(int crc32, unsigned short w, unsigned short h, ShapeRect* shPressed, ShapeRect* shNormal, ShapeRect* shRollOver) :ShapeRect(crc32) {
-	this->mouseEventActive = true;
-	this->width = w;
-	this->height = h;
+}*/
+UIButton::UIButton() {
 	this->press = false;
 	this->status = UIButton::NORMAL;
-	this->shapePressed = shPressed;
-	this->shapeNormal = shNormal;
-	this->shapeRollOver = shRollOver;
-	Windows::window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, ButtonMouseUp, this);
-}
-UIButton::UIButton(unsigned short w, unsigned short h) :ShapeRect(UIButton::CRC32) {
-	this->mouseEventActive = true;
-	this->width = w;
-	this->height = h;
-	this->press = false;
-	this->status = UIButton::NORMAL;
-	this->shapePressed = new FRect(w, h, 0xFF16A085);
-	this->shapeNormal = new FRect(w, h, 0xFF1ABC9C);
-	this->shapeRollOver = new FRect(w, h, 0xFF48C9B0);
-	Windows::window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, ButtonMouseUp, this);
-}
-void UIButton::updateGlobalPosition() {
-	if (this->parent!=NULL) {
-		this->globalx = parent->globalx+this->x;
-		this->globaly = parent->globaly+this->y;
-		this->shapePressed->globalx = this->globalx+shapePressed->x;
-		this->shapePressed->globaly = this->globaly+shapePressed->y;
-		this->shapeNormal->globalx = this->globalx+shapeNormal->x;
-		this->shapeNormal->globaly = this->globaly+shapeNormal->y;
-		this->shapeRollOver->globalx = this->globalx+shapeRollOver->x;
-		this->shapeRollOver->globaly = this->globaly+shapeRollOver->y;
-	}
-	#ifdef REDRAWN_BY_THE_ACTION
-	Windows::window->renderComplete = false;
-	#endif
 }
 int UIButton::callEvent(EventMouseShape* event) {
 	//event->shape = this;
@@ -405,343 +371,38 @@ int UIButton::callEvent(EventMouseShape* event) {
 			return true;
 	}
 }
-int UIButton::renderGLComptAll() {
-	switch(this->status) {
-		case UIButton::NORMAL:
-			this->shapeNormal->renderGLComptAll();
-			return true;
-		case UIButton::PRESS:
-			this->shapePressed->renderGLComptAll();
-			return true;
-		case UIButton::ROLLOVER:
-			this->shapeRollOver->renderGLComptAll();
-			return true;
-	}
-}
-int UIButton::renderGL400() {
-	switch(this->status) {
-		case UIButton::NORMAL:
-			this->shapeNormal->renderGL400();
-			return true;
-		case UIButton::PRESS:
-			this->shapePressed->renderGL400();
-			return true;
-		case UIButton::ROLLOVER:
-			this->shapeRollOver->renderGL400();
-			return true;
-	}
-}
-int UIButton::renderGL330() {
-	switch(this->status) {
-		case UIButton::NORMAL:
-			this->shapeNormal->renderGL330();
-			return true;
-		case UIButton::PRESS:
-			this->shapePressed->renderGL330();
-			return true;
-		case UIButton::ROLLOVER:
-			this->shapeRollOver->renderGL330();
-			return true;
-	}
-}
-int UIButton::renderGL210() {
-	switch(this->status) {
-		case UIButton::NORMAL:
-			this->shapeNormal->renderGL210();
-			return true;
-		case UIButton::PRESS:
-			this->shapePressed->renderGL210();
-			return true;
-		case UIButton::ROLLOVER:
-			this->shapeRollOver->renderGL210();
-			return true;
-	}
-}
 
-
-
-void UICheckboxMouseDown (const EventMouseShape *e) {
-	UICheckbox *sb = (UICheckbox*)(e->shape);
-	if (sb->status!=UICheckbox::CHECKED_DISABLE && sb->status!=UICheckbox::UNCHECKED_DISABLE) {
-		sb->press = true;
-		if (sb->checked) {
-			sb->status = UICheckbox::CHECKED_PRESS;
-		}else{
-			sb->status = UICheckbox::UNCHECKED_PRESS;
-		}
-		#ifdef REDRAWN_BY_THE_ACTION
-		Windows::window->renderComplete = false;
-		#endif
-	}
-}
-void UICheckboxMouseUp (const EventMouse *e) {
-	UICheckbox *sb = (UICheckbox*)(e->obj);
-	short localx, localy;
-	if (sb->press) {
-		sb->press = false;
-		localx = e->x - sb->globalx;
-		localy = e->y - sb->globaly;
-		if (localx>0 && localx<sb->width && localy>0 && localy<sb->height) {
-			if (sb->checked) {
-				sb->checked = false;
-				sb->status = UICheckbox::UNCHECKED_NORMAL;
-			}else{
-				sb->checked = true;
-				sb->status = UICheckbox::CHECKED_NORMAL;
-			}
-		}else{
-			if (sb->checked) {
-				sb->status = UICheckbox::CHECKED_NORMAL;
-			}else{
-				sb->status = UICheckbox::UNCHECKED_NORMAL;
-			}
-		}
-		#ifdef REDRAWN_BY_THE_ACTION
-		Windows::window->renderComplete = false;
-		#endif
-	}
-}
-void UICheckboxMouseOver (const EventMouseShape *e) {
-	UICheckbox *sb = (UICheckbox*)(e->shape);
-	if (sb->status!=UICheckbox::CHECKED_DISABLE && sb->status!=UICheckbox::UNCHECKED_DISABLE) {
-		if (sb->checked) {
-			if (sb->press) {
-				sb->status = UICheckbox::CHECKED_PRESS;
-			}else{
-				sb->status = UICheckbox::CHECKED_ROLLOVER;
-			}
-		}else{
-			if (sb->press) {
-				sb->status = UICheckbox::UNCHECKED_PRESS;
-			}else{
-				sb->status = UICheckbox::UNCHECKED_ROLLOVER;
-			}
-		}
-		#ifdef REDRAWN_BY_THE_ACTION
-		Windows::window->renderComplete = false;
-		#endif
-	}
-}
-void UICheckboxMouseOut (const EventMouseShape *e) {
-	UICheckbox *sb = (UICheckbox*)(e->shape);
-	if (sb->status!=UICheckbox::CHECKED_DISABLE && sb->status!=UICheckbox::UNCHECKED_DISABLE) {
-		if (sb->checked) {
-			sb->status = UICheckbox::CHECKED_NORMAL;
-		}else{
-			sb->status = UICheckbox::UNCHECKED_NORMAL;
-		}
-		#ifdef REDRAWN_BY_THE_ACTION
-		Windows::window->renderComplete = false;
-		#endif
-	}
-}
-
-UICheckbox::UICheckbox(int crc32, unsigned short w, unsigned short h, ShapeRect* shUnchkPressed, ShapeRect* shUnchkNormal, ShapeRect* shUnchkRollOver, ShapeRect* shUnchkDisable, 
-		ShapeRect* shChkPressed, ShapeRect* shChkNormal, ShapeRect* shChkRollOver, ShapeRect* shChkDisable) :ShapeRect(crc32) {
-	this->width = w;
-	this->height = h;
-	this->press = false;
-	this->checked = false;
-	this->status = UICheckbox::UNCHECKED_NORMAL;
-	this->shUnchkPressed = shUnchkPressed;
-	this->shUnchkNormal = shUnchkNormal;
-	this->shUnchkRollOver = shUnchkRollOver;
-	this->shUnchkDisable = shUnchkDisable;
-	this->shChkPressed = shChkPressed;
-	this->shChkNormal = shChkNormal;
-	this->shChkRollOver = shChkRollOver;
-	this->shChkDisable = shChkDisable;
-	this->addEventHandler(EventMouseShape::MOUSE_DOWN, UICheckboxMouseDown);
-	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, UICheckboxMouseOut);
-	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OVER, UICheckboxMouseOver);
-	Windows::window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, UICheckboxMouseUp, this);
-}
-UICheckbox::UICheckbox(unsigned short w, unsigned short h) :ShapeRect(UIButton::CRC32) {
-	this->width = w;
-	this->height = h;
-	this->press = false;
-	this->checked = false;
-	this->status = UICheckbox::UNCHECKED_NORMAL;
-	this->shUnchkPressed =	new FRect(w, h, 0xFF00AAAA);
-	this->shUnchkNormal =	new FRect(w, h, 0xFFAA00AA);
-	this->shUnchkRollOver = new FRect(w, h, 0xFFFF0000);
-	this->shUnchkDisable =	new FRect(w, h, 0xFF117700);
-	this->shChkPressed =	new FRect(w, h, 0xFFFF0000);
-	this->shChkNormal =		new FRect(w, h, 0xFF00FF00);
-	this->shChkRollOver =	new FRect(w, h, 0xFF0000FF);
-	this->shChkDisable =	new FRect(w, h, 0xFF117766);
-	this->addEventHandler(EventMouseShape::MOUSE_DOWN, UICheckboxMouseDown);
-	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, UICheckboxMouseOut);
-	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OVER, UICheckboxMouseOver);
-	Windows::window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, UICheckboxMouseUp, this);
-}
-void UICheckbox::updateGlobalPosition() {
-	if (this->parent!=NULL) {
-		this->globalx = this->parent->globalx+this->x;
-		this->globaly = this->parent->globaly+this->y;
-		this->shUnchkPressed->globalx = this->globalx+shUnchkPressed->x;
-		this->shUnchkPressed->globaly = this->globaly+shUnchkPressed->y;
-		this->shUnchkNormal->globalx = this->globalx+shUnchkNormal->x;
-		this->shUnchkNormal->globaly = this->globaly+shUnchkNormal->y;
-		this->shUnchkRollOver->globalx = this->globalx+shUnchkRollOver->x;
-		this->shUnchkRollOver->globaly = this->globaly+shUnchkRollOver->y;
-		this->shUnchkDisable->globalx = this->globalx+shUnchkDisable->x;
-		this->shUnchkDisable->globaly = this->globaly+shUnchkDisable->y;
-		this->shChkPressed->globalx = this->globalx+shChkPressed->x;
-		this->shChkPressed->globaly = this->globaly+shChkPressed->y;
-		this->shChkNormal->globalx = this->globalx+shChkNormal->x;
-		this->shChkNormal->globaly = this->globaly+shChkNormal->y;
-		this->shChkRollOver->globalx = this->globalx+shChkRollOver->x;
-		this->shChkRollOver->globaly = this->globaly+shChkRollOver->y;
-		this->shChkDisable->globalx = this->globalx+shChkRollOver->x;
-		this->shChkDisable->globaly = this->globaly+shChkRollOver->y;
-	}
-	#ifdef REDRAWN_BY_THE_ACTION
-	Windows::window->renderComplete = false;
-	#endif
-}
-int UICheckbox::renderGLComptAll() {
-	switch(this->status) {
-		case UICheckbox::UNCHECKED_PRESS:
-			this->shUnchkPressed->renderGLComptAll();
-			return true;
-		case UICheckbox::UNCHECKED_NORMAL:
-			this->shUnchkNormal->renderGLComptAll();
-			return true;
-		case UICheckbox::UNCHECKED_ROLLOVER:
-			this->shUnchkRollOver->renderGLComptAll();
-			return true;
-		case UICheckbox::UNCHECKED_DISABLE:
-			this->shUnchkDisable->renderGLComptAll();
-			return true;
-		case UICheckbox::CHECKED_PRESS:
-			this->shChkPressed->renderGLComptAll();
-			return true;
-		case UICheckbox::CHECKED_NORMAL:
-			this->shChkNormal->renderGLComptAll();
-			return true;
-		case UICheckbox::CHECKED_ROLLOVER:
-			this->shChkRollOver->renderGLComptAll();
-			return true;
-		case UICheckbox::CHECKED_DISABLE:
-			this->shChkDisable->renderGLComptAll();
-			return true;
-	}
-}
-int UICheckbox::renderGL400() {
-	switch(this->status) {
-		case UICheckbox::UNCHECKED_PRESS:
-			this->shUnchkPressed->renderGL400();
-			return true;
-		case UICheckbox::UNCHECKED_NORMAL:
-			this->shUnchkNormal->renderGL400();
-			return true;
-		case UICheckbox::UNCHECKED_ROLLOVER:
-			this->shUnchkRollOver->renderGL400();
-			return true;
-		case UICheckbox::UNCHECKED_DISABLE:
-			this->shUnchkDisable->renderGL400();
-			return true;
-		case UICheckbox::CHECKED_PRESS:
-			this->shChkPressed->renderGL400();
-			return true;
-		case UICheckbox::CHECKED_NORMAL:
-			this->shChkNormal->renderGL400();
-			return true;
-		case UICheckbox::CHECKED_ROLLOVER:
-			this->shChkRollOver->renderGL400();
-			return true;
-		case UICheckbox::CHECKED_DISABLE:
-			this->shChkDisable->renderGL400();
-			return true;
-	}
-}
-int UICheckbox::renderGL330() {
-	switch(this->status) {
-		case UICheckbox::UNCHECKED_PRESS:
-			this->shUnchkPressed->renderGL330();
-			return true;
-		case UICheckbox::UNCHECKED_NORMAL:
-			this->shUnchkNormal->renderGL330();
-			return true;
-		case UICheckbox::UNCHECKED_ROLLOVER:
-			this->shUnchkRollOver->renderGL330();
-			return true;
-		case UICheckbox::UNCHECKED_DISABLE:
-			this->shUnchkDisable->renderGL330();
-			return true;
-		case UICheckbox::CHECKED_PRESS:
-			this->shChkPressed->renderGL330();
-			return true;
-		case UICheckbox::CHECKED_NORMAL:
-			this->shChkNormal->renderGL330();
-			return true;
-		case UICheckbox::CHECKED_ROLLOVER:
-			this->shChkRollOver->renderGL330();
-			return true;
-		case UICheckbox::CHECKED_DISABLE:
-			this->shChkDisable->renderGL330();
-			return true;
-	}
-}
-int UICheckbox::renderGL210() {
-	switch(this->status) {
-		case UICheckbox::UNCHECKED_PRESS:
-			this->shUnchkPressed->renderGL210();
-			return true;
-		case UICheckbox::UNCHECKED_NORMAL:
-			this->shUnchkNormal->renderGL210();
-			return true;
-		case UICheckbox::UNCHECKED_ROLLOVER:
-			this->shUnchkRollOver->renderGL210();
-			return true;
-		case UICheckbox::UNCHECKED_DISABLE:
-			this->shUnchkDisable->renderGL210();
-			return true;
-		case UICheckbox::CHECKED_PRESS:
-			this->shChkPressed->renderGL210();
-			return true;
-		case UICheckbox::CHECKED_NORMAL:
-			this->shChkNormal->renderGL210();
-			return true;
-		case UICheckbox::CHECKED_ROLLOVER:
-			this->shChkRollOver->renderGL210();
-			return true;
-		case UICheckbox::CHECKED_DISABLE:
-			this->shChkDisable->renderGL210();
-			return true;
-	}
-}
-
-
-
-UIRadioButtonGroup::UIRadioButtonGroup() :ShapeGroupRect (UIRadioButtonGroup::CRC32) {
+UICheckbox::UICheckbox() :
+	press(false),
+	checked(false),
+	status(UICheckbox::UNCHECKED_NORMAL) {
 	
 }
-UIRadioButton *UIRadioButtonGroup::addRadioButton() {
-	UIRadioButton *rb = new UIRadioButton(20, 20, this);
-	this->addChild(rb);
-	return rb;
+
+UIRadioButtonGroup::UIRadioButtonGroup() :active(true), checked(nullptr) {
+}
+bool UIRadioButtonGroup::addRadioButton(UIRadioButton* rb) {
+	rb->group = this;
+	this->_buttons.push_back(rb);
 }
 bool UIRadioButtonGroup::setActiveButton(UIRadioButton* rb) {
 	UIRadioButton *rb1;
 	bool searchRB = false;
-	for (int i=this->child.size()-1; i>=0; i--) {
-		rb1 = dynamic_cast<UIRadioButton*>(this->child[i]);
-		if (rb1!=NULL) {
-			if (rb1 = rb) {
-				searchRB = true;
-				rb1->checked = true;
-				rb1->status = UIRadioButton::CHECKED_NORMAL;
-			}else{
-				rb1->checked = false;
-				rb1->status = UIRadioButton::UNCHECKED_NORMAL;
-			}
+	for (int i=this->_buttons.size()-1; i>=0; i--) {
+		rb1 = this->_buttons[i]; 
+		if (rb1 == rb) {
+			searchRB = true;
+			rb1->checked = true;
+			rb1->status = UIRadioButton::CHECKED_NORMAL;
+		}else{
+			rb1->checked = false;
+			rb1->status = UIRadioButton::UNCHECKED_NORMAL;
 		}
+		rb1->changeCheck();
 	}
 	return searchRB;
 }
-
+/*
 void UIRadioButtonMouseDown (const EventMouseShape *e) {
 	printf("UIRadioButtonMouseDown");
 	UIRadioButton *sb = (UIRadioButton*)(e->shape);
@@ -820,164 +481,15 @@ void UIRadioButtonMouseOut (const EventMouseShape *e) {
 		Windows::window->renderComplete = false;
 		#endif
 	}
+}*/
+UIRadioButton::UIRadioButton() :
+	press(false),
+	checked(false),
+	status(STATUS::UNCHECKED_NORMAL),
+	group(nullptr) {
 }
-
-UIRadioButton::UIRadioButton(unsigned short w, unsigned short h, UIRadioButtonGroup *gr) :ShapeRect(UIRadioButton::CRC32) {
-	this->width = w;
-	this->height = h;
-	this->group = gr;
-	this->press = false;
-	this->checked = false;
-	this->status = UIRadioButton::UNCHECKED_NORMAL;
-	this->shUnchkPressed =	new FRect(w, h, 0xFF00AAAA);
-	this->shUnchkNormal =	new FRect(w, h, 0xFFAA00AA);
-	this->shUnchkRollOver = new FRect(w, h, 0xFFFF0000);
-	this->shUnchkDisable =	new FRect(w, h, 0xFF117700);
-	this->shChkPressed =	new FRect(w, h, 0xFFFF0000);
-	this->shChkNormal =		new FRect(w, h, 0xFF00FF00);
-	this->shChkRollOver =	new FRect(w, h, 0xFF0000FF);
-	this->shChkDisable =	new FRect(w, h, 0xFF117766);
-	this->addEventHandler(EventMouseShape::MOUSE_DOWN, UIRadioButtonMouseDown);
-	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OUT, UIRadioButtonMouseOut);
-	this->addEventHandler(EventMouseShape::MOUSE_ROLL_OVER, UIRadioButtonMouseOver);
-	Windows::window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, UIRadioButtonMouseUp, this);
-}
-void UIRadioButton::updateGlobalPosition() {
-	if (this->parent!=NULL) {
-		this->globalx = this->parent->globalx+this->x;
-		this->globaly = this->parent->globaly+this->y;
-		this->shUnchkPressed->globalx = this->globalx+shUnchkPressed->x;
-		this->shUnchkPressed->globaly = this->globaly+shUnchkPressed->y;
-		this->shUnchkNormal->globalx = this->globalx+shUnchkNormal->x;
-		this->shUnchkNormal->globaly = this->globaly+shUnchkNormal->y;
-		this->shUnchkRollOver->globalx = this->globalx+shUnchkRollOver->x;
-		this->shUnchkRollOver->globaly = this->globaly+shUnchkRollOver->y;
-		this->shUnchkDisable->globalx = this->globalx+shUnchkDisable->x;
-		this->shUnchkDisable->globaly = this->globaly+shUnchkDisable->y;
-		this->shChkPressed->globalx = this->globalx+shChkPressed->x;
-		this->shChkPressed->globaly = this->globaly+shChkPressed->y;
-		this->shChkNormal->globalx = this->globalx+shChkNormal->x;
-		this->shChkNormal->globaly = this->globaly+shChkNormal->y;
-		this->shChkRollOver->globalx = this->globalx+shChkRollOver->x;
-		this->shChkRollOver->globaly = this->globaly+shChkRollOver->y;
-		this->shChkDisable->globalx = this->globalx+shChkRollOver->x;
-		this->shChkDisable->globaly = this->globaly+shChkRollOver->y;
-	}
-	#ifdef REDRAWN_BY_THE_ACTION
-	Windows::window->renderComplete = false;
-	#endif
-}
-int UIRadioButton::renderGLComptAll() {
-	switch(this->status) {
-		case UIRadioButton::UNCHECKED_PRESS:
-			this->shUnchkPressed->renderGLComptAll();
-			return true;
-		case UIRadioButton::UNCHECKED_NORMAL:
-			this->shUnchkNormal->renderGLComptAll();
-			return true;
-		case UIRadioButton::UNCHECKED_ROLLOVER:
-			this->shUnchkRollOver->renderGLComptAll();
-			return true;
-		case UIRadioButton::UNCHECKED_DISABLE:
-			this->shUnchkDisable->renderGLComptAll();
-			return true;
-		case UIRadioButton::CHECKED_PRESS:
-			this->shChkPressed->renderGLComptAll();
-			return true;
-		case UIRadioButton::CHECKED_NORMAL:
-			this->shChkNormal->renderGLComptAll();
-			return true;
-		case UIRadioButton::CHECKED_ROLLOVER:
-			this->shChkRollOver->renderGLComptAll();
-			return true;
-		case UIRadioButton::CHECKED_DISABLE:
-			this->shChkDisable->renderGLComptAll();
-			return true;
-	}
-}
-int UIRadioButton::renderGL400() {
-	switch(this->status) {
-		case UIRadioButton::UNCHECKED_PRESS:
-			this->shUnchkPressed->renderGL400();
-			return true;
-		case UIRadioButton::UNCHECKED_NORMAL:
-			this->shUnchkNormal->renderGL400();
-			return true;
-		case UIRadioButton::UNCHECKED_ROLLOVER:
-			this->shUnchkRollOver->renderGL400();
-			return true;
-		case UIRadioButton::UNCHECKED_DISABLE:
-			this->shUnchkDisable->renderGL400();
-			return true;
-		case UIRadioButton::CHECKED_PRESS:
-			this->shChkPressed->renderGL400();
-			return true;
-		case UIRadioButton::CHECKED_NORMAL:
-			this->shChkNormal->renderGL400();
-			return true;
-		case UIRadioButton::CHECKED_ROLLOVER:
-			this->shChkRollOver->renderGL400();
-			return true;
-		case UIRadioButton::CHECKED_DISABLE:
-			this->shChkDisable->renderGL400();
-			return true;
-	}
-}
-int UIRadioButton::renderGL330() {
-	switch(this->status) {
-		case UIRadioButton::UNCHECKED_PRESS:
-			this->shUnchkPressed->renderGL330();
-			return true;
-		case UIRadioButton::UNCHECKED_NORMAL:
-			this->shUnchkNormal->renderGL330();
-			return true;
-		case UIRadioButton::UNCHECKED_ROLLOVER:
-			this->shUnchkRollOver->renderGL330();
-			return true;
-		case UIRadioButton::UNCHECKED_DISABLE:
-			this->shUnchkDisable->renderGL330();
-			return true;
-		case UIRadioButton::CHECKED_PRESS:
-			this->shChkPressed->renderGL330();
-			return true;
-		case UIRadioButton::CHECKED_NORMAL:
-			this->shChkNormal->renderGL330();
-			return true;
-		case UIRadioButton::CHECKED_ROLLOVER:
-			this->shChkRollOver->renderGL330();
-			return true;
-		case UIRadioButton::CHECKED_DISABLE:
-			this->shChkDisable->renderGL330();
-			return true;
-	}
-}
-int UIRadioButton::renderGL210() {
-	switch(this->status) {
-		case UIRadioButton::UNCHECKED_PRESS:
-			this->shUnchkPressed->renderGL210();
-			return true;
-		case UIRadioButton::UNCHECKED_NORMAL:
-			this->shUnchkNormal->renderGL210();
-			return true;
-		case UIRadioButton::UNCHECKED_ROLLOVER:
-			this->shUnchkRollOver->renderGL210();
-			return true;
-		case UIRadioButton::UNCHECKED_DISABLE:
-			this->shUnchkDisable->renderGL210();
-			return true;
-		case UIRadioButton::CHECKED_PRESS:
-			this->shChkPressed->renderGL210();
-			return true;
-		case UIRadioButton::CHECKED_NORMAL:
-			this->shChkNormal->renderGL210();
-			return true;
-		case UIRadioButton::CHECKED_ROLLOVER:
-			this->shChkRollOver->renderGL210();
-			return true;
-		case UIRadioButton::CHECKED_DISABLE:
-			this->shChkDisable->renderGL210();
-			return true;
-	}
+void UIRadioButton::changeCheck() {
+	fprintf(stderr, "VOID UIRadioButton::changeCheck()\n");
 }
 
 

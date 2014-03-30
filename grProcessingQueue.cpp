@@ -64,6 +64,7 @@ int TextureToUpdateTask::processExecute() {
 				tex->type = GL_UNSIGNED_BYTE;
 				break;
 			case Image::MONO_8:
+				printf("\tImage::MONO_8\n");
 				tex->format = GL_ALPHA;
 				tex->type = GL_UNSIGNED_BYTE;
 				break;
@@ -84,6 +85,7 @@ int TextureToUpdateTask::processExecute() {
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+			printf("TEXTURE %i", tex->img->raw);
 			glTexImage2D( GL_TEXTURE_2D, 0, tex->format, tex->width, tex->height, 0, tex->format, tex->type, tex->img->raw );
 		}else{
 			fprintf(stderr, "GLID!=0!!!!!!!!!!!!!!");

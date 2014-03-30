@@ -11,8 +11,10 @@ namespace Graphonichk {
 	class Font;
 	typedef struct {
 		short ch;
-		void *bmp;
-		unsigned short width, height, bmpWidth, bmpHeight;
+		//void *bmp;
+		//unsigned short bmpX, bmpY;
+		unsigned short width, height;
+		GLuint id;
 		short horiBearingX, horiBearingY, horiAdvance, vertBearingX, vertBearingY, vertAdvance;
 		
 	} FontGlyph;
@@ -20,6 +22,7 @@ namespace Graphonichk {
 	
 	class FontFace {
 	public:
+		FontFace(unsigned short size, Array<FontGlyph> *arr);
 		unsigned short size;
 		unsigned int ramUsed;
 		Array<FontGlyph> *arr;

@@ -90,84 +90,54 @@ namespace Graphonichk {
 		bool scrollStarted;
 	};
 	
-	class UIButton :public ShapeRect {
+	class UIButton {
 	protected:
-		UIButton(int crc32, unsigned short w, unsigned short h, ShapeRect *shPressed, ShapeRect *shNormal, ShapeRect *shRollOver);
+		UIButton();
 	public:
-		enum {CRC32=0x251F1AC9};
 		enum STATUS {
 			PRESS, NORMAL, ROLLOVER
 		};
-		UIButton(unsigned short w, unsigned short h);
-		int renderGLComptAll();
-		int renderGL400();
-		int renderGL330();
-		int renderGL210();
-		void updateGlobalPosition();
 		int callEvent(EventMouseShape *e);
-		ShapeRect *shapePressed, *shapeNormal, *shapeRollOver;
 		STATUS status;
 		bool press;
 	};
-	class UICheckbox :public ShapeRect {
+	class UICheckbox {
 	protected:
-		UICheckbox(int crc32, unsigned short w, unsigned short h, 
-				ShapeRect *shUnchkPressed, 
-				ShapeRect *shUnchkNormal, 
-				ShapeRect *shUnchkRollOver, 
-				ShapeRect *shUnchkDisable,
-				ShapeRect *shChkPressed, 
-				ShapeRect *shChkNormal, 
-				ShapeRect *shChkRollOver, 
-				ShapeRect *shChkDisable);
+		UICheckbox();
 	public:
-		enum {CRC32=0x4CA925F4};
 		enum STATUS {
 			UNCHECKED_PRESS, UNCHECKED_NORMAL, UNCHECKED_ROLLOVER, UNCHECKED_DISABLE,
 			CHECKED_PRESS, CHECKED_NORMAL, CHECKED_ROLLOVER, CHECKED_DISABLE
 		};
-		UICheckbox(unsigned short w, unsigned short h);
-		void updateGlobalPosition();
-		int renderGLComptAll();
-		int renderGL400();
-		int renderGL330();
-		int renderGL210();
-		ShapeRect *shUnchkPressed, *shUnchkNormal, *shUnchkRollOver, *shUnchkDisable, *shChkPressed, *shChkNormal, *shChkRollOver, *shChkDisable;
 		STATUS status;
 		bool press;
 		bool checked;
 	};
 	
-	class UIRadioButtonGroup :public ShapeGroupRect {
-	protected:
-		//bool addChild(ShapeRect*);
+	class UIRadioButtonGroup {
+	private:
+		vector<UIRadioButton*> _buttons;
 	public:
 		enum {CRC32=0xE7E01EB1};
 		UIRadioButtonGroup();
-		UIRadioButton *addRadioButton();
-		bool setActiveButton(UIRadioButton *);
+		bool addRadioButton(UIRadioButton *rb);
+		bool setActiveButton(UIRadioButton *rb);
 		bool active;
 		UIRadioButton *checked;
 	};
-	class UIRadioButton :public ShapeRect {
+	class UIRadioButton {
 	protected:
+		UIRadioButton();
 	public:
-		enum {CRC32=0x97511BB6};
 		enum STATUS {
 			UNCHECKED_PRESS, UNCHECKED_NORMAL, UNCHECKED_ROLLOVER, UNCHECKED_DISABLE,
 			CHECKED_PRESS, CHECKED_NORMAL, CHECKED_ROLLOVER, CHECKED_DISABLE
 		};
-		UIRadioButton(unsigned short w, unsigned short h, UIRadioButtonGroup *gr);
-		void updateGlobalPosition();
-		int renderGLComptAll();
-		int renderGL400();
-		int renderGL330();
-		int renderGL210();
 		UIRadioButtonGroup *group;
-		ShapeRect *shUnchkPressed, *shUnchkNormal, *shUnchkRollOver, *shUnchkDisable, *shChkPressed, *shChkNormal, *shChkRollOver, *shChkDisable;
 		STATUS status;
 		bool press;
 		bool checked;
+		virtual void changeCheck();
 	};
 
 	

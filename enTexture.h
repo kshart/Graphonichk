@@ -41,10 +41,11 @@ namespace Graphonichk {
 			EXT_TGA,
 			ETX_BMP
 		};
+		Image(unsigned short width, unsigned short height, TYPE type, char *raw);
 		Image(char *data, unsigned int size);
 		Image(string path);
 		int saveAsXML(FILE *str, unsigned short tab=0);
-		
+		void copyPixels(unsigned short x, unsigned short y, unsigned short width, unsigned short height, char *raw);
 		string name;
 		unsigned short width, height;
 		STATUS status;
@@ -57,7 +58,7 @@ namespace Graphonichk {
 		static vector<Texture*> buffer;
 		static uint toUpdate, toDelete;
 	public:
-		/* format = 0 Рё type = 0 Рё GLID = 0
+		/* format = 0 Р С‘ type = 0 Р С‘ GLID = 0
 		 */
 		enum EVENT:char {
 			NONE,

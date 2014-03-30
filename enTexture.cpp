@@ -199,6 +199,13 @@ void PNGReadData(png_structp png_ptr, png_bytep data, png_size_t length) {
 	memcpy(data, d->data+d->pt, length);
 	d->pt += length;
 }
+Image::Image(unsigned short width, unsigned short height, TYPE type, char *raw) {
+	this->width = width;
+	this->height = height;
+	this->raw = raw;
+	this->type = type;
+	this->status = STATUS::LOADED;
+}
 Image::Image(char* data, unsigned int size) {
 	this->load(data, size);
 }
@@ -210,6 +217,9 @@ Image::Image(string path) {
 	this->type = Image::NC;
 	FileLoad *fl = new FileLoad(path);
 	fl->addEventHandler(EventFileLoad::FILE_SUCCESS, Image::loaded, this);
+	
+}
+void Image::copyPixels(unsigned short x, unsigned short y, unsigned short width, unsigned short height, char *raw) {
 	
 }
 bool Image::load(char* data, unsigned int size) {

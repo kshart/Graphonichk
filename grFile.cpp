@@ -22,7 +22,7 @@ DWORD WINAPI FileLoad::loaderThread (void* sys) {
 			fl = FileLoad::buffer[i];
 			switch (fl->status) {
 				case FileLoad::STOP:// <editor-fold defaultstate="collapsed" desc="FileLoad::STOP">
-					printf("FileLoad::STOP\n");
+					//printf("FileLoad::STOP\n");
 					fl->data = malloc(fl->size);
 					if ( fl->data != NULL ) {
 						fl->status = FileLoad::PROCESS;
@@ -30,12 +30,12 @@ DWORD WINAPI FileLoad::loaderThread (void* sys) {
 							switch(GetLastError()) {
 								case ERROR_IO_PENDING:
 									fl->status = FileLoad::PROCESS;
-									printf("Read file pending.\n");
+									//printf("Read file pending.\n");
 									break;
 								case ERROR_HANDLE_EOF:
 									fl->status = FileLoad::SUCCESS;
 									fl->progres = fl->size;
-									printf("End of the file. The file is read.\n");
+									//printf("End of the file. The file is read.\n");
 									CloseHandle(fl->fileHandle);
 									CloseHandle(fl->ovl.hEvent);
 									break;
@@ -43,13 +43,13 @@ DWORD WINAPI FileLoad::loaderThread (void* sys) {
 									fl->status = FileLoad::READ_FILE_ERROR;
 									fl->progres = 0;
 									free(fl->data);
-									printf("Read file failed.\n");
+									//printf("Read file failed.\n");
 									CloseHandle(fl->fileHandle);
 									CloseHandle(fl->ovl.hEvent);
 									break;
 							}
 						}else{
-							printf("readFile %i\n", GetLastError());
+							//printf("readFile %i\n", GetLastError());
 						}
 					}
 					break;// </editor-fold>

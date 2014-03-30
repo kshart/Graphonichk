@@ -660,11 +660,12 @@ int Bitmap::renderGL400() {
 	return false;
 }
 int Bitmap::renderGL330() {
+	if (this->tex == nullptr) return false;
 	if (GLShader::shader->crc32!=ShaderBitmap::CRC32) GLShader::setShader(ShaderBitmap::prog);
-	if (OpenGL::textureGLID!=this->tex->GLID) {
+	//if (OpenGL::textureGLID!=this->tex->GLID) {
 		glBindTexture(GL_TEXTURE_2D, this->tex->GLID);
-		OpenGL::textureGLID = this->tex->GLID;
-	}
+		//OpenGL::textureGLID = this->tex->GLID;
+	//}
 	if (this->vao==0 && this->tex->event==Texture::LOADED) {
 		short vertex[2] = {
 			this->globalx, this->globaly

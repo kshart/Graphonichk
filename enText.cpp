@@ -59,6 +59,93 @@ TextFormat::TextFormat() {
 	this->textDecorationColor.color = 0x00FF00AA;
 	
 }
+FontFace::FontFace(unsigned short size, Array<FontGlyph> *arr) :size(size), arr(arr) {
+	
+}
+
+#include <time.h> 
+struct stNode;
+struct stNode {
+	struct stNode* child[2];
+	unsigned short imgWidth, imgHeight, imgID;
+};
+typedef struct stNode Node;
+typedef struct {
+	Node* node;
+	unsigned short outPix;
+	bool rotate90;
+} NodeResult;
+int addImage(Array<Rect> *rects, unsigned short imgID, unsigned short viewWidth, unsigned short viewHeight,Node *in, NodeResult *result) {
+	unsigned short thisOutPix;
+	if ( rects->data[imgID].width <= viewWidth && rects->data[imgID].height <= viewHeight ) {
+		if (in->child[0]!=NULL&&in->child[1]!=NULL) {
+			addImage(rects, imgID, viewWidth-in->imgWidth, in->imgHeight, in->child[0], result);
+			addImage(rects, imgID, viewWidth, viewHeight-in->imgHeight, in->child[1], result);
+		}else if ( in->child[0]==NULL && in->child[1]==NULL ) {
+			thisOutPix = viewWidth-rects->data[imgID].width;
+			if (thisOutPix < result->outPix) {
+				//printf("%i %i", in, result->node);
+				result->node = in;
+				result->outPix = thisOutPix;
+				result->rotate90 = false;
+			}
+		}else if (in->child[0]!=NULL&&in->child[1]==NULL) {
+			addImage(rects, imgID, viewWidth-in->imgWidth, viewHeight, in->child[0], result);
+		}
+	}else{
+		
+	}
+}
+int addNodeInResult(Array<Rect> *rects, unsigned short imgID, NodeResult *result) {
+	Node *node = result->node;
+	node->imgWidth = rects->data[imgID].width;
+	node->imgHeight = rects->data[imgID].height;
+	node->imgID = imgID;
+	if (node->child[0]!=NULL||node->child[1]!=NULL) return 1;//printf("ERRROORRR\n");
+	if (result->outPix==0) {
+		node->child[0] = new Node();
+		node->child[0]->imgID = SHRT_MAX;
+		node->child[0]->imgHeight = 0;
+		node->child[0]->imgWidth = 0;
+		node->child[0]->child[0] = NULL;
+		node->child[0]->child[1] = NULL;
+		node->child[1] = NULL;
+		printf("imgID1 %i\n", imgID);
+	}else{
+		node->child[0] = new Node();
+		node->child[0]->imgID = SHRT_MAX;
+		node->child[0]->imgHeight = 0;
+		node->child[0]->imgWidth = 0;
+		node->child[0]->child[0] = NULL;
+		node->child[0]->child[1] = NULL;
+		node->child[1] = new Node();
+		node->child[1]->imgID = SHRT_MAX;
+		node->child[1]->imgHeight = 0;
+		node->child[1]->imgWidth = 0;
+		node->child[1]->child[0] = NULL;
+		node->child[1]->child[1] = NULL;
+		if (node->child[0]==NULL||node->child[1]==NULL) printf("ERRROORRR\n"); 
+		printf("imgID2 %i\n", imgID);
+	}
+		
+}
+void traceNods(unsigned short viewX, unsigned short viewY, unsigned short viewWidth, unsigned short viewHeight, Node *in, Array<Rect> *rects) {
+	if (in->child[0]==NULL&&in->child[1]==NULL) {
+	}else if (in->child[0]!=NULL&&in->child[1]==NULL) {
+		rects->data[in->imgID].x = viewX;
+		rects->data[in->imgID].y = viewY;
+		traceNods(viewX+in->imgWidth, viewY, viewWidth-in->imgWidth, viewHeight, in->child[0], rects);
+	}else if (in->child[0]!=NULL&&in->child[1]!=NULL) {
+		traceNods(viewX+in->imgWidth, viewY, viewWidth-in->imgWidth, viewHeight, in->child[0], rects);
+		traceNods(viewX, viewY+in->imgHeight, viewWidth, viewHeight-in->imgHeight, in->child[1], rects);
+		if (viewY+rects->data[in->imgID].height>2048) {
+			printf("1232123 %i \n", in->imgID);
+		}else{
+			rects->data[in->imgID].x = viewX;
+			rects->data[in->imgID].y = viewY;
+		}
+	}
+}
 
 Font::Font(string path) {
 	this->path = path;
@@ -91,22 +178,34 @@ Font::Font(string path) {
 	this->cache.push_back(fgs[0]);*/
 	Font::buffer.push_back(this);
 }
+typedef struct {
+	unsigned short width, height;
+	//float x1, y1, x2, y2;
+}asdasd;
 bool Font::cached(unsigned short size) {
 	this->error = FT_Set_Pixel_Sizes(this->face, 0, size);
 	if (this->error != FT_Err_Ok) return false;
 	int glyphCount = this->face->num_glyphs;
-	FontFace *fface = new FontFace();
-	fface->size = size;
-	fface->arr->size = glyphCount;
-	fface->arr = new Array<FontGlyph>(glyphCount);
+	FontFace *fface = new FontFace(size, new Array<FontGlyph>(glyphCount));
 	fface->ramUsed = sizeof(Array<FontGlyph>)+sizeof(FontGlyph)*glyphCount;
+	int pix=0, maxWidth = 0, maxHeight = 0, mwid, mhid;
+	char *imgRaw = (char*)malloc(2048*2048);
+	Array<void*> bmps(glyphCount);
+	Array<Rect> bmpRect(glyphCount);
+	Node node;
+	node.imgHeight = 0;
+	node.imgWidth = 0;
+	node.imgID = SHRT_MAX;
+	node.child[0] = NULL;
+	node.child[1] = NULL;
+	
 	for(int i=0; i<this->face->num_glyphs; i++) {
 		FT_Load_Glyph( this->face, i, FT_LOAD_DEFAULT );
 		FT_Render_Glyph( this->face->glyph, FT_RENDER_MODE_LIGHT   );
-		fface->arr->data[i].bmpWidth = this->face->glyph->bitmap.width;
-		fface->arr->data[i].bmpHeight = this->face->glyph->bitmap.rows;
-		fface->arr->data[i].bmp = malloc(fface->arr->data[i].bmpWidth*fface->arr->data[i].bmpHeight);
-		memcpy(fface->arr->data[i].bmp, this->face->glyph->bitmap.buffer, fface->arr->data[i].bmpWidth*fface->arr->data[i].bmpHeight);
+		bmpRect.data[i].width = this->face->glyph->bitmap.width;
+		bmpRect.data[i].height = this->face->glyph->bitmap.rows;
+		bmps.data[i] = malloc(bmpRect.data[i].width*bmpRect.data[i].height);
+		memcpy(bmps.data[i], this->face->glyph->bitmap.buffer, bmpRect.data[i].width*bmpRect.data[i].height);
 		fface->arr->data[i].width = this->face->glyph->metrics.width >> 6;
 		fface->arr->data[i].height = this->face->glyph->metrics.height >> 6;
 		fface->arr->data[i].horiAdvance = this->face->glyph->metrics.horiAdvance >> 6;
@@ -115,8 +214,39 @@ bool Font::cached(unsigned short size) {
 		fface->arr->data[i].vertAdvance = this->face->glyph->metrics.vertAdvance >> 6;
 		fface->arr->data[i].vertBearingX = this->face->glyph->metrics.vertBearingX >> 6;
 		fface->arr->data[i].vertBearingY = this->face->glyph->metrics.vertBearingY >> 6;
-		fface->ramUsed+=fface->arr->data[i].bmpWidth*fface->arr->data[i].bmpHeight;
-	} 
+		fface->ramUsed+=bmpRect.data[i].width*bmpRect.data[i].height;
+		
+		/*if (fface->arr->data[i].bmpWidth>maxWidth) {
+			maxWidth = fface->arr->data[i].bmpWidth;
+			mwid = i;
+		}
+		if (fface->arr->data[i].bmpHeight>maxHeight) {
+			maxHeight = fface->arr->data[i].bmpHeight;
+			mhid = i;
+		}
+		pix += fface->arr->data[i].bmpWidth*fface->arr->data[i].bmpHeight;*/
+		
+		NodeResult nodeRes;
+		nodeRes.node = &node;
+		nodeRes.outPix = SHRT_MAX;
+		nodeRes.rotate90 = false;
+		
+		addImage(&bmpRect, i, 2048, 2048, &node, &nodeRes);
+		//printf("%i %i\n", i, nodeRes.node);
+		addNodeInResult(&bmpRect, i, &nodeRes);
+	}
+	printf("%i\n", this->face->num_glyphs);
+	traceNods(0, 0, 2048, 2048, &node, &bmpRect);
+	
+	for(int i=0; i<this->face->num_glyphs; i++) {
+		for (int y=0; y<bmpRect.data[i].height; y++) {
+			memcpy( imgRaw+(y+bmpRect.data[i].y)*2048+bmpRect.data[i].x, bmps.data[i]+bmpRect.data[i].width*y, bmpRect.data[i].width );
+		}
+	}
+	Image *img = new Image(2048, 2048, Image::MONO_8, imgRaw);
+	Texture *tex = new Texture(img);
+	Bitmap *bm = new Bitmap(tex);
+	Windows::window->root->addChild(bm);
 	this->cache.push_back(fface);
 }
 void Font::trace() {
@@ -215,10 +345,10 @@ int TextField::bufferGLComptAll() {
 		if ( FT_Set_Char_Size(font->face, 0, format->size*64, Windows::window->dpi, Windows::window->dpi ) != FT_Err_Ok) return false;
 		FT_Load_Glyph(font->face, FT_Get_Char_Index(font->face, ' '), FT_LOAD_DEFAULT);
 		FT_Render_Glyph(font->face->glyph, FT_RENDER_MODE_LIGHT);
-		spaceGlyph.bmpWidth = font->face->glyph->bitmap.width;
+		/*spaceGlyph.bmpWidth = font->face->glyph->bitmap.width;
 		spaceGlyph.bmpHeight = font->face->glyph->bitmap.rows;
 		spaceGlyph.bmp = malloc(spaceGlyph.bmpWidth*spaceGlyph.bmpHeight);
-		memcpy(spaceGlyph.bmp, font->face->glyph->bitmap.buffer, spaceGlyph.bmpWidth*spaceGlyph.bmpHeight);
+		memcpy(spaceGlyph.bmp, font->face->glyph->bitmap.buffer, spaceGlyph.bmpWidth*spaceGlyph.bmpHeight);*/
 		spaceGlyph.width		= font->face->glyph->metrics.width >> 6;
 		spaceGlyph.height		= font->face->glyph->metrics.height >> 6;
 		spaceGlyph.horiAdvance	= font->face->glyph->metrics.horiAdvance >> 6;
@@ -262,10 +392,10 @@ int TextField::bufferGLComptAll() {
 				FT_Render_Glyph( font->face->glyph, FT_RENDER_MODE_LIGHT   );
 				if (font->face->glyph->metrics.horiAdvance > 0) {
 					lastID = ch;
-					lastGlyph.bmpWidth	= font->face->glyph->bitmap.width;
-					lastGlyph.bmpHeight	= font->face->glyph->bitmap.rows;
+					/*//lastGlyph.bmpWidth	= font->face->glyph->bitmap.width;
+					//lastGlyph.bmpHeight	= font->face->glyph->bitmap.rows;
 					lastGlyph.bmp		= malloc(lastGlyph.bmpWidth*lastGlyph.bmpHeight);
-					memcpy(lastGlyph.bmp, font->face->glyph->bitmap.buffer, lastGlyph.bmpWidth*lastGlyph.bmpHeight);
+					memcpy(lastGlyph.bmp, font->face->glyph->bitmap.buffer, lastGlyph.bmpWidth*lastGlyph.bmpHeight);*/
 					lastGlyph.width			= font->face->glyph->metrics.width >> 6;
 					lastGlyph.height		= font->face->glyph->metrics.height >> 6;
 					lastGlyph.horiAdvance	= font->face->glyph->metrics.horiAdvance >> 6;
@@ -275,7 +405,7 @@ int TextField::bufferGLComptAll() {
 					lastGlyph.vertBearingX	= font->face->glyph->metrics.vertBearingX >> 6;
 					lastGlyph.vertBearingY	= font->face->glyph->metrics.vertBearingY >> 6;
 					glRasterPos2s( bx+lastGlyph.horiBearingX, by-lastGlyph.horiBearingY );
-					glDrawPixels(lastGlyph.bmpWidth, lastGlyph.bmpHeight, GL_ALPHA, GL_UNSIGNED_BYTE, lastGlyph.bmp);
+					//glDrawPixels(lastGlyph.bmpWidth, lastGlyph.bmpHeight, GL_ALPHA, GL_UNSIGNED_BYTE, lastGlyph.bmp);
 					glBegin(GL_POINTS);
 					glVertex2s(bx, by);
 					glEnd();
@@ -284,7 +414,7 @@ int TextField::bufferGLComptAll() {
 					int v1 = lastGlyph.horiBearingX + lastGlyph.width/2 - lastGlyph.horiAdvance;
 					//glRasterPos2s(bx+f->cache[0].arr[id].horiBearingX+v1, by - f->cache[0].arr[lastID].horiBearingY - f->cache[0].arr[id].height );
 					glRasterPos2s(bx+(font->face->glyph->metrics.horiBearingX>>6)+v1, by-(font->face->glyph->metrics.horiBearingY>>6)-(font->face->glyph->metrics.height>>6) );
-					glDrawPixels(font->face->glyph->bitmap.width, font->face->glyph->bitmap.rows, GL_ALPHA, GL_UNSIGNED_BYTE, font->face->glyph->bitmap.buffer);
+					//glDrawPixels(font->face->glyph->bitmap.width, font->face->glyph->bitmap.rows, GL_ALPHA, GL_UNSIGNED_BYTE, font->face->glyph->bitmap.buffer);
 				}
 			}
 		}
@@ -324,7 +454,7 @@ int TextField::bufferGLComptAll() {
 				if (fface->arr->data[id].horiAdvance > 0) {
 					lastID = ch;
 					glRasterPos2s( bx+fface->arr->data[id].horiBearingX, by-fface->arr->data[id].horiBearingY );
-					glDrawPixels(fface->arr->data[id].bmpWidth, fface->arr->data[id].bmpHeight, GL_ALPHA, GL_UNSIGNED_BYTE, fface->arr->data[id].bmp);
+					//glDrawPixels(fface->arr->data[id].bmpWidth, fface->arr->data[id].bmpHeight, GL_ALPHA, GL_UNSIGNED_BYTE, fface->arr->data[id].bmp);
 					glBegin(GL_POINTS);
 					glVertex2s(bx, by);
 					glEnd();
@@ -333,7 +463,7 @@ int TextField::bufferGLComptAll() {
 					int v1 = fface->arr->data[lastID].horiBearingX + fface->arr->data[lastID].width/2 - fface->arr->data[lastID].horiAdvance;
 					//glRasterPos2s(bx+f->cache[0].arr[id].horiBearingX+v1, by - f->cache[0].arr[lastID].horiBearingY - f->cache[0].arr[id].height );
 					glRasterPos2s(bx+fface->arr->data[id].horiBearingX+v1, by-fface->arr->data[lastID].horiBearingY - fface->arr->data[id].height );
-					glDrawPixels(fface->arr->data[id].bmpWidth, fface->arr->data[id].bmpHeight, GL_ALPHA, GL_UNSIGNED_BYTE, fface->arr->data[id].bmp);
+					//glDrawPixels(fface->arr->data[id].bmpWidth, fface->arr->data[id].bmpHeight, GL_ALPHA, GL_UNSIGNED_BYTE, fface->arr->data[id].bmp);
 				}
 			}
 		}

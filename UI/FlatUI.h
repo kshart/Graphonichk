@@ -4,6 +4,9 @@
 #include "../grBaseTypes.h"
 #include "UIMain.h"
 
+
+using namespace Graphonichk;
+
 namespace FlatUI {
 	class FlatUIButton;
 	class FlatUICheckbox;
@@ -12,16 +15,21 @@ namespace FlatUI {
 	class MainFlatUI {
 	public:
 		static int init();
-		static Graphonichk::Texture *flRB, *flRBChk, *flRBRollOver,
-				*flCB, *flCBChk, *flCBRollOver;
+		static Graphonichk::Texture *flRB, *flRBDisable, *flRBChk, *flRBRollOver,
+				*flCB, *flCBDisable, *flCBChk, *flCBRollOver;
 	};
-	class FlatUICheckbox :public Graphonichk::UICheckbox {
+	class FlatUICheckbox :public Graphonichk::Bitmap, public Graphonichk::UICheckbox {
 	public:
 		FlatUICheckbox();
+		
+		int callEvent(EventMouseShape* event);
 	};
-	class FlatUIRadioButton :public Graphonichk::UIRadioButton {
+	class FlatUIRadioButton :public Graphonichk::Bitmap, public Graphonichk::UIRadioButton {
 	public:
-		FlatUIRadioButton(Graphonichk::UIRadioButtonGroup *gr);
+		FlatUIRadioButton();
+		
+		int callEvent(EventMouseShape* event);
+		void changeCheck();
 	};
 }
 

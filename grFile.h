@@ -1,10 +1,3 @@
-/* 
- * File:   grFile.h
- * Author: Артем
- *
- * Created on 20 Декабрь 2013 г., 21:49
- */
-
 #ifndef GRFILE_H
 #define	GRFILE_H
 

@@ -2,12 +2,6 @@
 #define	GROPENGL_H
 
 
-#ifndef GL_MAJOR_VERSION
-#define GL_MAJOR_VERSION 33307
-#endif
-#ifndef GL_MINOR_VERSION
-#define GL_MINOR_VERSION 33308
-#endif
 #define OPENGL_GET_PROC(p,n) n=(p)wglGetProcAddress(#n); \
 	if (n==NULL){printf("Loading extension '%s' fail (%d)\n", #n,GetLastError());}
 
@@ -15,6 +9,9 @@
 
 using namespace std;
 namespace Graphonichk {
+	class GLShader;
+	class GLShaderLoadTask;
+	
 	class GLShader {
 	protected:
 		GLShader(int crc32);
@@ -29,39 +26,51 @@ namespace Graphonichk {
 		//static void popShader();
 		static GLShader* shader;
 		static void setShader(GLShader *shader);
+		
 		int crc32;
 		GLuint shaderProgram, vertexShader, fragmentShader, geometryShader;
 		//bool fragment, vertex;
+		friend GLShaderLoadTask;
+		virtual void init();
 	};
 	class ShaderBitmap :public GLShader {
 	public:
 		enum {CRC32=0x587213EC};
 		ShaderBitmap();
-		static void init();
+		//static void init();
 		static void init33();
 		static ShaderBitmap* prog;
 		
 		GLint position, texCoord, texture, viewMatrix;
+		
+		friend GLShaderLoadTask;
+		void init();
 	};
 	class ShaderSVGmain :public GLShader {
 	public:
 		enum {CRC32=0x51};
 		ShaderSVGmain();
-		static void init();
+		//static void init();
 		static void init33();
 		static ShaderSVGmain* prog;
 		
 		GLint position, fillColor, typeShape, circleTransform, viewMatrix, transformMatrix;
+		
+		friend GLShaderLoadTask;
+		void init();
 	};
 	class ShaderFPrimitiv :public GLShader {
 	public:
 		enum {CRC32=0x5123};
 		ShaderFPrimitiv();
-		static void init();
+		//static void init();
 		static void init33();
 		static ShaderFPrimitiv* prog;
 		
 		GLint position, fillColor, viewMatrix;
+		
+		friend GLShaderLoadTask;
+		void init();
 	};
 	class OpenGL {
 	  public:
@@ -90,6 +99,15 @@ namespace Graphonichk {
 		static void multViewMatrix(ViewMatrix view);
 		static GLuint viewMatrix, circleBuffer, textureGLID;
 		static int init(OPENGL_VER);
+	};
+	
+	
+	class GLShaderLoadTask :public EachFrameTask {
+	public:
+		GLShaderLoadTask(GLShader *t, const GLchar *vs,  const GLchar *fs, const GLchar *gs=nullptr);
+		int processExecute();
+		GLShader *shader;
+		const GLchar *vs, *fs, *gs;
 	};
 };
 
