@@ -35,7 +35,7 @@ DWORD WINAPI Windows::threadWindow (void* sys) {
 		while(PeekMessage(&msg, win->hWnd, 0, 0, PM_REMOVE)) DispatchMessage(&msg);
 		Sleep(10);
 	}
-	
+	return 0;
 }
 DWORD WINAPI Windows::threadRender (void* sys) {
 	int format;
@@ -56,7 +56,7 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 		return 0;
 	}
 	if (!(hRCTemp = wglCreateContext(win->hDC)) || !wglMakeCurrent(win->hDC, hRCTemp)) {
-		printf("<Error str='Р РЋreating temp render context fail (%d)'/>\n", GetLastError());
+		printf("<Error str='Р В Р Р‹reating temp render context fail (%d)'/>\n", GetLastError());
 		return 0;
 	}
 	/*
@@ -113,6 +113,7 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 			Sleep( (int)( 1000*(TIME_IN_FRAME_MS - time) ) );
 		}
 	}
+	return 0;
 }
 LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 	EventKeyboard *eventKey = new EventKeyboard();
@@ -379,7 +380,7 @@ void Windows::resize(short width, short height) {
 	this->width  = rect.right-rect.left;
 	this->height = rect.bottom-rect.top;
 	OpenGL::setViewport(0, 0, this->width, this->height);
-	ViewMatrix vm(0, this->width, 0, this->height, -1, 1);
+	ViewMatrix vm = ViewMatrixOrtho(0, this->width, 0, this->height, -1, 1);
 	OpenGL::viewMatrixBuffer[0] = vm;
 	EventWindow *e = new EventWindow();
 	e->window = this;
@@ -497,14 +498,15 @@ void Windows::redraw() {
 			break;// </editor-fold>
 		case OpenGL::VER_CORE_330:// <editor-fold defaultstate="collapsed" desc="VER_CORE_330">
 			glEnable( GL_BLEND );
+			glFrontFace(GL_CW);
+			//glPolygonMode(GL_FRONT, GL_LINE);
+			//glPolygonMode(GL_BACK, GL_LINE);
 			//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 			glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 			//glUseProgram(GLShader::glsl->shaderProgram);
 			//printf("GLShader::glsl->shaderProgram %i\n", GLShader::glsl->shaderProgram);
 			this->root->renderGL330();
 			glDisable( GL_BLEND );
-			glFlush();
-			glFinish();
 			break;// </editor-fold>
 	}
 	/*const int vertexCount = 6, vertexSize = 2;
