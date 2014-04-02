@@ -2,8 +2,8 @@
 #define	GROPENGL_H
 
 
-#define OPENGL_GET_PROC(p,n) n=(p)wglGetProcAddress(#n); \
-	if (n==NULL){printf("Loading extension '%s' fail (%d)\n", #n,GetLastError());}
+//#define OPENGL_GET_PROC(p,n) n=(p)wglGetProcAddress(#n);
+//if (n==NULL){printf("Loading extension '%s' fail (%d)\n", #n,GetLastError());}
 
 #include "grBaseTypes.h"
 
@@ -68,6 +68,19 @@ namespace Graphonichk {
 		static ShaderFPrimitiv* prog;
 		
 		GLint position, fillColor, viewMatrix;
+		
+		friend GLShaderLoadTask;
+		void init();
+	};
+	class ShaderF3D :public GLShader {
+	public:
+		enum {CRC32=0x5142123};
+		ShaderF3D();
+		//static void init();
+		static void init33();
+		static ShaderF3D* prog;
+		
+		GLint position, fillColor, transformMatrix, viewMatrix;
 		
 		friend GLShaderLoadTask;
 		void init();

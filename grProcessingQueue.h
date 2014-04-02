@@ -51,6 +51,12 @@ namespace Graphonichk {
 		void* data;
 		size_t dataSize;
 	};
+	class Model3D;
+	class Model3DLoadTask :public EachFrameTask {
+	public:
+		int processExecute();
+		Model3D *model;
+	};
 	
 	
 	template<class TTask> class ProcessingQueue {
@@ -98,6 +104,50 @@ namespace Graphonichk {
 		}
 	};
 	
+	template<class TTask> class ProcessingQueueTimeLimited {
+		queue<TTask*> essentialTasks1;
+		queue<TTask*> essentialTasks2;
+		char queueIsUse;
+		CRITICAL_SECTION accessPush;
+	public:
+		ProcessingQueueTimeLimited(){
+			this->queueIsUse = 0;
+			InitializeCriticalSection(&this->accessPush);
+		}
+		int addTask(TTask *task, int type) {
+			EnterCriticalSection(&this->accessPush);
+			if (this->queueIsUse == 1) {
+				this->essentialTasks2.push(task);
+			}else{
+				this->essentialTasks1.push(task);
+			}
+			LeaveCriticalSection(&this->accessPush);
+			return true;
+		}
+		int performTasks() {
+			EnterCriticalSection(&this->accessPush);
+			this->queueIsUse = !this->queueIsUse;
+			LeaveCriticalSection(&this->accessPush);
+			if (this->queueIsUse == 1) {
+				//printf("performTasks %i\n", this->essentialTasks1.size());
+				while ( !this->essentialTasks1.empty() ) {
+					this->essentialTasks1.front()->processExecute();
+					delete this->essentialTasks1.front();
+					this->essentialTasks1.pop();
+				}
+			}else{
+				//printf("performTasks %i\n", this->essentialTasks2.size());
+				while ( !this->essentialTasks2.empty() ) {
+					this->essentialTasks2.front()->processExecute();
+					delete this->essentialTasks2.front();
+					this->essentialTasks2.pop();
+				}
+			}
+			
+			
+			return true;
+		}
+	};
 };
 #endif	/* GRPROCESSINGQUEUE_H */
 

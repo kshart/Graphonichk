@@ -68,10 +68,10 @@ int OpenGL::init(OPENGL_VER ver) {
 		glBindBuffer(GL_UNIFORM_BUFFER, OpenGL::viewMatrix);
 		glBufferData(GL_UNIFORM_BUFFER, 4*4*sizeof(float), nullptr, GL_DYNAMIC_DRAW);
 		
-		ShaderBitmap::prog = new ShaderBitmap();
-		ShaderSVGmain::prog = new ShaderSVGmain();
-		ShaderFPrimitiv::prog = new ShaderFPrimitiv();
-		
+		//ShaderBitmap::prog = new ShaderBitmap();
+		//ShaderSVGmain::prog = new ShaderSVGmain();
+		//ShaderFPrimitiv::prog = new ShaderFPrimitiv();
+		//ShaderF3D::prog = new ShaderF3D();
 		/*glslStr *BitmapChars = new glslStr();
 		FileLoad *vsBitmapChar = new FileLoad("glsl/ShaderBitmap.vs"),
 				*gsBitmapChar = new FileLoad("glsl/ShaderBitmap.gs"),
@@ -80,6 +80,7 @@ int OpenGL::init(OPENGL_VER ver) {
 		ShaderBitmap::init33();
 		ShaderSVGmain::init33();
 		ShaderFPrimitiv::init33();
+		ShaderF3D::init33();
 		
 		GLShader::setShader(ShaderBitmap::prog);
 		glActiveTexture(GL_TEXTURE0);
@@ -543,6 +544,78 @@ void ShaderFPrimitiv::init33() {
 	Windows::window->eachFrame.addTask(task, 0);
 }
 
+ShaderF3D* ShaderF3D::prog = nullptr;
+ShaderF3D::ShaderF3D() :GLShader(ShaderF3D::CRC32) {
+	
+}
+void ShaderF3D::init() {
+	this->position = glGetAttribLocation(this->shaderProgram, "position");
+	this->fillColor = glGetUniformLocation(this->shaderProgram, "fillColor");
+	this->transformMatrix = glGetUniformLocation(this->shaderProgram, "transformMatrix");
+	this->viewMatrix = glGetUniformBlockIndex(this->shaderProgram, "viewMatrix");
+	glUniformBlockBinding(this->shaderProgram, this->viewMatrix, 1);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::viewMatrix, 0, 4*4*sizeof(float));
+}
+void ShaderF3D::init33() {
+	ShaderF3D *sh = new ShaderF3D();
+	const GLchar *vrsh = 
+		"layout(shared) uniform viewMatrix {"
+			"mat4 viewMatrixValue;"
+		"};"
+		"uniform mat4 transformMatrix;"
+		"in vec3 position;"
+		"out vec3 w_position;"
+		"out vec3 c_normal;"
+		"out vec3 c_eye;"
+		"out vec3 c_light;"
+		"void main () {"
+			//"cameraPos = vec3(0, 0, 0);"
+			"w_position = (vec4(position, 1)*transformMatrix).xyz;"
+			"gl_Position = vec4(w_position, 1)*viewMatrixValue;"
+			"c_eye = 0 - (vec4(position, 1)*viewMatrixValue*transformMatrix).xyz;"
+			"c_light = normalize((vec4(0, -10, 0, 1)*viewMatrixValue).xyz+c_eye);"
+			"c_normal = normalize((vec4(position.xyz, 0)*transformMatrix*viewMatrixValue).xyz);"
+		"}",
+		*frsh = 
+		"uniform vec4 fillColor;"
+		"out vec4 color;"
+		"in vec3 w_position;"
+		"in vec3 c_normal;"
+		"in vec3 c_eye;"
+		"in vec3 c_light;"
+		"void main () {"
+			"float cosTheta = clamp( dot( c_normal,c_light ), 0,1 );"
+			"color = vec4( fillColor.xyz*max(cosTheta, 0.1), fillColor.w);"
+		"}",
+		*gmsh = 
+		"layout (triangles) in;"
+		"layout (triangle_strip) out;"
+		"layout (max_vertices = 3) out;"
+		"layout(shared) uniform viewMatrix {"
+			"mat4 viewMatrixValue;"
+		"};"
+		"void main () {"
+			"vec3 Pos = gl_in[0].gl_Position.xyz;"
+			"gl_Position = vec4(gl_in[0].gl_Position.xy, gl_in[0].gl_Position.z-4, 1.0)*viewMatrixValue;"
+			"gl_Normal = 1.0;"
+			"EmitVertex();"
+			
+			"gl_Position = vec4(gl_in[1].gl_Position.xy, gl_in[1].gl_Position.z-4, 1.0)*viewMatrixValue;"
+			"gl_Normal = 1.0;"
+			"EmitVertex();"
+			
+			"gl_Position = vec4(gl_in[2].gl_Position.xy, gl_in[2].gl_Position.z-4, 1.0)*viewMatrixValue;"
+			"gl_Normal = 1.0;"
+			"EmitVertex();"
+	
+			"EndPrimitive();"
+		"}";
+	gmsh = nullptr;
+	ShaderF3D::prog = sh;
+	GLShaderLoadTask *task = new GLShaderLoadTask(sh, vrsh, frsh);
+	Windows::window->eachFrame.addTask(task, 0);
+}
+
 
 
 GLShaderLoadTask::GLShaderLoadTask(GLShader* sh, const GLchar *vs, const GLchar *fs, const GLchar *gs) :shader(sh), vs(vs), gs(gs), fs(fs){
@@ -599,6 +672,7 @@ int GLShaderLoadTask::processExecute() {
 	glLinkProgram(this->shader->shaderProgram);
 	
 	this->shader->init();
+	return true;
 }
 
 /*void ShaderBitmap::init() {

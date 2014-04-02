@@ -2,10 +2,7 @@
 #define	GRSHAPE_H
 
 #include "grBaseTypes.h"
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include FT_GLYPH_H
-#include <GL/gl.h>
+
 
 
 using namespace std;
@@ -20,6 +17,7 @@ namespace Graphonichk {
 	
 	class ShapeRectGateBasic;
 	class ShapeRectGateMatrix2D;
+	class ShapeRectGateMatrix3D;
 
 	class Bitmap;
 	class Buffer;
@@ -75,22 +73,14 @@ namespace Graphonichk {
 	protected:
 		ShapeRect(int crc32);
 	public:
-		///РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ ShapeRect (РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ С‚РѕР»СЊРєРѕ РІ РєР»Р°СЃСЃР°С… РЅР°СЃР»РЅРґ) 
 		virtual void trace();
-		///РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ ShapeRect (РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ С‚РѕР»СЊРєРѕ РІ РєР»Р°СЃСЃР°С… РЅР°СЃР»РЅРґ) 
 		virtual void drag(short x, short y);
 		virtual void updateGlobalPosition();
-		///РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ ShapeRect (РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ С‚РѕР»СЊРєРѕ РІ РєР»Р°СЃСЃР°С… РЅР°СЃР»РЅРґ) 
 		GLuint meshVAO, meshVBO;
-		///РЎСЃС‹Р»РєР° РЅР° СЂРѕРґРёС‚РµР»СЊСЃРєСѓСЋ РґРёСЂРµРєС‚РѕСЂРёСЋ
 		ShapeGroupRect* parent;
-		///
 		Point offsetPos;
-		///РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ ShapeRect (РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ С‚РѕР»СЊРєРѕ РІ РєР»Р°СЃСЃР°С… РЅР°СЃР»РЅРґ) 
 		short globalx, globaly, x, y;
-		///РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ ShapeRect (РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ С‚РѕР»СЊРєРѕ РІ РєР»Р°СЃСЃР°С… РЅР°СЃР»РЅРґ) 
 		unsigned short width, height;
-		///
 		bool visible;
 		string name;
 		
@@ -119,7 +109,7 @@ namespace Graphonichk {
 		virtual bool addChild(ShapeRect *sh);
 		virtual bool removeChild(ShapeRect *sh);
 		virtual bool setChildDepth(ShapeRect *sh, unsigned short depth);
-		virtual unsigned short getChildDepth(ShapeRect *sh);
+		virtual unsigned int getChildDepth(ShapeRect *sh);
 		virtual ShapeRect* getChild(string str);
 		
 		virtual void drag(short, short);
@@ -189,6 +179,18 @@ namespace Graphonichk {
 		ViewMatrix view;
 	};
 	
+	class ShapeRectGateMatrix3D :public ShapeRect {
+	public:
+		ShapeRectGateMatrix3D();
+		//virtual void trace();
+		virtual int renderGLComptAll();
+		virtual int renderGL400();
+		virtual int renderGL330();
+		virtual int renderGL210();
+		ShapeGroupBasic group;
+		ViewMatrix view;
+	};
+	
 	
 	
 	
@@ -238,8 +240,18 @@ namespace Graphonichk {
 		argb backgroundColor;
 		GLuint vao, vbo;
 	};
-
+	class Model3D;
 	
+	class Scene3D :public ShapeRect {
+	public:
+		Scene3D();
+		int renderGLComptAll();
+		int renderGL330();
+		ViewMatrix viewMatrix;
+		TransformMatrix3D viewPosMatrix;
+		TransformMatrix3D transformMatrix;
+		Model3D *model;
+	};
 /*CRC32
 Bitmap		0xEFC15B9A
 Directory	0xC489C679

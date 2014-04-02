@@ -126,6 +126,7 @@ void ShapeRect::trace() {
 	printf("ShapeRect a='%i' x=%i, y=%i, gx=%i, gy=%i, w=%i, h=%i\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->width, this->height);
 }
 void ShapeRect::setVisible(bool vis) {
+	this->visible = vis;
 	if (this->parent==NULL) return;
 	this->parent->updateRect();
 }
@@ -171,6 +172,7 @@ int ShapeRect::saveAsXML(FILE* str, unsigned short tab) {
 	for (int i=0; i<tab; i++) fprintf(str, "\t");
 	fprintf(str, "<ShapeRect name='%s' crc32='%i' x='%i' y='%i' width='%i' height='%i' offsetX='%i' offsetY='%i'/>\n",
 			this->name.c_str(), this->crc32, this->x, this->y, this->width, this->height, this->offsetPos.x, this->offsetPos.y);
+	return true;
 }
 ShapeRect* ShapeRect::globalHitTest(short x, short y) {
 	if ( x>this->globalx+this->offsetPos.x &&
@@ -205,7 +207,7 @@ int ShapeRect::addEventHandler( int type, void(*fun)(const EventMouseShape*)) {
 	}
 }
 
-ShapeGroupRect::ShapeGroupRect() :ShapeRect(ShapeGroupRect::CRC32), Buffer() {
+ShapeGroupRect::ShapeGroupRect() :ShapeRect(ShapeGroupRect::CRC32) {
 	this->shapeCache = NULL;
 	this->totalShape = this->totalDir = 0;
 	this->parent = NULL;
@@ -215,7 +217,7 @@ ShapeGroupRect::ShapeGroupRect() :ShapeRect(ShapeGroupRect::CRC32), Buffer() {
 	this->offsetPos.y = SHRT_MAX;
 	this->addChildLock = CreateMutex(NULL, FALSE, NULL);
 }
-ShapeGroupRect::ShapeGroupRect(int crc32) :ShapeRect(crc32), Buffer() {
+ShapeGroupRect::ShapeGroupRect(int crc32) :ShapeRect(crc32) {
 	this->shapeCache = NULL;
 	this->totalShape = this->totalDir = 0;
 	this->parent = NULL;
@@ -238,7 +240,7 @@ int ShapeGroupRect::renderGLComptAll() {
 				this->width,
 				this->height);
 		OpenGL::pushViewMatrix();
-		ViewMatrix vm(this->globalx+this->offsetPos.x, this->globalx+this->offsetPos.x+this->width, 
+		ViewMatrix vm = ViewMatrixOrtho(this->globalx+this->offsetPos.x, this->globalx+this->offsetPos.x+this->width, 
 				this->globaly+this->offsetPos.y+this->height, this->globaly+this->offsetPos.y, -1, 1);
 		OpenGL::setViewMatrix(vm);
 	}
@@ -258,13 +260,13 @@ int ShapeGroupRect::renderGLComptAll() {
 		#ifdef DEBUG
 		printf("ShapeGroupRect shapeCache\n");
 		#endif
-		for (int i=0; i<this->shapeCache->size(); i++) {
+		/*for (int i=0; i<this->shapeCache->size(); i++) {
 			(this->shapeCache->at(i))->renderGLComptAll();
-		}
+		}*/
 	}else{
 		WaitForSingleObject(this->addChildLock, INFINITE);
-		for (int i=0; i<this->child.size(); i++) {
-			if (this->child[i]->visible) this->child[i]->renderGLComptAll();
+		for (vector<ShapeRect*>::const_iterator it=this->child.begin(), end=this->child.end(); it!=end; ++it) {
+			if ( (*it)->visible) (*it)->renderGLComptAll();
 		}
 		ReleaseMutex(this->addChildLock);
 	}
@@ -288,13 +290,13 @@ int ShapeGroupRect::renderGL400() {
 	printf("ShapeGroupRect p\n");
 	for (int i=0; i<this->child.size(); i++) {
 		this->child[i]->trace();
-		this->child[i]->renderGL400();
+		if (this->child[i]->visible)this->child[i]->renderGL400();
 	}
 	return true;
 }
 int ShapeGroupRect::renderGL330() {
 	for (int i=0; i<this->child.size(); i++) {
-		this->child[i]->renderGL330();
+		if (this->child[i]->visible) this->child[i]->renderGL330();
 	}
 	#ifdef DEBUG
 /*	glLineWidth(1);
@@ -535,18 +537,22 @@ bool ShapeGroupRect::addChild(ShapeRect *sh) {
 	Windows::window->renderComplete = false;
 	#endif
 	ReleaseMutex(this->addChildLock);
+	return true;
 }
 bool ShapeGroupRect::removeChild(ShapeRect* sh) {
-	
+	return false;
 }
 bool ShapeGroupRect::setChildDepth(ShapeRect* sh, unsigned short depth) {
-	
+	return false;
 }
-unsigned short ShapeGroupRect::getChildDepth(ShapeRect* sh) {
-	
+unsigned int ShapeGroupRect::getChildDepth(ShapeRect* sh) {
+	for (vector<ShapeRect*>::const_iterator it=this->child.begin(), end=this->child.end(); it!=end; ++it) {
+		if ( (*it)==sh ) return it-this->child.begin();
+	}
+	return INT_MAX;
 }
 ShapeRect* ShapeGroupRect::getChild(string str) {
-	
+	return nullptr;
 }
 void ShapeGroupRect::setBuffer(ShapeGroupRect::BUFFER_TYPE type, char val) {
 	/*switch (type) {
@@ -626,6 +632,7 @@ int ShapeGroupRect::callEvent(EventMouseShape* event) {
 			}
 		}
 	}
+	return true;
 }
 
 Bitmap::Bitmap(Texture *tex) :ShapeRect(Bitmap::CRC32), vao(0) {
@@ -783,6 +790,7 @@ int FPoint::renderGLComptAll() {
 	  glVertex2s(this->globalx, this->globaly);
 	glEnd();
 	glPopMatrix();
+	return true;
 }
 FLines::FLines(void *arr, short length, short w, unsigned int color=0) :ShapeRect(FLines::CRC32) {
 	this->arr = (short*)arr;
@@ -804,6 +812,7 @@ int FLines::renderGLComptAll() {
 		//glColor3ub(0xFF, 0xFF, 0xFF);
 	glEnd();
 	glPopMatrix();
+	return true;
 }
 
 FRect::FRect(short width, short height, uint32_t backgroundColor) :ShapeRect(FRect::CRC32) {
@@ -821,6 +830,7 @@ int FRect::renderGLComptAll() {
 		glVertex2s(this->globalx, this->globaly+this->height);
 	glEnd();
 	glPopMatrix();
+	return true;
 }
 int FRect::renderGL330() {
 	//glUseProgram();
@@ -847,5 +857,100 @@ int FRect::renderGL330() {
 			backgroundColor.b/255.0, 
 			backgroundColor.a/255.0);
 	glDrawArrays(GL_POINTS, 0, 1);
+	return true;
+}
+
+Scene3D::Scene3D():ShapeRect(1232123) {
+	//this->viewMatrix = ViewMatrixPerspective2(45.0, 1, 1, 10);
+	this->viewMatrix = ViewMatrixPerspective2(45.0, (float)Windows::window->width/(float)Windows::window->height, 1, 1000);
+	//this->viewPosMatrix;
+	this->x = 0;
+	this->y = 0;
+	this->width = Windows::window->width;
+	this->height = Windows::window->height;
+	this->model = nullptr;
+}
+int Scene3D::renderGLComptAll() {
+	OpenGL::pushViewport();
+	OpenGL::pushViewMatrix();
+	OpenGL::setViewport(this->globalx+this->offsetPos.x, 
+			Windows::window->height-this->globaly+this->offsetPos.y-this->height,
+			this->width, this->height);
+	OpenGL::setViewMatrix(this->viewMatrix);
+	
+	//this->root.renderGLComptAll();
+	
+	OpenGL::popViewMatrix();
+	OpenGL::popViewport();
+	
+	glLineWidth(1);
+	glColor4ub(0xFF,0,0,0xFF);
+	glBegin(GL_LINE_STRIP);// <editor-fold defaultstate="collapsed" desc="GL_LINE_STRIP">
+		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
+		glVertex2s( this->globalx+this->offsetPos.x+this->width, this->globaly+this->offsetPos.y );
+		glVertex2s( this->globalx+this->offsetPos.x+this->width, this->globaly+this->offsetPos.y+this->height );
+		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y+this->height );
+		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
+	glEnd();// </editor-fold>
+	return true;
+}
+int Scene3D::renderGL330() {
+	OpenGL::pushViewport();
+	OpenGL::pushViewMatrix();
+	OpenGL::setViewport(this->globalx+this->offsetPos.x, 
+			Windows::window->height-this->globaly+this->offsetPos.y-this->height,
+			this->width, this->height);
+	OpenGL::setViewMatrix(this->viewMatrix);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	
+	if (GLShader::shader->crc32!=ShaderF3D::CRC32) GLShader::setShader(ShaderF3D::prog);
+	if (this->model!=nullptr) {
+		glUniform4f(ShaderF3D::prog->fillColor, 0, 1, 0, 1);
+		glUniformMatrix4fv(ShaderF3D::prog->transformMatrix, 1, GL_FALSE, this->viewPosMatrix.a);
+		//glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(this->model->vao);//this->model->polygon.size()*3
+		glDrawElements(GL_TRIANGLES, this->model->polygon.size()*3, GL_UNSIGNED_INT, NULL);
+	}
+	/*
+	float s = 1;
+		float vertex[24][3] = {
+			{-s, s, s}, { s, s, s}, { s,-s, s}, {-s,-s, s}, // front
+			{ s, s,-s}, {-s, s,-s}, {-s,-s,-s}, { s,-s,-s}, // back
+			{-s, s,-s}, { s, s,-s}, { s, s, s}, {-s, s, s}, // top
+			{ s,-s,-s}, {-s,-s,-s}, {-s,-s, s}, { s,-s, s}, // bottom
+			{-s, s,-s}, {-s, s, s}, {-s,-s, s}, {-s,-s,-s}, // left
+			{ s, s, s}, { s, s,-s}, { s,-s,-s}, { s,-s, s}  // right
+		};
+		unsigned int index[36] = {
+			0, 3, 1,  1, 3, 2, // back
+			4, 7, 5,  5, 7, 6, // front
+			8,11, 9,  9,11,10, // top
+		   12,15,13, 13,15,14, // bottom
+		   16,19,17, 17,19,18, // left
+		   20,23,21, 21,23,22  // right
+		};
+		glGenVertexArrays(1, &this->vao);
+		if (this->vao==0) printf("VAO_NULL");
+		glBindVertexArray(this->vao);
+		
+		glGenBuffers(1, &this->vbo1);
+		glBindBuffer(GL_ARRAY_BUFFER, this->vbo1);
+		glBufferData(GL_ARRAY_BUFFER, 24*3*sizeof(float), vertex, GL_STATIC_DRAW);
+		glVertexAttribPointer(ShaderF3D::prog->position, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+		glEnableVertexAttribArray(ShaderF3D::prog->position);
+		
+		glGenBuffers(1, &this->vbo2);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->vbo2);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36*sizeof(unsigned int), index, GL_STATIC_DRAW);*/
+	//glClearColor( 0, 0, 1, 1 );
+	//glClear( GL_COLOR_BUFFER_BIT );
+	
+	
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+	OpenGL::popViewMatrix();
+	OpenGL::popViewport();
 	return true;
 }

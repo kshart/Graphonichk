@@ -75,8 +75,9 @@ bool UIUnitDirectory::addChild(UIUnit* unit, unsigned short pos) {
 }
 void UIUnitDirectory::drag(unsigned short x, unsigned short y) {
 	this->UIUnit::drag(x, y);
-	for(int i=0; i<this->child.size(); i++) {
-		this->child[i]->updateGlobalPosition();
+	
+	for(vector<UIUnit*>::const_iterator it=this->child.begin(), end=this->child.end(); it!=end; ++it) {
+		(*it)->updateGlobalPosition();
 	}
 }
 void UIUnitDirectory::resize(unsigned short w, unsigned short h) {
@@ -277,10 +278,9 @@ void ScrollBarWmouseUp (const EventMouse *e) {
 }
 void ScrollBarWmouseMove (const EventMouse *e) {
 	UIScrollBarH *sb = (UIScrollBarH*)(e->obj);
-	short mousex, mousey;
 	if (sb->scrollStarted) {
-		mousex = e->x - sb->globalx - sb->bar->width/2;
-		mousey = e->y - sb->globaly - sb->bar->height/2;
+		short mousex = e->x - sb->globalx - sb->bar->width/2,
+			mousey = e->y - sb->globaly - sb->bar->height/2;
 		if (mousex<0) mousex = 0;
 		if ( mousex>(sb->width - sb->bar->width) ) mousex = sb->width - sb->bar->width;
 		sb->position = (float)mousex/(sb->width - sb->bar->width);
@@ -370,8 +370,12 @@ int UIButton::callEvent(EventMouseShape* event) {
 			#endif
 			return true;
 	}
+	return false;
 }
 
+EventCheckButton::EventCheckButton() {
+	
+}
 UICheckbox::UICheckbox() :
 	press(false),
 	checked(false),
@@ -384,22 +388,30 @@ UIRadioButtonGroup::UIRadioButtonGroup() :active(true), checked(nullptr) {
 bool UIRadioButtonGroup::addRadioButton(UIRadioButton* rb) {
 	rb->group = this;
 	this->_buttons.push_back(rb);
+	return true;
 }
 bool UIRadioButtonGroup::setActiveButton(UIRadioButton* rb) {
 	UIRadioButton *rb1;
 	bool searchRB = false;
+	EventCheckButton *event = new EventCheckButton();
+	event->type = EventCheckButton::CHECK_UPDATE;
 	for (int i=this->_buttons.size()-1; i>=0; i--) {
 		rb1 = this->_buttons[i]; 
 		if (rb1 == rb) {
 			searchRB = true;
 			rb1->checked = true;
 			rb1->status = UIRadioButton::CHECKED_NORMAL;
+			event->checked = true;
 		}else{
 			rb1->checked = false;
 			rb1->status = UIRadioButton::UNCHECKED_NORMAL;
+			event->checked = false;
 		}
+		event->obj = rb1;
+		rb1->callEvent(event);
 		rb1->changeCheck();
 	}
+	delete event;
 	return searchRB;
 }
 /*
@@ -604,7 +616,7 @@ void UITableDirectory::addRow(UITableDirectoryRow* row) {
 }
 void UITableDirectory::setPos(float n) {
 	if (n<0 || n>1) return;
-	UITableDirectoryRow *row;
+	//UITableDirectoryRow *row;
 	this->child.clear();
 	this->addChild(this->background);
 	FRect *r1;

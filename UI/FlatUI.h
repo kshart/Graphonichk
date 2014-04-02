@@ -24,7 +24,7 @@ namespace FlatUI {
 		
 		int callEvent(EventMouseShape* event);
 	};
-	class FlatUIRadioButton :public Graphonichk::Bitmap, public Graphonichk::UIRadioButton {
+	class FlatUIRadioButton :public Graphonichk::UIRadioButton, public Graphonichk::Bitmap  {
 	public:
 		FlatUIRadioButton();
 		

@@ -1,6 +1,6 @@
 #include "grBaseTypes.h"
 #include "SVG.h"
-
+#include "grMatrix.h"
 using namespace SVG;
 using namespace std;
 
@@ -555,7 +555,7 @@ int BasicShapeRect::renderGL400() {
 	return false;
 }
 int BasicShapeRect::renderGL330() {
-	ViewMatrix mat;
+	ViewMatrix mat = ViewMatrixIdentity();
 	mat.a[0] = this->matrix.a;
 	mat.a[1] = this->matrix.b;
 	mat.a[2] = this->matrix.c;
@@ -848,7 +848,7 @@ int BasicShapeLine::renderGL210() {
 	return false;
 }
 
-BasicShapePolyline::BasicShapePolyline() :length(0), points(0) {
+BasicShapePolyline::BasicShapePolyline() :length(0), points(nullptr) {
 }
 int BasicShapePolyline::renderGLComptAll() {
 	if (length == 0) return true;
@@ -864,7 +864,7 @@ int BasicShapePolyline::renderGLComptAll() {
 	glBegin(GL_LINE_STRIP);
 		glColor3ub(0xFF, 0, 0);
 		glVertex2f(this->points[0].x.value, this->points[0].y.value);
-		for(int i=1; i<this->length; i++) {
+		for(uint i=1; i<this->length; i++) {
 			glVertex2f(this->points[i].x.value, this->points[i].y.value);
 		}
 	glEnd();
@@ -882,7 +882,7 @@ int BasicShapePolyline::renderGL210() {
 	return false;
 }
 
-BasicShapePolygon::BasicShapePolygon() :length(0), points(0) {
+BasicShapePolygon::BasicShapePolygon() :length(0), points(nullptr) {
 }
 int BasicShapePolygon::renderGLComptAll() {
 	if (length < 2) return true;

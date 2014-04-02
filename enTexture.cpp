@@ -15,7 +15,7 @@
 #define ADD_TEXTURE_TO_DELETE_BUFFER(glid) \
 	TextureToDeleteTask *task = new TextureToDeleteTask(glid);\
 	Windows::window->eachFrame.addTask(task, 0);\
-	//Texture::buffer.push_back(tex);\
+	//Texture::buffer.push_back(tex);
 	//Texture::toDelete++;
 using namespace std;
 using namespace Graphonichk;
@@ -65,6 +65,23 @@ Texture::Texture(Image *img) {
 			this->format = GL_ALPHA;
 			this->type = GL_UNSIGNED_BYTE;
 			break;
+		case Image::MONO_1:
+		case Image::MONO_2:
+		case Image::MONO_4:
+		case Image::MONO_16:
+		case Image::MONO_ALPHA_8:
+		case Image::MONO_ALPHA_16:
+		case Image::BGR_48:
+		case Image::RGB_48:
+		case Image::BGRA_64:
+		case Image::RGBA_64:
+		case Image::PALETTE_1:
+		case Image::PALETTE_2:
+		case Image::PALETTE_4:
+		case Image::PALETTE_8:
+		case Image::NC:
+			fputs("Texture::Texture(Image *img) NOT SUPPORTED TYPE", stderr);
+			break;
 	}
 	this->img = img;
 	this->width = img->width;
@@ -79,14 +96,15 @@ Texture::~Texture() {
 	ADD_TEXTURE_TO_DELETE_BUFFER(this->GLID);
 }
 void Texture::trace() {
-	printf("\t<Texture w='%i' h='%i' event='%i' type='%i' format='%i' texId='%i' GLID='%i'/>\n", 
-		this->width, this->height, this->event, this->type, this->format, this, this->GLID);
+	printf("\t<Texture w='%i' h='%i' event='%i' type='%i' format='%i' GLID='%i'/>\n", 
+		this->width, this->height, this->event, this->type, this->format, this->GLID);
 }
 int Texture::saveAsXML(FILE* str, unsigned short tab) {
 	//for (int i=0; i<tab; i++) fprintf(str, "\t");
 	//fprintf(str, "<Texture name='%s' id='%i' width='%i' height='%i' />\n", this->name.c_str(), this, this->width, this->height);
+	return false;
 }
-void Texture::texturesUpdate() {
+/*void Texture::texturesUpdate() {
 	Texture *tex;
 	if (Texture::toUpdate==0 && Texture::toDelete==0) return;
 	if (Texture::toUpdate>0 && Texture::toUpdate<=Texture::buffer.size()) {// <editor-fold defaultstate="collapsed" desc="toUpdate">
@@ -182,7 +200,7 @@ void Texture::texturesUpdate() {
 			}
 		}
 	}// </editor-fold>
-}
+}*/
 
 typedef struct{
 	char *data;

@@ -95,6 +95,7 @@ int addImage(Array<Rect> *rects, unsigned short imgID, unsigned short viewWidth,
 	}else{
 		
 	}
+	return true;
 }
 int addNodeInResult(Array<Rect> *rects, unsigned short imgID, NodeResult *result) {
 	Node *node = result->node;
@@ -127,7 +128,7 @@ int addNodeInResult(Array<Rect> *rects, unsigned short imgID, NodeResult *result
 		if (node->child[0]==NULL||node->child[1]==NULL) printf("ERRROORRR\n"); 
 		printf("imgID2 %i\n", imgID);
 	}
-		
+	return true;
 }
 void traceNods(unsigned short viewX, unsigned short viewY, unsigned short viewWidth, unsigned short viewHeight, Node *in, Array<Rect> *rects) {
 	if (in->child[0]==NULL&&in->child[1]==NULL) {
@@ -240,7 +241,9 @@ bool Font::cached(unsigned short size) {
 	
 	for(int i=0; i<this->face->num_glyphs; i++) {
 		for (int y=0; y<bmpRect.data[i].height; y++) {
-			memcpy( imgRaw+(y+bmpRect.data[i].y)*2048+bmpRect.data[i].x, bmps.data[i]+bmpRect.data[i].width*y, bmpRect.data[i].width );
+			memcpy( (void*)( (ptrdiff_t)imgRaw + (y+bmpRect.data[i].y)*2048 + bmpRect.data[i].x ), 
+					(void*)( (ptrdiff_t)bmps.data + i + bmpRect.data[i].width*y ), 
+					bmpRect.data[i].width );
 		}
 	}
 	Image *img = new Image(2048, 2048, Image::MONO_8, imgRaw);
@@ -251,10 +254,11 @@ bool Font::cached(unsigned short size) {
 }
 void Font::trace() {
 	printf("<Fonts count='%i'>\n", Font::buffer.size());
-	for(int i=0; i<Font::buffer.size(); i++) {
-		printf("\t<Font path='%s' cached='%i' error='%i'>\n", Font::buffer[i]->path.c_str(), Font::buffer[i]->cache.size(), Font::buffer[i]->error);
-		for(int t=0; t<Font::buffer[i]->cache.size(); t++) {
-			printf("\t\t<FontFace size='%i' count='%i' ramUsed='%iKb'/>\n", Font::buffer[i]->cache[t]->size, Font::buffer[i]->cache[t]->arr->size, Font::buffer[i]->cache[t]->ramUsed/1024);
+	//for (vector<ShapeRect*>::const_iterator it=this->child.begin(), end=this->child.end(); it!=end; ++it) {
+	for(vector<Font*>::const_iterator it=Font::buffer.begin(), end=Font::buffer.end(); it!=end; ++it) {
+		printf("\t<Font path='%s' cached='%i' error='%i'>\n", (*it)->path.c_str(), (*it)->cache.size(), (*it)->error);
+		for(int t=0; t<(*it)->cache.size(); t++) {
+			printf("\t\t<FontFace size='%i' count='%i' ramUsed='%iKb'/>\n", (*it)->cache[t]->size, (*it)->cache[t]->arr->size, (*it)->cache[t]->ramUsed/1024);
 		}
 		printf("\t</Font>\n");
 	}
@@ -306,7 +310,7 @@ int TextField::bufferGLComptAll() {
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, this->bufferTexture->GLID, 0);
 		glViewport(0, 0, this->width, this->height);
 		
-		ViewMatrix matrix(0, this->width, this->height, 0, -1, 1);
+		ViewMatrix matrix = ViewMatrixOrtho(0, this->width, this->height, 0, -1, 1);
 		OpenGL::setViewMatrix(matrix);
 		glClearColor(0,0,0,0);
 		glClear( GL_COLOR_BUFFER_BIT );

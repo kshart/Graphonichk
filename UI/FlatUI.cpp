@@ -21,13 +21,14 @@ int MainFlatUI::init() {
 	MainFlatUI::flCBDisable = new Graphonichk::Texture("FlatUICheckBoxDisable.png");
 	MainFlatUI::flCBChk = new Graphonichk::Texture("FlatUICheckBoxCheck.png");
 	MainFlatUI::flCBRollOver = new Graphonichk::Texture("FlatUICheckBoxRollOver.png");
+	return true;
 }
 
 
 void FlatUICheckboxMouseUp (const EventMouse *e) {
 	FlatUICheckbox *flsb = (FlatUICheckbox*)(e->obj);
 	short localx, localy;
-	
+	EventCheckButton *event;
 	if (flsb->press) {
 		flsb->press = false;
 		localx = e->x - flsb->globalx;
@@ -37,10 +38,22 @@ void FlatUICheckboxMouseUp (const EventMouse *e) {
 				flsb->checked = false;
 				flsb->status = UICheckbox::UNCHECKED_NORMAL;
 				flsb->tex = MainFlatUI::flCB;
+				event = new EventCheckButton();
+				event->checked = false;
+				event->type = EventCheckButton::CHECK_UPDATE;
+				event->obj = flsb;
+				flsb->UICheckbox::callEvent(event);
+				delete event;
 			}else{
 				flsb->checked = true;
 				flsb->status = UICheckbox::CHECKED_NORMAL;
 				flsb->tex = MainFlatUI::flCBChk;
+				event = new EventCheckButton();
+				event->checked = true;
+				event->type = EventCheckButton::CHECK_UPDATE;
+				event->obj = flsb;
+				flsb->UICheckbox::callEvent(event);
+				delete event;
 			}
 		}else{
 			if (flsb->checked) {
@@ -120,7 +133,7 @@ int FlatUICheckbox::callEvent(EventMouseShape* event) {
 void FlatUIRadioButtonMouseUp (const EventMouse *e) {
 	FlatUIRadioButton *flsb = (FlatUIRadioButton*)(e->obj);
 	short localx, localy;
-	
+	EventCheckButton *event;
 	if (flsb->press) {
 		flsb->press = false;
 		localx = e->x - flsb->globalx;
@@ -131,12 +144,24 @@ void FlatUIRadioButtonMouseUp (const EventMouse *e) {
 					flsb->checked = false;
 					flsb->status = UIRadioButton::UNCHECKED_NORMAL;
 					flsb->tex = MainFlatUI::flRB;
+					event = new EventCheckButton();
+					event->checked = false;
+					event->type = EventCheckButton::CHECK_UPDATE;
+					event->obj = flsb;
+					flsb->UIRadioButton::callEvent(event);
+					delete event;
 				}
 			}else{
 				if (flsb->group==nullptr) {
 					flsb->checked = true;
 					flsb->status = UIRadioButton::CHECKED_NORMAL;
 					flsb->tex = MainFlatUI::flRBChk;
+					event = new EventCheckButton();
+					event->checked = true;
+					event->type = EventCheckButton::CHECK_UPDATE;
+					event->obj = flsb;
+					flsb->UIRadioButton::callEvent(event);
+					delete event;
 				}else{
 					flsb->group->setActiveButton(flsb);
 				}

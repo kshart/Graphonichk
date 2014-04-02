@@ -90,6 +90,14 @@ namespace Graphonichk {
 		bool scrollStarted;
 	};
 	
+	class EventCheckButton :public Event {
+	  public:
+		enum :int{
+			CHECK_UPDATE
+		};
+		EventCheckButton();
+		bool checked;
+	};
 	class UIButton {
 	protected:
 		UIButton();
@@ -101,7 +109,7 @@ namespace Graphonichk {
 		STATUS status;
 		bool press;
 	};
-	class UICheckbox {
+	class UICheckbox :public EventDispatcher<EventCheckButton> {
 	protected:
 		UICheckbox();
 	public:
@@ -125,7 +133,7 @@ namespace Graphonichk {
 		bool active;
 		UIRadioButton *checked;
 	};
-	class UIRadioButton {
+	class UIRadioButton :public EventDispatcher<EventCheckButton> {
 	protected:
 		UIRadioButton();
 	public:
@@ -139,7 +147,6 @@ namespace Graphonichk {
 		bool checked;
 		virtual void changeCheck();
 	};
-
 	
 	
 	

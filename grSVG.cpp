@@ -35,10 +35,7 @@ ImageSVG::ImageSVG(const char *filename) :ShapeRect(0) {
 		attr = attr->next;
 		
 	}
-	ViewMatrix vm(0, this->width, 0, this->height, -1, 1);
-	this->viewMatrix = vm;
-	
-	
+	this->viewMatrix = ViewMatrixOrtho(0, this->width, 0, this->height, -1, 1);
 	
 	ImageSVG::loadGroup(node, &this->root);
 	/*node = node->xmlChildrenNode;
@@ -320,6 +317,7 @@ int ImageSVG::renderGLComptAll() {
 		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y+this->height );
 		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
 	glEnd();// </editor-fold>
+	return true;
 }
 int ImageSVG::renderGL400() {
 	OpenGL::pushViewport();
@@ -333,6 +331,7 @@ int ImageSVG::renderGL400() {
 	
 	OpenGL::popViewMatrix();
 	OpenGL::popViewport();
+	return true;
 }
 int ImageSVG::renderGL330() {
 	OpenGL::pushViewport();
@@ -346,6 +345,7 @@ int ImageSVG::renderGL330() {
 	
 	OpenGL::popViewMatrix();
 	OpenGL::popViewport();
+	return true;
 }
 int ImageSVG::renderGL210() {
 	OpenGL::pushViewport();
@@ -369,4 +369,5 @@ int ImageSVG::renderGL210() {
 		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y+this->height );
 		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
 	glEnd();// </editor-fold>
+	return true;
 }

@@ -104,6 +104,7 @@ namespace Graphonichk {
 					this->eventList[i].fun(event);
 				}
 			}
+			return true;
 		}
 		virtual int addEventHandler(int type, void(*fun)(const TEvent*), void* obj=NULL) {
 			EventLinc el;
@@ -111,8 +112,11 @@ namespace Graphonichk {
 			el.type = type;
 			el.fun = (void(*)(const Event*))fun;
 			this->eventList.push_back( el );
+			return true;
 		}
 		virtual int removeEventHandler( void(*fun)(const TEvent*) ) {
+			fprintf(stderr, "VOID virtual int removeEventHandler\n");
+			return false;
 		}
 	};
 	template<class TEvent, class TObject> class EventDispatcherObject {

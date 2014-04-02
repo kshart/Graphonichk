@@ -1,10 +1,3 @@
-/* 
- * File:   grMatrix.h
- * Author: Артем
- *
- * Created on 22 Февраль 2014 г., 17:35
- */
-
 #ifndef GRMATRIX_H
 #define	GRMATRIX_H
 
@@ -23,15 +16,27 @@ namespace Graphonichk {
 		void skewX(float angle);
 		void skewY(float angle);
 	};
-	class ViewMatrix {
+	class TransformMatrix3D {
 	public:
 		float a[16];
-		//Orto
-		//ViewMatrix(float a, float b, float c, float d, float e, float f);
+		TransformMatrix3D();
+		TransformMatrix3D(const TransformMatrix3D *m);
 		void trace();
-		ViewMatrix();
-		ViewMatrix(float r, float l, float t, float b, float f, float n);//ortho
+		void loadIdentity();
+		void multiple(TransformMatrix3D &mt);
+		void scale(float s);
+		void translate(float x, float y, float z);
+		void rotate(float angleX, float angleY, float angleZ);
 	};
+	typedef struct {
+		float a[16];
+	} ViewMatrix;
+	ViewMatrix ViewMatrixIdentity();
+	ViewMatrix ViewMatrixOrtho(float r, float l, float t, float b, float f, float n);
+	ViewMatrix ViewMatrixPerspective(float r, float l, float t, float b, float f, float n);
+	ViewMatrix ViewMatrixPerspective2(float fov, float aspect, float f, float n);
+	void ViewMatrixRotate(ViewMatrix &vm);
+	void ViewMatrixTranslate(ViewMatrix &vm, float x, float y, float z);
 	
 }
 
