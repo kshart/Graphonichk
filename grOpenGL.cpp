@@ -573,7 +573,7 @@ void ShaderF3D::init33() {
 			"w_position = (vec4(position, 1)*transformMatrix).xyz;"
 			"gl_Position = vec4(w_position, 1)*viewMatrixValue;"
 			"c_eye = 0 - (vec4(position, 1)*viewMatrixValue*transformMatrix).xyz;"
-			"c_light = normalize((vec4(0, -10, 0, 1)*viewMatrixValue).xyz+c_eye);"
+			"c_light = normalize((vec4(0, 0, 0, 1)*viewMatrixValue).xyz+c_eye);"
 			"c_normal = normalize((vec4(position.xyz, 0)*transformMatrix*viewMatrixValue).xyz);"
 		"}",
 		*frsh = 
@@ -584,8 +584,8 @@ void ShaderF3D::init33() {
 		"in vec3 c_eye;"
 		"in vec3 c_light;"
 		"void main () {"
-			"float cosTheta = clamp( dot( c_normal,c_light ), 0,1 );"
-			"color = vec4( fillColor.xyz*max(cosTheta, 0.1), fillColor.w);"
+			"float cosTheta = clamp( dot( c_normal,c_light ), 0, 1 );"
+			"color = vec4( fillColor.xyz*max(cosTheta, 0.3), fillColor.w);"
 		"}",
 		*gmsh = 
 		"layout (triangles) in;"

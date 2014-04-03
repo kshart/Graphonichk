@@ -42,23 +42,19 @@ namespace Graphonichk {
 		void show();
 		void setFocus();
 		void killFocus();
+		void resize(short width, short height);
 		
 		void saveAsXML();
 		
 		void redraw();
-		void redrawFBO();
-		void resize(short, short);
-		void loop();
-
 		
 		struct {
 			EventDispatcher<EventKeyboard> keyboard;
 			EventDispatcher<EventMouse> mouse;
 		} events;
-		//Graphonichk::ProcessingQueue<Graphonichk::VBOUpdateTask> asd;
-		//ProcessingQueue<VBOUpdateTask> VBOupdate;
+		
 		ProcessingQueue<EachFrameTask> eachFrame;
-		vector<Buffer*> FBOBuffer;
+		
 		ShapeGroupRect *root;
 		bool visible, renderComplete;
 		short x, y, width, height;

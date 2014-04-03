@@ -368,7 +368,7 @@ int ShapeGroupRect::bufferGL210() {
 	return false;
 }
 bool ShapeGroupRect::bufferMode(bool mode) {
-	if (mode && !this->bufferActivate ) {
+	/*if (mode && !this->bufferActivate ) {
 		this->bufferTexture = new Texture(this->width, this->height, GL_RGBA, GL_UNSIGNED_BYTE);
 		Windows::window->FBOBuffer.push_back(this);
 		
@@ -378,8 +378,8 @@ bool ShapeGroupRect::bufferMode(bool mode) {
 		this->bufferActivate = false;
 		delete this->bufferTexture;
 		this->bufferTexture = NULL;
-	}
-	return true;
+	}*/
+	return false;
 }
 int ShapeGroupRect::saveAsXML(FILE* str, unsigned short tab) {
 	for (int i=0; i<tab; i++) fprintf(str, "\t");

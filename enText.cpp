@@ -2,57 +2,21 @@
 using namespace std;
 using namespace Graphonichk;
 
-/*int ft_init () {
-	FT_Library library;
-	FT_Face face;
-	FT_GlyphSlot gs;
-	FT_BitmapGlyphRec bmp;
-	int error;
-	
-	error = FT_Init_FreeType( &library );
-	if (error) return error;
-	printf("FT_Init %i\n", error);
-	error = FT_New_Face( library, "C:/Windows/Fonts/arial.ttf", 0, &face );
-	if (error) return error;
-	
-	printf("FT_Init %i\n", error);
-	printf("FT_Face %i\n", face->num_glyphs);
-	error = FT_Set_Char_Size(face, 0, 20*64, 72, 72 );
-	error = FT_Set_Pixel_Sizes(face, 0, 20);
-	//FT_Set_Transform(face, &matrix, &delta);
-	error = FT_Load_Glyph( face, FT_Get_Char_Index(face, 'W'), FT_LOAD_DEFAULT );
-	//error = FT_Get_Glyph( face->glyph, &glyph );
-	error = FT_Render_Glyph( face->glyph, FT_RENDER_MODE_LIGHT   );
-	gs = face->glyph;
-	printf(" width %i ", gs->metrics.width>>6);
-	printf(" height %i\n", gs->metrics.height>>6);
-	//printf("FT_Init %i\n", error);
-	//printf("FT_Init %i\n", error);
-	printf("FT_Init %i\n", error);
-	glRasterPos2s(100, 100);
-	glPixelZoom(1,-1);
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	glDrawPixels(gs->bitmap.width, gs->bitmap.rows, GL_ALPHA, GL_UNSIGNED_BYTE, gs->bitmap.buffer);
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-	//printf("GLERR %i\n");
-	return error;
-}*/
-//FT_Err_Unknown_File_Format
 
+// pos short x y
+// index i
 
-
+// indexed 1DBuffer
+// float x1 float y1 float x2 float y2
 vector<Font*> Font::buffer;
 FT_Library Font::library;
-
 TextFormat *TextFormat::defaultFormat = new TextFormat();
 
 
 TextFormat::TextFormat() {
 	this->fn = NULL;
-	//unsigned short strWidth, strHeight;
 	this->size = 50;
 	this->direction = DIR::LTR;
-	//letterSpacing;
 	this->lineHeight = __SHRT_MAX__;
 	this->tabSize = 4;
 	this->whiteSpace = __SHRT_MAX__;
@@ -63,7 +27,6 @@ FontFace::FontFace(unsigned short size, Array<FontGlyph> *arr) :size(size), arr(
 	
 }
 
-#include <time.h> 
 struct stNode;
 struct stNode {
 	struct stNode* child[2];
@@ -193,6 +156,7 @@ bool Font::cached(unsigned short size) {
 	char *imgRaw = (char*)malloc(2048*2048);
 	Array<void*> bmps(glyphCount);
 	Array<Rect> bmpRect(glyphCount);
+	Array<float> bmpTexCoord(glyphCount*4);
 	Node node;
 	node.imgHeight = 0;
 	node.imgWidth = 0;
@@ -242,9 +206,13 @@ bool Font::cached(unsigned short size) {
 	for(int i=0; i<this->face->num_glyphs; i++) {
 		for (int y=0; y<bmpRect.data[i].height; y++) {
 			memcpy( (void*)( (ptrdiff_t)imgRaw + (y+bmpRect.data[i].y)*2048 + bmpRect.data[i].x ), 
-					(void*)( (ptrdiff_t)bmps.data + i + bmpRect.data[i].width*y ), 
+					(void*)( (ptrdiff_t)bmps.data[i] + bmpRect.data[i].width*y ), 
 					bmpRect.data[i].width );
 		}
+		bmpTexCoord.data[i*4+0] = ((float)bmpRect.data[i].x)/2048;
+		bmpTexCoord.data[i*4+1] = ((float)bmpRect.data[i].y)/2048;
+		bmpTexCoord.data[i*4+2] = ((float)bmpRect.data[i].width)/2048;
+		bmpTexCoord.data[i*4+3] = ((float)bmpRect.data[i].height)/2048;
 	}
 	Image *img = new Image(2048, 2048, Image::MONO_8, imgRaw);
 	Texture *tex = new Texture(img);
@@ -289,7 +257,7 @@ void TextField::setString(string str) {
 	this->bufferMode(true);
 }
 bool TextField::bufferMode(bool mode) {
-	if (mode && !this->bufferActivate ) {
+	/*if (mode && !this->bufferActivate ) {
 		Windows::window->FBOBuffer.push_back(this);
 		
 		this->bufferActivate = true;
@@ -298,8 +266,8 @@ bool TextField::bufferMode(bool mode) {
 		this->bufferActivate = false;
 		delete this->bufferTexture;
 		this->bufferTexture = NULL;
-	}
-	return true;
+	}*/
+	return false;
 }
 void TextField::trace() {
 	//printf("<Bitmap x='%i' y='%i' gx='%i' gy='%i' w='%i' h='%i' texId='%i'/>\n", this->x, this->y, this->globalx, this->globaly, this->width, this->height, this->tex);

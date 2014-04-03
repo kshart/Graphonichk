@@ -75,6 +75,13 @@ namespace Graphonichk {
 		vector<FontFace*> cache;
 		FontFace *getFontFace(unsigned short size);
 	};
+	class TextLine :public ShapeBasic {
+	public:
+		TextLine();
+		Font *font;
+		TextFormat *format;
+		string strUTF8;
+	};
 	class TextField :public Buffer, public ShapeRect {
 	private:
 		TextFormat *tf;

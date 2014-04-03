@@ -56,7 +56,7 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 		return 0;
 	}
 	if (!(hRCTemp = wglCreateContext(win->hDC)) || !wglMakeCurrent(win->hDC, hRCTemp)) {
-		printf("<Error str='Р В Р Р‹reating temp render context fail (%d)'/>\n", GetLastError());
+		printf("<Error str='Р В Р’В Р В Р вЂ№reating temp render context fail (%d)'/>\n", GetLastError());
 		return 0;
 	}
 	/*
@@ -509,93 +509,11 @@ void Windows::redraw() {
 			glDisable( GL_BLEND );
 			break;// </editor-fold>
 	}
-	/*const int vertexCount = 6, vertexSize = 2;
-	static const unsigned short triangleMesh[vertexCount*vertexSize] = {
-		0, 0,
-		0, 300,
-		404, 0,
-		404, 0,
-		404, 300,
-		0, 300,
-	};
-	static const unsigned char texMesh[vertexCount*vertexSize] = {
-		0, 0,
-		0, 1,
-		1, 0,
-		1, 0,
-		1, 1,
-		0, 1
-	};
-#define WIDTCH 301
-#define HEIGHT 401	
-	unsigned char bmp[WIDTCH*HEIGHT*3+((WIDTCH*3+3)&~3-WIDTCH)*HEIGHT];
-	int offset=((WIDTCH*3+3)&~3)-WIDTCH*3;
-	for (int y=0; y<HEIGHT; y++) {
-		for (int x=0; x<WIDTCH; x++) {
-			bmp[ offset*y+(x+WIDTCH*y)*3   ] = 0xFF;
-			bmp[ offset*y+(x+WIDTCH*y)*3+1 ] = 0;
-			bmp[ offset*y+(x+WIDTCH*y)*3+2 ] = 0;
-			
-		}
-	}
-	GLuint meshVAO, meshVBO[2], img;
-	
-	glGenTextures( 1, &img );
-	glBindTexture( GL_TEXTURE_2D, img );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, WIDTCH, HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, bmp );
-	
-	glGenVertexArrays(1, &meshVAO);
-	glBindVertexArray(meshVAO);
-	glGenBuffers(2, meshVBO);
-
-	GLint positionLocation, texcoordLocation;
-	const int vertexOffsetPosition = 0;
-	const int vertexOffsetColor    = 2;
-	positionLocation = glGetAttribLocation(OpenGL::shaderProgram, "position");
-	if (positionLocation != -1) {
-		glBindBuffer(GL_ARRAY_BUFFER, meshVBO[0]);
-		glBufferData(GL_ARRAY_BUFFER, vertexCount*vertexSize*2, triangleMesh, GL_STATIC_DRAW);
-		glVertexAttribPointer(positionLocation, 2, GL_UNSIGNED_SHORT, GL_FALSE, 0, 0);
-		glEnableVertexAttribArray(positionLocation);
-	}else{
-		printf("ERROR positionLocation\n");
-	}
-	texcoordLocation = glGetAttribLocation(OpenGL::shaderProgram, "texcoord");
-	if (texcoordLocation != -1) {
-		glBindBuffer(GL_ARRAY_BUFFER, meshVBO[1]);
-		glBufferData(GL_ARRAY_BUFFER, vertexCount*vertexSize, texMesh, GL_STATIC_DRAW);
-		glVertexAttribPointer(texcoordLocation, 2, GL_UNSIGNED_BYTE, GL_FALSE, 0, 0);
-		glEnableVertexAttribArray(texcoordLocation);
-	}else{
-		printf("ERROR texcoordLocation\n");
-	}
-	//w = (float)(Windows::width), h = (float)(Windows::height)
-	const float left = 0, right = Windows::width, bottom = Windows::height, top = 0, zNear = 0.001, zFar = 100;
-	const float tx = - (right + left) / (right - left),
-		ty = - (top + bottom) / (top - bottom),
-		tz = - (zFar + zNear) / (zFar - zNear);
-	float projectionMatrix[16] = {
-		2 / (right - left), 0, 0, tx,
-		0, 2 / (top - bottom), 0, ty,
-		0, 0, -2 / (zFar - zNear), tz,
-		0, 0, 0, 1
-	};
-
-	GLint projectionMatrixLocation = glGetUniformLocation(OpenGL::shaderProgram, "projectionMatrix");
-	if (projectionMatrixLocation != -1) glUniformMatrix4fv(projectionMatrixLocation, 1, GL_TRUE, projectionMatrix);
-
-	glBindVertexArray(meshVAO);
-	glDrawArrays(GL_TRIANGLES, 0, vertexCount);
-*/
 	SwapBuffers(this->hDC);
 	this->renderComplete = true;
 }
-void Windows::redrawFBO () {
-	/*//Directory *dir;
+/*void Windows::redrawFBO () {
+	//Directory *dir;
 	//GLuint fb;
 	//glGenFramebuffers(1, &fb);
 	//glBindFramebuffer(GL_FRAMEBUFFER, fb);
@@ -626,10 +544,10 @@ void Windows::redrawFBO () {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	//glDeleteFramebuffers(1, &Windows::FBOGL);
 	//glViewport(0, 0, this->width, this->height);
-	//OpenGL::setViewMatrix(0, 0, this->width, this->height);*/
+	//OpenGL::setViewMatrix(0, 0, this->width, this->height);
 }
 
-/*int Windows::addEventHandler(int type, void(*fun)(const EventWindows*)) {
+int Windows::addEventHandler(int type, void(*fun)(const EventWindows*)) {
 	EventLinc el;
 	el.type = type;
 	el.fun = (void(*)(const Event*))fun;
