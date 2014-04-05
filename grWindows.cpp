@@ -100,9 +100,8 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 		if (!win->renderComplete) {
 			win->redraw();
 		}
-		#else
-		win->redraw();
 		#endif
+		win->redraw();
 		win->eachFrame.performTasks();
 		QueryPerformanceCounter(&time2);
 		time = (float)(time2.QuadPart-time1.QuadPart)/frequency;
@@ -499,6 +498,9 @@ void Windows::redraw() {
 		case OpenGL::VER_CORE_330:// <editor-fold defaultstate="collapsed" desc="VER_CORE_330">
 			glEnable( GL_BLEND );
 			glFrontFace(GL_CW);
+			//glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+			//glHint(GL_FOG_HINT, GL_NICEST);
+			//glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 			//glPolygonMode(GL_FRONT, GL_LINE);
 			//glPolygonMode(GL_BACK, GL_LINE);
 			//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
@@ -509,6 +511,7 @@ void Windows::redraw() {
 			glDisable( GL_BLEND );
 			break;// </editor-fold>
 	}
+	glFlush( );
 	SwapBuffers(this->hDC);
 	this->renderComplete = true;
 }

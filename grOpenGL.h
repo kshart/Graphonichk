@@ -41,7 +41,7 @@ namespace Graphonichk {
 		static void init33();
 		static ShaderBitmap* prog;
 		
-		GLint position, texCoord, texture, viewMatrix;
+		GLint position, texture, grShaderData;
 		
 		friend GLShaderLoadTask;
 		void init();
@@ -54,7 +54,7 @@ namespace Graphonichk {
 		static void init33();
 		static ShaderSVGmain* prog;
 		
-		GLint position, fillColor, typeShape, circleTransform, viewMatrix, transformMatrix;
+		GLint position, fillColor, typeShape, circleTransform, grShaderData, transformMatrix;
 		
 		friend GLShaderLoadTask;
 		void init();
@@ -67,7 +67,7 @@ namespace Graphonichk {
 		static void init33();
 		static ShaderFPrimitiv* prog;
 		
-		GLint position, fillColor, viewMatrix;
+		GLint position, fillColor, grShaderData;
 		
 		friend GLShaderLoadTask;
 		void init();
@@ -80,7 +80,7 @@ namespace Graphonichk {
 		static void init33();
 		static ShaderF3D* prog;
 		
-		GLint position, fillColor, transformMatrix, viewMatrix;
+		GLint position, fillColor, transformMatrix, grShaderData;
 		
 		friend GLShaderLoadTask;
 		void init();
@@ -110,7 +110,7 @@ namespace Graphonichk {
 		static void popViewMatrix();
 		static void setViewMatrix(ViewMatrix view);
 		static void multViewMatrix(ViewMatrix view);
-		static GLuint viewMatrix, circleBuffer, textureGLID;
+		static GLuint grShaderData, circleBuffer, textureGLID;
 		static int init(OPENGL_VER);
 	};
 	

@@ -115,6 +115,15 @@ namespace Graphonichk {
 		unsigned int x, y, z, w;
 	} uvec4;
 	
+	typedef struct {
+		short x, y;
+	} svec2;
+	typedef struct {
+		short x, y, z;
+	} svec3;
+	typedef struct {
+		short x, y, z, w;
+	} svec4;
 
 	template<typename Type> class Array {
 	public:

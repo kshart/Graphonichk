@@ -27,7 +27,7 @@ void glslLoaded(const EventFileLoad* e) {
 	//img->load( (char*)(e->file->data), e->file->size);
 }*/
 
-GLuint OpenGL::viewMatrix = 0;
+GLuint OpenGL::grShaderData = 0;
 GLuint OpenGL::circleBuffer = 0;
 GLuint OpenGL::textureGLID = 0;
 OpenGL::OPENGL_VER OpenGL::ver;
@@ -64,8 +64,8 @@ int OpenGL::init(OPENGL_VER ver) {
 	glBufferData(GL_ARRAY_BUFFER, (8192+100)*sizeof(float), circle, GL_STATIC_DRAW);
 	if ( ver==VER_COMPTABLE_ALL || ver==VER_CORE_210) {
 	}else if (ver==VER_CORE_330) {
-		glGenBuffers(1, &OpenGL::viewMatrix);
-		glBindBuffer(GL_UNIFORM_BUFFER, OpenGL::viewMatrix);
+		glGenBuffers(1, &OpenGL::grShaderData);
+		glBindBuffer(GL_UNIFORM_BUFFER, OpenGL::grShaderData);
 		glBufferData(GL_UNIFORM_BUFFER, 4*4*sizeof(float), nullptr, GL_DYNAMIC_DRAW);
 		
 		//ShaderBitmap::prog = new ShaderBitmap();
@@ -82,6 +82,7 @@ int OpenGL::init(OPENGL_VER ver) {
 		ShaderFPrimitiv::init33();
 		ShaderF3D::init33();
 		ShaderTextField::init33();
+		ShaderTextFieldBuffer::init33();
 		
 		GLShader::setShader(ShaderBitmap::prog);
 		glActiveTexture(GL_TEXTURE0);
@@ -182,7 +183,7 @@ void OpenGL::setViewMatrix(ViewMatrix matrix) {
 			glLoadMatrixf(transposeMatrix);
 			return;
 		case VER_CORE_330:
-			glBindBuffer(GL_UNIFORM_BUFFER, OpenGL::viewMatrix);
+			glBindBuffer(GL_UNIFORM_BUFFER, OpenGL::grShaderData);
 			glBufferSubData(GL_UNIFORM_BUFFER, 0, 4*4*sizeof(float), matrix.a);
 			//glBindAttribLocation(GLShader::glsl->shaderProgram, GLShader::matrixProjection, "matrixProjection");
 			//glUniformMatrix4fv(GLShader::matrixProjection, 1, GL_FALSE, matrix.a);
@@ -241,12 +242,11 @@ ShaderBitmap::ShaderBitmap() :GLShader(ShaderBitmap::CRC32) {
 }
 void ShaderBitmap::init() {
 	this->position = glGetAttribLocation(this->shaderProgram, "position");
-	this->texCoord = glGetAttribLocation(this->shaderProgram, "coordTex");
 	this->texture = glGetUniformLocation(this->shaderProgram, "colorTexture");
-	this->viewMatrix = glGetUniformBlockIndex(this->shaderProgram, "viewMatrix");
+	this->grShaderData = glGetUniformBlockIndex(this->shaderProgram, "grShaderData");
 	glUniform1i(this->texture , 0);
-	glUniformBlockBinding(this->shaderProgram, this->viewMatrix, 1);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::viewMatrix, 0, 4*4*sizeof(float));
+	glUniformBlockBinding(this->shaderProgram, this->grShaderData, 1);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::grShaderData, 0, 4*4*sizeof(float));
 }
 void ShaderBitmap::init33() {
 	ShaderBitmap *sh = new ShaderBitmap();
@@ -269,7 +269,7 @@ void ShaderBitmap::init33() {
 		"layout (points) in;"
 		"layout (triangle_strip) out;"
 		"layout (max_vertices = 4) out;"
-		"layout(shared) uniform viewMatrix {"
+		"layout(shared) uniform grShaderData {"
 			"mat4 viewMatrixValue;"
 		"};"
 		"uniform sampler2D colorTexture;"
@@ -356,19 +356,19 @@ ShaderSVGmain::ShaderSVGmain() :GLShader(ShaderSVGmain::CRC32) {
 }
 void ShaderSVGmain::init() {
 	this->position = glGetAttribLocation(this->shaderProgram, "position");
-	this->viewMatrix = glGetUniformBlockIndex(this->shaderProgram, "viewMatrix");
+	this->grShaderData = glGetUniformBlockIndex(this->shaderProgram, "grShaderData");
 	this->fillColor = glGetUniformLocation(this->shaderProgram, "fillColor");
 	this->typeShape = glGetUniformLocation(this->shaderProgram, "typeShape");
 	this->circleTransform = glGetUniformLocation(this->shaderProgram, "circleTransform");
 	this->transformMatrix = glGetUniformLocation(this->shaderProgram, "transformMatrix");
-	glUniformBlockBinding(this->shaderProgram, this->viewMatrix, 1);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::viewMatrix, 0, 4*4*sizeof(float));
+	glUniformBlockBinding(this->shaderProgram, this->grShaderData, 1);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::grShaderData, 0, 4*4*sizeof(float));
 }
 void ShaderSVGmain::init33() {
 	ShaderSVGmain *sh = new ShaderSVGmain();
 	const GLchar *vrsh = 
 		//"#version 330 core\n"
-		"layout(shared) uniform viewMatrix {"
+		"layout(shared) uniform grShaderData {"
 			"mat4 viewMatrixValue;"
 		"};"
 		"uniform int typeShape;"
@@ -456,9 +456,9 @@ ShaderFPrimitiv::ShaderFPrimitiv() :GLShader(ShaderFPrimitiv::CRC32) {
 void ShaderFPrimitiv::init() {
 	this->position = glGetAttribLocation(this->shaderProgram, "position");
 	this->fillColor = glGetUniformLocation(this->shaderProgram, "fillColor");
-	this->viewMatrix = glGetUniformBlockIndex(this->shaderProgram, "viewMatrix");
-	glUniformBlockBinding(this->shaderProgram, this->viewMatrix, 1);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::viewMatrix, 0, 4*4*sizeof(float));
+	this->grShaderData = glGetUniformBlockIndex(this->shaderProgram, "grShaderData");
+	glUniformBlockBinding(this->shaderProgram, this->grShaderData, 1);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::grShaderData, 0, 4*4*sizeof(float));
 }
 void ShaderFPrimitiv::init33() {
 	ShaderFPrimitiv *sh = new ShaderFPrimitiv();
@@ -477,7 +477,7 @@ void ShaderFPrimitiv::init33() {
 		"layout (points) in;"
 		"layout (triangle_strip) out;"
 		"layout (max_vertices = 4) out;"
-		"layout(shared) uniform viewMatrix {"
+		"layout(shared) uniform grShaderData {"
 			"mat4 viewMatrixValue;"
 		"};"
 		"void main () {"
@@ -553,14 +553,14 @@ void ShaderF3D::init() {
 	this->position = glGetAttribLocation(this->shaderProgram, "position");
 	this->fillColor = glGetUniformLocation(this->shaderProgram, "fillColor");
 	this->transformMatrix = glGetUniformLocation(this->shaderProgram, "transformMatrix");
-	this->viewMatrix = glGetUniformBlockIndex(this->shaderProgram, "viewMatrix");
-	glUniformBlockBinding(this->shaderProgram, this->viewMatrix, 1);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::viewMatrix, 0, 4*4*sizeof(float));
+	this->grShaderData = glGetUniformBlockIndex(this->shaderProgram, "grShaderData");
+	glUniformBlockBinding(this->shaderProgram, this->grShaderData, 1);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::grShaderData, 0, 4*4*sizeof(float));
 }
 void ShaderF3D::init33() {
 	ShaderF3D *sh = new ShaderF3D();
 	const GLchar *vrsh = 
-		"layout(shared) uniform viewMatrix {"
+		"layout(shared) uniform grShaderData {"
 			"mat4 viewMatrixValue;"
 		"};"
 		"uniform mat4 transformMatrix;"

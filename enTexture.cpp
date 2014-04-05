@@ -22,9 +22,31 @@ using namespace Graphonichk;
 
 
 
-//vector<Texture*> Texture::buffer;
-//uint Texture::toUpdate, Texture::toDelete;
-
+Texture::Texture() :_loadedInFile(false) {
+	this->event = Texture::NONE;
+	this->img = NULL;
+	this->width = 0;
+	this->height = 0;
+	this->format = 0;
+	this->type = 0;
+	this->GLID = 0;
+}
+Texture* Texture::getTexture(unsigned short w, unsigned short h, GLuint format, GLuint type) {
+	Texture *tex = new Texture();
+	glGenTextures( 1, &tex->GLID );
+	if (tex->GLID==0) return nullptr;
+	tex->width = w;
+	tex->height = h;
+	tex->type = type;
+	tex->format = format;
+	glBindTexture( GL_TEXTURE_2D, tex->GLID );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexImage2D( GL_TEXTURE_2D, 0, format, w, h, 0, format, type, NULL );
+	return tex;
+}
 Texture::Texture(unsigned short w, unsigned short h, GLuint format, GLuint type) :_loadedInFile(false) {
 	this->event = Texture::TO_UPDATE;
 	this->img = NULL;
@@ -351,96 +373,94 @@ void Image::loaded(const EventFileLoad* e) {
 }
 
 
-TextureToUpdateTask::TextureToUpdateTask(Texture *t) :tex(t) {
+TextureToUpdateTask::TextureToUpdateTask(Texture *t) :_tex(t) {
 	
 }
 int TextureToUpdateTask::processExecute() {
-	if (tex->event!=Texture::TO_UPDATE) {
-		TextureToUpdateTask *task = new TextureToUpdateTask(this->tex);
+	if (this->_tex->event!=Texture::TO_UPDATE) {
+		TextureToUpdateTask *task = new TextureToUpdateTask(this->_tex);
 		Windows::window->eachFrame.addTask(task, 0);
 		return false;
 	}
-	if (tex->img==NULL) {// <editor-fold defaultstate="collapsed" desc="tex->img==NULL">
-		if (tex->GLID==0) {
-			glGenTextures( 1, &tex->GLID );
-			if (tex->GLID==0) {
-				TextureToUpdateTask *task = new TextureToUpdateTask(this->tex);
+	if (_tex->img==NULL) {// <editor-fold defaultstate="collapsed" desc="tex->img==NULL">
+		if (_tex->GLID==0) {
+			glGenTextures( 1, &_tex->GLID );
+			if (_tex->GLID==0) {
+				TextureToUpdateTask *task = new TextureToUpdateTask(this->_tex);
 				Windows::window->eachFrame.addTask(task, 0);
 				return false;
 			}
-			glBindTexture( GL_TEXTURE_2D, tex->GLID );
+			glBindTexture( GL_TEXTURE_2D, _tex->GLID );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-			glTexImage2D( GL_TEXTURE_2D, 0, 0, tex->width, tex->height, 0, tex->format, tex->type, NULL );
+			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, NULL );
 		}else{
-			glBindTexture( GL_TEXTURE_2D, tex->GLID );
-			glTexImage2D( GL_TEXTURE_2D, 0, 0, tex->width, tex->height, 0, tex->format, tex->type, NULL );
+			glBindTexture( GL_TEXTURE_2D, _tex->GLID );
+			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, NULL );
 		}
-		tex->event = Texture::LOADED;//</editor-fold>
+		this->_tex->event = Texture::LOADED;//</editor-fold>
 	}else{// <editor-fold defaultstate="collapsed">
-		if (tex->img->status!=Image::LOADED) {
-			TextureToUpdateTask *task = new TextureToUpdateTask(this->tex);
+		if (_tex->img->status!=Image::LOADED) {
+			TextureToUpdateTask *task = new TextureToUpdateTask(this->_tex);
 			Windows::window->eachFrame.addTask(task, 0);
 			return false;
 		}
-		switch (tex->img->type) {
+		switch (_tex->img->type) {
 			case Image::RGBA_32:
 				printf("\tImage::RGBA_32\n");
-				tex->format = GL_RGBA;
-				tex->type = GL_UNSIGNED_BYTE;
+				_tex->format = GL_RGBA;
+				_tex->type = GL_UNSIGNED_BYTE;
 				break;
 			case Image::BGRA_32:
-				tex->format = GL_BGRA;
-				tex->type = GL_UNSIGNED_BYTE;
+				_tex->format = GL_BGRA;
+				_tex->type = GL_UNSIGNED_BYTE;
 				break;
 			case Image::RGB_24:
 				printf("\tImage::RGB_24\n");
-				tex->format = GL_RGB;
-				tex->type = GL_UNSIGNED_BYTE;
+				_tex->format = GL_RGB;
+				_tex->type = GL_UNSIGNED_BYTE;
 				break;
 			case Image::BGR_24:
 				printf("\tImage::BGR_24\n");
-				tex->format = GL_BGR;
-				tex->type = GL_UNSIGNED_BYTE;
+				_tex->format = GL_BGR;
+				_tex->type = GL_UNSIGNED_BYTE;
 				break;
 			case Image::MONO_8:
 				printf("\tImage::MONO_8\n");
-				tex->format = GL_ALPHA;
-				tex->type = GL_UNSIGNED_BYTE;
+				_tex->format = GL_ALPHA;
+				_tex->type = GL_UNSIGNED_BYTE;
 				break;
 		}
-		printf("\tImage %i\n", tex->img->raw);
+		printf("\tImage %i\n", _tex->img->raw);
 		printf("\t//////\n");
-		tex->width = tex->img->width;
-		tex->height = tex->img->height;
-		if (tex->GLID==0) {
-			glGenTextures( 1, &tex->GLID );
-			if (tex->GLID==0) {
-				TextureToUpdateTask *task = new TextureToUpdateTask(this->tex);
+		_tex->width = _tex->img->width;
+		_tex->height = _tex->img->height;
+		if (_tex->GLID==0) {
+			glGenTextures( 1, &_tex->GLID );
+			if (_tex->GLID==0) {
+				TextureToUpdateTask *task = new TextureToUpdateTask(this->_tex);
 				Windows::window->eachFrame.addTask(task, 0);
 				return false;
 			}
-			glBindTexture( GL_TEXTURE_2D, tex->GLID );
+			glBindTexture( GL_TEXTURE_2D, _tex->GLID );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-			printf("TEXTURE %i", tex->img->raw);
-			glTexImage2D( GL_TEXTURE_2D, 0, tex->format, tex->width, tex->height, 0, tex->format, tex->type, tex->img->raw );
+			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, _tex->img->raw );
 		}else{
-			fprintf(stderr, "GLID!=0!!!!!!!!!!!!!!");
-			glBindTexture( GL_TEXTURE_2D, tex->GLID );
-			glTexImage2D( GL_TEXTURE_2D, 0, tex->format, tex->width, tex->height, 0, tex->format, tex->type, tex->img->raw );
+			glBindTexture( GL_TEXTURE_2D, _tex->GLID );
+			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, _tex->img->raw );
 		}
-		tex->event = Texture::LOADED;
+		_tex->event = Texture::LOADED;
 	}//</editor-fold>
 }
-TextureToDeleteTask::TextureToDeleteTask(GLuint glid) :GLID(glid) {
+TextureToDeleteTask::TextureToDeleteTask(GLuint glid) :_GLID(glid) {
 	
 }
 int TextureToDeleteTask::processExecute() {
-	glDeleteTextures(1, &this->GLID);
+	glDeleteTextures(1, &this->_GLID);
 	return true;
 }

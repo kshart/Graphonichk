@@ -11,8 +11,8 @@ namespace Graphonichk {
 	class Font;
 	typedef struct {
 		short ch;
-		//void *bmp;
-		//unsigned short bmpX, bmpY;
+		void *bmp;
+		unsigned short bmpWidth, bmpHeight;
 		unsigned short width, height;
 		GLuint id;
 		short horiBearingX, horiBearingY, horiAdvance, vertBearingX, vertBearingY, vertAdvance;
@@ -22,12 +22,12 @@ namespace Graphonichk {
 	
 	class FontFace {
 	public:
-		FontFace(unsigned short size, Array<FontGlyph> *arr);
+		FontFace(unsigned short size, size_t glyphCount);
 		unsigned short size;
 		unsigned int ramUsed;
 		GLuint texCoord;
 		Texture *tex;
-		Array<FontGlyph> *arr;
+		Array<FontGlyph> arr;
 	};
 	class TextFormat {
 	public:
@@ -84,21 +84,28 @@ namespace Graphonichk {
 		TextFormat *format;
 		string strUTF8;
 	};
-	class TextField :public Buffer, public ShapeRect {
+	class TextField :public ShapeRect {
 	private:
-		TextFormat *tf;
+		TextFormat *_tf;
+		uint _symvolCount;
 	public:
+		enum POSITION {
+			LEFT_TOP,
+			LEFT_BOTTOM,
+			LEFT_CENTER,
+			RIGHT_TOP,
+			RIGHT_BOTTOM,
+			RIGHT_CENTER,
+			TOP_CENTER,
+			BOTTOM_CENTER,
+			CENTER
+		};
 		TextField(unsigned short, unsigned short);
 		void trace();
 		int renderGLComptAll();
 		int renderGL400();
 		int renderGL330();
 		int renderGL210();
-		int bufferGLComptAll();
-		int bufferGL400();
-		int bufferGL330();
-		int bufferGL210();
-		bool bufferMode(bool mode);
 		
 		void setString(string str);
 		void setFormat(TextFormat *tf);
@@ -109,8 +116,10 @@ namespace Graphonichk {
 		};
 		STR_TYPE strType;*/
 		
+		Texture *tex;
 		GLuint vao, vbo;
 		
+		POSITION position;
 		unsigned short borderSize;
 		char background, multiline;
 		unsigned int borderColor, backgroundColor, textColor;
@@ -137,7 +146,7 @@ namespace Graphonichk {
 		FontFaceLoadTask(FontFace *face, size_t sizeTexCoord);
 		int processExecute();
 		FontFace *face;
-		Array<float> bmpTexCoord;
+		Array<uint16_t> bmpTexCoord;
 	};
 	class ShaderTextField :public GLShader {
 	public:
@@ -147,7 +156,20 @@ namespace Graphonichk {
 		static void init33();
 		static ShaderTextField* prog;
 		
-		GLint texture, coordTex, position, viewMatrix;
+		GLint position, texture, coordTex, grShaderData;
+		
+		friend GLShaderLoadTask;
+		void init();
+	};
+	class ShaderTextFieldBuffer :public GLShader {
+	public:
+		enum {CRC32=0x51f2123};
+		ShaderTextFieldBuffer();
+		//static void init();
+		static void init33();
+		static ShaderTextFieldBuffer* prog;
+		
+		GLint position, textColor, textTexture, texCoord, grShaderData;
 		
 		friend GLShaderLoadTask;
 		void init();

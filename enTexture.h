@@ -44,7 +44,6 @@ namespace Graphonichk {
 		Image(unsigned short width, unsigned short height, TYPE type, char *raw);
 		Image(char *data, unsigned int size);
 		Image(string path);
-		int saveAsXML(FILE *str, unsigned short tab=0);
 		void copyPixels(unsigned short x, unsigned short y, unsigned short width, unsigned short height, char *raw);
 		string name;
 		unsigned short width, height;
@@ -58,6 +57,7 @@ namespace Graphonichk {
 		//static vector<Texture*> buffer;
 		//static uint toUpdate, toDelete;
 		bool _loadedInFile;
+		Texture();
 	public:
 		enum EVENT:char {
 			NONE,
@@ -78,20 +78,24 @@ namespace Graphonichk {
 		Image *img;
 		unsigned short width, height;
 		GLuint format, type, GLID;
+		
+		static Texture* getTexture(unsigned short w, unsigned short h, GLuint format, GLuint type);
 	};
 	
 	
 	class TextureToUpdateTask :public EachFrameTask {
+	private:
+		Texture *_tex;
 	public:
 		TextureToUpdateTask(Texture *t);
 		int processExecute();
-		Texture *tex;
 	};
 	class TextureToDeleteTask :public EachFrameTask {
+	private:
+		GLuint _GLID;
 	public:
 		TextureToDeleteTask(GLuint GLID);
 		int processExecute();
-		GLuint GLID;
 	};
 };
 
