@@ -25,6 +25,8 @@ namespace Graphonichk {
 		FontFace(unsigned short size, Array<FontGlyph> *arr);
 		unsigned short size;
 		unsigned int ramUsed;
+		GLuint texCoord;
+		Texture *tex;
 		Array<FontGlyph> *arr;
 	};
 	class TextFormat {
@@ -90,11 +92,11 @@ namespace Graphonichk {
 		void trace();
 		int renderGLComptAll();
 		int renderGL400();
-		int renderGL300();
+		int renderGL330();
 		int renderGL210();
 		int bufferGLComptAll();
 		int bufferGL400();
-		int bufferGL300();
+		int bufferGL330();
 		int bufferGL210();
 		bool bufferMode(bool mode);
 		
@@ -106,6 +108,8 @@ namespace Graphonichk {
 			UTF8, UTF16, UTF32
 		};
 		STR_TYPE strType;*/
+		
+		GLuint vao, vbo;
 		
 		unsigned short borderSize;
 		char background, multiline;
@@ -128,6 +132,26 @@ namespace Graphonichk {
 		} style;*/
 	};
 	
+	class FontFaceLoadTask :public EachFrameTask {
+	public:
+		FontFaceLoadTask(FontFace *face, size_t sizeTexCoord);
+		int processExecute();
+		FontFace *face;
+		Array<float> bmpTexCoord;
+	};
+	class ShaderTextField :public GLShader {
+	public:
+		enum {CRC32=0x514f2123};
+		ShaderTextField();
+		//static void init();
+		static void init33();
+		static ShaderTextField* prog;
+		
+		GLint texture, coordTex, position, viewMatrix;
+		
+		friend GLShaderLoadTask;
+		void init();
+	};
 }
 
 #endif	/* GRTEXT_H */

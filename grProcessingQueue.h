@@ -12,8 +12,6 @@
 using namespace std;
 
 namespace Graphonichk {
-	class Image;
-	class Texture;
 	
 	class ProcessingTask {
 	public:
@@ -25,18 +23,6 @@ namespace Graphonichk {
 		EachFrameTask();
 		virtual int processExecute();
 		int info;
-	};
-	class TextureToUpdateTask :public EachFrameTask {
-	public:
-		TextureToUpdateTask(Texture *t);
-		int processExecute();
-		Texture *tex;
-	};
-	class TextureToDeleteTask :public EachFrameTask {
-	public:
-		TextureToDeleteTask(GLuint GLID);
-		int processExecute();
-		GLuint GLID;
 	};
 	
 	class HeapFreeTask {
@@ -103,7 +89,6 @@ namespace Graphonichk {
 			return true;
 		}
 	};
-	
 	template<class TTask> class ProcessingQueueTimeLimited {
 		queue<TTask*> essentialTasks1;
 		queue<TTask*> essentialTasks2;

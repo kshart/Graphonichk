@@ -81,6 +81,7 @@ int OpenGL::init(OPENGL_VER ver) {
 		ShaderSVGmain::init33();
 		ShaderFPrimitiv::init33();
 		ShaderF3D::init33();
+		ShaderTextField::init33();
 		
 		GLShader::setShader(ShaderBitmap::prog);
 		glActiveTexture(GL_TEXTURE0);
@@ -240,7 +241,7 @@ ShaderBitmap::ShaderBitmap() :GLShader(ShaderBitmap::CRC32) {
 }
 void ShaderBitmap::init() {
 	this->position = glGetAttribLocation(this->shaderProgram, "position");
-	this->texCoord = glGetAttribLocation(this->shaderProgram, "texCoord");
+	this->texCoord = glGetAttribLocation(this->shaderProgram, "coordTex");
 	this->texture = glGetUniformLocation(this->shaderProgram, "colorTexture");
 	this->viewMatrix = glGetUniformBlockIndex(this->shaderProgram, "viewMatrix");
 	glUniform1i(this->texture , 0);

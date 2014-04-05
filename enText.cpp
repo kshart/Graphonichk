@@ -23,7 +23,7 @@ TextFormat::TextFormat() {
 	this->textDecorationColor.color = 0x00FF00AA;
 	
 }
-FontFace::FontFace(unsigned short size, Array<FontGlyph> *arr) :size(size), arr(arr) {
+FontFace::FontFace(unsigned short size, Array<FontGlyph> *arr) :tex(0), texCoord(0), size(size), arr(arr) {
 	
 }
 
@@ -111,6 +111,19 @@ void traceNods(unsigned short viewX, unsigned short viewY, unsigned short viewWi
 	}
 }
 
+FontFaceLoadTask::FontFaceLoadTask(FontFace *face, size_t sizeTexCoord) :bmpTexCoord(sizeTexCoord), face(face) {
+	
+}
+int FontFaceLoadTask::processExecute() {
+	glGenTextures(1, &this->face->texCoord);
+	glBindTexture(GL_TEXTURE_1D, this->face->texCoord );
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, this->bmpTexCoord.size/4, 0, GL_RGBA, GL_FLOAT, this->bmpTexCoord.data);
+}
+
 Font::Font(string path) {
 	this->path = path;
 	this->error = FT_New_Face( Font::library, path.c_str(), 0, &this->face );
@@ -142,10 +155,6 @@ Font::Font(string path) {
 	this->cache.push_back(fgs[0]);*/
 	Font::buffer.push_back(this);
 }
-typedef struct {
-	unsigned short width, height;
-	//float x1, y1, x2, y2;
-}asdasd;
 bool Font::cached(unsigned short size) {
 	this->error = FT_Set_Pixel_Sizes(this->face, 0, size);
 	if (this->error != FT_Err_Ok) return false;
@@ -156,7 +165,9 @@ bool Font::cached(unsigned short size) {
 	char *imgRaw = (char*)malloc(2048*2048);
 	Array<void*> bmps(glyphCount);
 	Array<Rect> bmpRect(glyphCount);
-	Array<float> bmpTexCoord(glyphCount*4);
+	for (uint i=0; i<2048*2048; i++) imgRaw[i] = 0x55;
+	
+	FontFaceLoadTask *task = new FontFaceLoadTask(fface, glyphCount*4);
 	Node node;
 	node.imgHeight = 0;
 	node.imgWidth = 0;
@@ -209,15 +220,14 @@ bool Font::cached(unsigned short size) {
 					(void*)( (ptrdiff_t)bmps.data[i] + bmpRect.data[i].width*y ), 
 					bmpRect.data[i].width );
 		}
-		bmpTexCoord.data[i*4+0] = ((float)bmpRect.data[i].x)/2048;
-		bmpTexCoord.data[i*4+1] = ((float)bmpRect.data[i].y)/2048;
-		bmpTexCoord.data[i*4+2] = ((float)bmpRect.data[i].width)/2048;
-		bmpTexCoord.data[i*4+3] = ((float)bmpRect.data[i].height)/2048;
+		task->bmpTexCoord.data[i*4+0] = ((float)bmpRect.data[i].x)/2048;
+		task->bmpTexCoord.data[i*4+1] = ((float)bmpRect.data[i].y)/2048;
+		task->bmpTexCoord.data[i*4+2] = (float)(bmpRect.data[i].x+bmpRect.data[i].width)/2048;
+		task->bmpTexCoord.data[i*4+3] = (float)(bmpRect.data[i].y+bmpRect.data[i].height)/2048;
 	}
 	Image *img = new Image(2048, 2048, Image::MONO_8, imgRaw);
-	Texture *tex = new Texture(img);
-	Bitmap *bm = new Bitmap(tex);
-	Windows::window->root->addChild(bm);
+	fface->tex = new Texture(img);
+	Windows::window->eachFrame.addTask(task, 0);
 	this->cache.push_back(fface);
 }
 void Font::trace() {
@@ -242,8 +252,8 @@ FontFace* Font::getFontFace(unsigned short size) {
 	return NULL;
 }
 
-TextField::TextField(unsigned short w, unsigned short h) :ShapeRect(0){
-	this->bufferTexture = new Texture(w, h, GL_ALPHA, GL_UNSIGNED_BYTE);
+TextField::TextField(unsigned short w, unsigned short h) :ShapeRect(0), vao(0) {
+	//this->bufferTexture = new Texture(w, h, GL_ALPHA, GL_UNSIGNED_BYTE);
 	this->padding = this->paddingLeft = this->paddingRight = this->paddingTop = this->paddingBottom = 0;
 	this->width = w;
 	this->height = h;
@@ -461,7 +471,7 @@ int TextField::bufferGLComptAll() {
 int TextField::bufferGL400() {
 	return false;
 }
-int TextField::bufferGL300() {
+int TextField::bufferGL330() {
 	return false;
 }
 int TextField::bufferGL210() {
@@ -476,21 +486,126 @@ int TextField::renderGLComptAll() {
 	}else{
 		glColor4ub(this->tf->textDecorationColor.r,this->tf->textDecorationColor.g,this->tf->textDecorationColor.b,this->tf->textDecorationColor.a);
 	}
-	glBegin( GL_QUADS );// <editor-fold defaultstate="collapsed" desc="GL_QUADS">
-				glTexCoord2d( 0.0, 0.0 );	glVertex2i(this->globalx, this->globaly );
-				glTexCoord2d( 0.0, 1.0 );	glVertex2i(this->globalx, this->globaly+tex->height );
-				glTexCoord2d( 1.0, 1.0 );	glVertex2i(this->globalx+tex->width, this->globaly+tex->height );
-				glTexCoord2d( 1.0, 0.0 );	glVertex2i(this->globalx+tex->width, this->globaly );
-			glEnd();// </editor-fold>
+	glBegin( GL_QUADS );
+		glTexCoord2d( 0.0, 0.0 );	glVertex2i(this->globalx, this->globaly );
+		glTexCoord2d( 0.0, 1.0 );	glVertex2i(this->globalx, this->globaly+tex->height );
+		glTexCoord2d( 1.0, 1.0 );	glVertex2i(this->globalx+tex->width, this->globaly+tex->height );
+		glTexCoord2d( 1.0, 0.0 );	glVertex2i(this->globalx+tex->width, this->globaly );
+	glEnd();
 	glDisable( GL_TEXTURE_2D );
 	return true;
 } 
 int TextField::renderGL400() {
 	return false;
 }
-int TextField::renderGL300() {
+int TextField::renderGL330() {
+	TextFormat *format;
+	Font *font;
+	FontFace *fface;
+	int lineHeight, lastID=0, id, bx, by, ch;
+	if (this->tf == NULL) {format=TextFormat::defaultFormat;}else{format=this->tf;}
+	if (format->fn == NULL) {
+		if (Font::buffer.empty()) return false;
+		font = Font::buffer[0];
+	}else{
+		font = format->fn;
+	}
+	if (format->lineHeight == __SHRT_MAX__) { lineHeight = format->size*1.5; }else{ lineHeight = format->lineHeight; }
+	bx = this->paddingLeft;
+	by = this->paddingTop+lineHeight;
+	format->size = 60;
+	fface = font->getFontFace(format->size);
+	if (fface==nullptr) return false;
+	if (GLShader::shader->crc32!=ShaderTextField::CRC32) GLShader::setShader(ShaderTextField::prog);
+	//if (OpenGL::textureGLID!=this->tex->GLID) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, fface->tex->GLID);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_1D, fface->texCoord);
+		glActiveTexture(GL_TEXTURE0);
+		//OpenGL::textureGLID = this->tex->GLID;
+	//}
+	if (this->vao==0) {
+		short vertex[6] = {
+			this->globalx, this->globaly, FT_Get_Char_Index(font->face, '8'), 
+			fface->arr->data[FT_Get_Char_Index(font->face, '8')].width, fface->arr->data[FT_Get_Char_Index(font->face, '8')].height, 0
+		};
+		glGenVertexArrays(1, &this->vao);
+		glBindVertexArray(this->vao);
+		
+		glGenBuffers(1, &this->vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
+		glBufferData(GL_ARRAY_BUFFER, 6*2, vertex, GL_STATIC_DRAW);
+		glVertexAttribPointer(ShaderTextField::prog->position, 3, GL_SHORT, GL_FALSE, 0, NULL);
+		glEnableVertexAttribArray(ShaderTextField::prog->position);
+	}
+	glBindVertexArray(this->vao);
+	glDrawArrays(GL_LINES, 0, 2);
 	return false;
 }
 int TextField::renderGL210() {
 	return false;
+}
+ShaderTextField* ShaderTextField::prog = nullptr;
+ShaderTextField::ShaderTextField() :GLShader(ShaderTextField::CRC32) {
+	
+}
+void ShaderTextField::init() {
+	this->position = glGetAttribLocation(this->shaderProgram, "position");
+	this->texture = glGetUniformLocation(this->shaderProgram, "texture");
+	this->coordTex = glGetUniformLocation(this->shaderProgram, "coordTex");
+	this->viewMatrix = glGetUniformBlockIndex(this->shaderProgram, "viewMatrix");
+	glUniform1i(this->texture , 0);
+	glUniform1i(this->coordTex , 1);
+	glUniformBlockBinding(this->shaderProgram, this->viewMatrix, 1);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::viewMatrix, 0, 4*4*sizeof(float));
+}
+void ShaderTextField::init33() {
+	ShaderTextField *sh = new ShaderTextField();
+	const GLchar *vrsh = 
+		"in vec3 position;"
+		"void main () {"
+			"gl_Position = vec4(position, 1);"
+		"}",
+		*frsh = 
+		"uniform sampler2D texture;"
+		"in vec2 coord;"
+		"out vec4 color;"
+		"void main () {"
+			"color = texture(texture, coord);"
+		"}",
+		*gmsh = 
+		"layout (lines) in;"
+		"layout (triangle_strip) out;"
+		"layout (max_vertices = 4) out;"
+		"layout(shared) uniform viewMatrix {"
+			"mat4 viewMatrixValue;"
+		"};"
+		"uniform sampler1D coordTex;"
+		"out vec2 coord;"
+		"void main () {"
+			"vec4 rect = vec4(gl_in[0].gl_Position.xy, gl_in[1].gl_Position.xy);"
+			"int index = int(gl_in[0].gl_Position.z);"
+			"vec4 rectTex = texelFetch(coordTex, index, 0);"
+			"gl_Position = vec4(rect.xy, 0.0, 1.0)*viewMatrixValue;"
+			"coord = vec2(rectTex.r, rectTex.g);"
+			"EmitVertex();"
+			
+			"gl_Position = vec4(rect.x, rect.y+rect.w, 0.0, 1.0)*viewMatrixValue;"
+			"coord = vec2(rectTex.r, rectTex.a);"
+			"EmitVertex();"
+			
+			"gl_Position = vec4(rect.x+rect.z, rect.y, 0.0, 1.0)*viewMatrixValue;"
+			"coord = vec2(rectTex.b, rectTex.g);"
+			"EmitVertex();"
+			
+			"gl_Position = vec4(rect.x+rect.z, rect.y+rect.w, 0.0, 1.0)*viewMatrixValue;"
+			"coord = vec2(rectTex.b, rectTex.a);"
+			//"gl_PointSize = 10.0;"
+			"EmitVertex();"
+			"EndPrimitive();"
+		"}";
+	ShaderTextField::prog = sh;
+	GLShaderLoadTask *task = new GLShaderLoadTask(sh, vrsh, frsh, gmsh);
+	Windows::window->eachFrame.addTask(task, 0);
 }

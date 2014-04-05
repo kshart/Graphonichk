@@ -55,33 +55,43 @@ namespace Graphonichk {
 	};
 	class Texture {
 	private:
-		static vector<Texture*> buffer;
-		static uint toUpdate, toDelete;
+		//static vector<Texture*> buffer;
+		//static uint toUpdate, toDelete;
+		bool _loadedInFile;
 	public:
-		/* format = 0 Р С‘ type = 0 Р С‘ GLID = 0
-		 */
 		enum EVENT:char {
 			NONE,
 			TO_DELETE,
 			TO_UPDATE,
 			LOADED
 		};
-		~Texture();
 		Texture(string path);
 		Texture(Image *img);
 		Texture(unsigned short w, unsigned short h, GLuint format, GLuint type);
-		int saveAsXML(FILE *str, unsigned short tab=0);
-		void trace();
+		~Texture();
 		
+		Image *getImage();
+		void trace();
 		
 		
 		EVENT event;
 		Image *img;
 		unsigned short width, height;
 		GLuint format, type, GLID;
-		
-		//static void addTexture();
-		static void texturesUpdate();
+	};
+	
+	
+	class TextureToUpdateTask :public EachFrameTask {
+	public:
+		TextureToUpdateTask(Texture *t);
+		int processExecute();
+		Texture *tex;
+	};
+	class TextureToDeleteTask :public EachFrameTask {
+	public:
+		TextureToDeleteTask(GLuint GLID);
+		int processExecute();
+		GLuint GLID;
 	};
 };
 
