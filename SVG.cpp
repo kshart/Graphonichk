@@ -454,15 +454,19 @@ TransformMatrix	DataTypes::getTransformMatrix(const char *str) {
 Symbol::Symbol() :matrix() {
 }
 int Symbol::renderGLComptAll() {
+	fputs("SVG::Symbol::renderGLComptAll\n", iovir);
 	return false;
 }
 int Symbol::renderGL400() {
+	fputs("SVG::Symbol::renderGL400\n", iovir);
 	return false;
 }
 int Symbol::renderGL330() {
+	fputs("SVG::Symbol::renderGL330\n", iovir);
 	return false;
 }
 int Symbol::renderGL210() {
+	fputs("SVG::Symbol::renderGL210\n", iovir);
 	return false;
 }
 

@@ -95,6 +95,7 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 	frequency = (float)frequencyStruct.QuadPart;
 	while (IsWindow(win->hWnd)) {
 		LARGE_INTEGER time1, time2;
+		float lastTime, fps;
 		QueryPerformanceCounter(&time1);
 		#ifdef REDRAWN_BY_THE_ACTION
 		if (!win->renderComplete) {
@@ -103,13 +104,16 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 		#endif
 		win->redraw();
 		win->eachFrame.performTasks();
+		Bitmap::updateBitmaps();
 		QueryPerformanceCounter(&time2);
 		time = (float)(time2.QuadPart-time1.QuadPart)/frequency;
-		
-		Bitmap::updateBitmaps();
-		
-		if ( time<TIME_IN_FRAME_MS ) {
-			Sleep( (int)( 1000*(TIME_IN_FRAME_MS - time) ) );
+		win->suspendProcess.setTime( TIME_IN_FRAME_MS-time );
+		win->suspendProcess.performTasks();
+		lastTime = win->suspendProcess.getTime();
+		fps = 1/lastTime;
+		printf("fps %f\n", fps );
+		if ( lastTime > 0 ) {
+			Sleep( (int)( 1000*lastTime ) );
 		}
 	}
 	return 0;

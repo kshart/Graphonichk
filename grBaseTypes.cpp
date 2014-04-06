@@ -11,8 +11,13 @@ string get_ext (const string& st) {
 
 #ifdef WIN32
 HINSTANCE System::hInstance = nullptr;
+uint16_t System::countProcessors = 1;
 void System::init() {
+	SYSTEM_INFO sysInfo;
 	System::hInstance = GetModuleHandle(NULL);
+	GetSystemInfo(&sysInfo);
+	System::countProcessors = sysInfo.dwNumberOfProcessors;
+	printf("count proc %i\n", System::countProcessors);
 	Windows::regFirstWin();
 	FileLoad::init();
 	Font::init();

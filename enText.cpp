@@ -252,7 +252,10 @@ FontFace* Font::getFontFace(unsigned short size) {
 
 TextField::TextField(unsigned short w, unsigned short h) :ShapeRect(0), tex(0), vao(0), _tf(TextFormat::defaultFormat), position(POSITION::LEFT_TOP) {
 	//this->bufferTexture = new Texture(w, h, GL_ALPHA, GL_UNSIGNED_BYTE);
-	this->padding = this->paddingLeft = this->paddingRight = this->paddingTop = this->paddingBottom = 0;
+	this->paddingLeft = 0;
+	this->paddingRight = 0;
+	this->paddingTop = 0;
+	this->paddingBottom = 0;
 	this->width = w;
 	this->height = h;
 	//this->style
@@ -490,6 +493,8 @@ int TextField::renderGL330() {
 		if (fface==nullptr) {
 			font->cached(format->size);
 			return false;
+		}else if (fface->tex->event!=Texture::LOADED) {
+			return false;
 		}else{
 			short minX, maxX, minY, maxY;
 			int bx, by, ch, id, lastID=0, lineHeight;
@@ -559,6 +564,7 @@ int TextField::renderGL330() {
 			
 			
 			GLuint buffer, bvao, bvbo;
+			if (GLShader::shader->crc32!=ShaderTextField::CRC32) GLShader::setShader(ShaderTextField::prog);
 			glGenFramebuffers(1, &buffer);
 			glBindFramebuffer(GL_FRAMEBUFFER, buffer);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this->tex->GLID, 0);
@@ -574,7 +580,6 @@ int TextField::renderGL330() {
 			OpenGL::setViewMatrix(ViewMatrixOrtho(minX, maxX, maxY, minY, -1, 1));
 			
 			
-			if (GLShader::shader->crc32!=ShaderTextField::CRC32) GLShader::setShader(ShaderTextField::prog);
 			glGenVertexArrays(1, &bvao);
 			glBindVertexArray(bvao);
 			glGenBuffers(1, &bvbo);
@@ -585,6 +590,7 @@ int TextField::renderGL330() {
 			
 			glBindTexture(GL_TEXTURE_2D, fface->tex->GLID);
 			glBindTexture(GL_TEXTURE_1D, fface->texCoord);
+			printf("glBindTexture %i\\%i\n", fface->tex->GLID, fface->texCoord);
 			glDrawArrays(GL_POINTS, 0, this->_symvolCount);
 			glDeleteVertexArrays(1, &bvao);
 			glDeleteBuffers(1, &bvbo);
@@ -618,28 +624,28 @@ int TextField::renderGL330() {
 		} point;
 		switch (this->position) {
 			case POSITION::LEFT_TOP:
-				point.x = this->globalx;
-				point.y = this->globaly;
+				point.x = this->globalx+paddingLeft;
+				point.y = this->globaly+paddingTop;
 				break;
 			case POSITION::LEFT_BOTTOM:
-				point.x = this->globalx;
-				point.y = this->globaly-this->height;
+				point.x = this->globalx+paddingLeft;
+				point.y = this->globaly-this->height-paddingBottom;
 				break;
 			case POSITION::LEFT_CENTER:
-				point.x = this->globalx;
-				point.y = this->globaly-this->height/2;
+				point.x = this->globalx+paddingLeft;
+				point.y = this->globaly-(this->height+paddingTop+paddingBottom)/2;
 				break;
 			case POSITION::RIGHT_TOP:
-				point.x = this->globalx-this->width;
-				point.y = this->globaly;
+				point.x = this->globalx-this->width-paddingRight;
+				point.y = this->globaly+paddingTop;
 				break;
 			case POSITION::RIGHT_BOTTOM:
-				point.x = this->globalx-this->width;
-				point.y = this->globaly-this->height;
+				point.x = this->globalx-this->width-paddingRight;
+				point.y = this->globaly-this->height-paddingBottom;
 				break;
 			case POSITION::RIGHT_CENTER:
-				point.x = this->globalx-this->width;
-				point.y = this->globaly-this->height/2;
+				point.x = this->globalx-this->width-paddingRight;
+				point.y = this->globaly-(this->height+paddingTop+paddingBottom)/2;
 				break;
 			case POSITION::TOP_CENTER:
 				point.x = this->globalx-this->width/2;
@@ -668,6 +674,7 @@ int TextField::renderGL330() {
 		glEnableVertexAttribArray(ShaderTextFieldBuffer::prog->position);
 		glVertexAttribPointer(ShaderTextFieldBuffer::prog->textColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, 8, (void*)4);
 		glEnableVertexAttribArray(ShaderTextFieldBuffer::prog->textColor);
+		printf("OASDASD %i\n", this->vbo);
 	}
 	glBindVertexArray(this->vao);
 	glDrawArrays(GL_POINTS, 0, 1);

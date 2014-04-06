@@ -44,9 +44,12 @@
 	#define THREAD void*
 #endif
 
-#define TIME_IN_FRAME_MS (float)1/60
+#define FRAME_PER_SECOND 60
+#define TIME_IN_FRAME_MS (float)1/FRAME_PER_SECOND
 #define M_PI 3.14159265358979323846
 using namespace std;
+extern FILE *iovir;
+extern FILE *ioshp;
 //111
 
 // <editor-fold defaultstate="collapsed" desc="#define IMG_TYPE">
@@ -285,6 +288,7 @@ namespace Graphonichk {
 	class System {
 	  public:
 		static HINSTANCE hInstance;
+		static uint16_t countProcessors;
 		static void init();
 	};
 	#endif

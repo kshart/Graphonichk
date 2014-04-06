@@ -20,18 +20,23 @@ ShapeBasic::ShapeBasic() :crc32(0) {
 	
 }
 void ShapeBasic::trace() {
-	printf("<ShapeBasic empty/>\n");
+	fprintf(ioshp, "<ShapeBasic empty/>\n");
+	fputs("ShapeBasic::trace\n", iovir);
 }
 int ShapeBasic::renderGLComptAll() {
+	fputs("ShapeBasic::renderGLComptAll\n", iovir);
 	return false;
 }
 int ShapeBasic::renderGL400() {
+	fputs("ShapeBasic::renderGL400\n", iovir);
 	return false;
 }
 int ShapeBasic::renderGL330() {
+	fputs("ShapeBasic::renderGL330\n", iovir);
 	return false;
 }
 int ShapeBasic::renderGL210() {
+	fputs("ShapeBasic::renderGL210\n", iovir);
 	return false;
 }
 
@@ -43,17 +48,22 @@ ShapeGroupBasic::ShapeGroupBasic() :ShapeBasic(1) {
 }
 void ShapeGroupBasic::trace() {
 	printf("<ShapeGroupBasic empty/>\n");
+	fputs("ShapeGroupBasic::trace\n", iovir);
 }
 int ShapeGroupBasic::renderGLComptAll() {
+	fputs("ShapeGroupBasic::renderGLComptAll\n", iovir);
 	return false;
 }
 int ShapeGroupBasic::renderGL400() {
+	fputs("ShapeGroupBasic::renderGL400\n", iovir);
 	return false;
 }
 int ShapeGroupBasic::renderGL330() {
+	fputs("ShapeGroupBasic::renderGL330\n", iovir);
 	return false;
 }
 int ShapeGroupBasic::renderGL210() {
+	fputs("ShapeGroupBasic::renderGL210\n", iovir);
 	return false;
 }
 
@@ -65,7 +75,7 @@ int ShapeGroupMatrix2D::renderGLComptAll() {
 	float mat[16] = {
 		this->matrix.a,	this->matrix.d,	0,	0,
 		this->matrix.b,	this->matrix.e,	0,	0,
-		this->matrix.c,	this->matrix.f,	1,	0,
+		0,				0,				1,	0,
 		this->matrix.c,	this->matrix.f,	1,	1};
 	glPushMatrix();
 	glMultMatrixf(mat);
@@ -76,12 +86,15 @@ int ShapeGroupMatrix2D::renderGLComptAll() {
 	return true;
 }
 int ShapeGroupMatrix2D::renderGL400() {
+	fputs("ShapeGroupMatrix2D::renderGL400\n", iovir);
 	return false;
 }
 int ShapeGroupMatrix2D::renderGL330() {
+	fputs("ShapeGroupMatrix2D::renderGL330\n", iovir);
 	return false;
 }
 int ShapeGroupMatrix2D::renderGL210() {
+	fputs("ShapeGroupMatrix2D::renderGL210\n", iovir);
 	return false;
 }
 
@@ -98,12 +111,15 @@ int ShapeRectGateMatrix2D::renderGLComptAll() {
 	return true;
 }
 int ShapeRectGateMatrix2D::renderGL400() {
+	fputs("ShapeRectGateMatrix2D::renderGL400\n", iovir);
 	return false;
 }
 int ShapeRectGateMatrix2D::renderGL330() {
+	fputs("ShapeRectGateMatrix2D::renderGL330\n", iovir);
 	return false;
 }
 int ShapeRectGateMatrix2D::renderGL210() {
+	fputs("ShapeRectGateMatrix2D::renderGL210\n", iovir);
 	return false;
 }
 

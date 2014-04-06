@@ -115,7 +115,7 @@ namespace Graphonichk {
 			return true;
 		}
 		virtual int removeEventHandler( void(*fun)(const TEvent*) ) {
-			fprintf(stderr, "VOID virtual int removeEventHandler\n");
+			fputs("Event::removeEventHandler\n", iovir);
 			return false;
 		}
 	};

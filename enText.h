@@ -123,7 +123,7 @@ namespace Graphonichk {
 		unsigned short borderSize;
 		char background, multiline;
 		unsigned int borderColor, backgroundColor, textColor;
-		short padding, paddingLeft, paddingRight, paddingTop, paddingBottom;
+		short paddingLeft, paddingRight, paddingTop, paddingBottom;
 		/*struct {
 			char decoration, decorationStyle, writingMode, whiteSpace,
 				align, alignLast;
@@ -150,7 +150,7 @@ namespace Graphonichk {
 	};
 	class ShaderTextField :public GLShader {
 	public:
-		enum {CRC32=0x514f2123};
+		enum {CRC32=0x51923};
 		ShaderTextField();
 		//static void init();
 		static void init33();

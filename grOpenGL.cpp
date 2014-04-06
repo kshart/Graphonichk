@@ -229,7 +229,7 @@ GLShader *GLShader::shader = nullptr;
 GLShader::GLShader(int c) :shaderProgram(0), vertexShader(0), fragmentShader(0), crc32(c) {
 }
 void GLShader::init() {
-	fprintf(stderr, "VOID GLShader::init();");
+	fputs("GLShader::init\n", iovir);
 }
 void GLShader::setShader(GLShader* shader) {
 	glUseProgram(shader->shaderProgram);

@@ -1,7 +1,7 @@
 #ifndef GRWINDOWS_H
 #define	GRWINDOWS_H
 
-
+#include "grProcessingQueue.h"
 #include "grBaseTypes.h"
 
 #define WIN_CLASS_NAME "grEWin"
@@ -49,8 +49,9 @@ namespace Graphonichk {
 			EventDispatcher<EventMouse> mouse;
 		} events;
 		
-		ProcessingQueue<EachFrameTask> eachFrame;
-		
+		ProcessingEachFrame eachFrame;
+		ProcessingSupSuspend suspendProcess;
+
 		ShapeGroupRect *root;
 		bool visible, renderComplete;
 		short x, y, width, height;
