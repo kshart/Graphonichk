@@ -11,24 +11,20 @@ using namespace std;
 namespace Graphonichk {
 	class Windows :public EventDispatcher<EventWindow> {
 	private:
+		THREAD_H winThread, renderThread;
+		static THREAD threadRender (void* data_args);
+		static THREAD threadWindow (void* data_args);
 		#ifdef WIN32
 			HWND hWnd;
 			HGLRC hRC;
 			HDC hDC;
-			HANDLE winThread, renderThread;
 			DWORD winThreadID, renderThreadID;
-			static DWORD WINAPI threadRender (void* sys);
-			static DWORD WINAPI threadWindow (void* sys);
 			static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 		#else
-			
 			Display *x11display;
 			Window x11window;
 			GLXContext x11context;
 			XEvent x11event;
-			pthread_t winThread, renderThread;
-			static void* threadRender (void* vptr_args);
-			static void* threadWindow (void* vptr_args);
 			static bool x11EventProc();
 		#endif
 	public:

@@ -305,14 +305,14 @@ bool Image::load(char* data, unsigned int size) {
 			}
 			this->raw = malloc(rowSize*this->height);
 			const png_uint_32 bytesPerRow = png_get_rowbytes(png_ptr, info_ptr);
-			byte* rowData = (byte*)malloc(bytesPerRow);
+			png_bytep rowData = (png_bytep)malloc(bytesPerRow);
 
 			for(int y=0; y<this->height; y++) {
-				png_read_row(png_ptr, (png_bytep)rowData, NULL);
+				png_read_row(png_ptr, rowData, NULL);
 				memcpy( (void*)((intptr_t)(this->raw)+y*rowSize), rowData, bytesPerRow);
 			}
 			png_destroy_read_struct(&png_ptr, NULL, NULL);
-			printf("Image size=%iKB w=%i h=%i depth=%i color=%i rowSize=%i\n", d1.size/1024, this->width, this->height, bitDepth, colorType, bytesPerRow);// </editor-fold>
+			printf("Image size=%iKB w=%i h=%i depth=%i color=%i rowSize=%i\n", d1.size/1024, this->width, this->height, bitDepth, colorType, (int)bytesPerRow);// </editor-fold>
 		}else if ( ((uint16_t*)data)[0] == 0xD8FFL) {// <editor-fold defaultstate="collapsed" desc="JPEG">
 			printf("JPEG\n");
 			struct jpeg_decompress_struct cinfo;
@@ -433,7 +433,6 @@ int TextureToUpdateTask::processExecute() {
 				_tex->type = GL_UNSIGNED_BYTE;
 				break;
 		}
-		printf("\tImage %i\n", _tex->img->raw);
 		printf("\t//////\n");
 		_tex->width = _tex->img->width;
 		_tex->height = _tex->img->height;

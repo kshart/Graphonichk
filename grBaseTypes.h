@@ -20,12 +20,28 @@
 	#include <windowsx.h>
 	#include <GL/wglext.h>
 	#include <GL/glext.h>
+
+	//#define CRITICAL_SECTION 
+	#define CRITICAL_SECTION_INIT(cs) InitializeCriticalSection(&cs);
+	#define CRITICAL_SECTION_INTER(cs) EnterCriticalSection(&cs);
+	#define CRITICAL_SECTION_LEAVE(cs) LeaveCriticalSection(&cs);
+
+	#define THREAD_H HANDLE
+	#define THREAD DWORD WINAPI
 #elif defined(X11)
 	#include<stdio.h>
 	#include<stdlib.h>
 	#include<X11/X.h>
 	#include<X11/Xlib.h>
 	#include<GL/glx.h>
+
+	#define CRITICAL_SECTION pthread_mutex_t
+	#define CRITICAL_SECTION_INIT(cs) cs = PTHREAD_MUTEX_INITIALIZER;
+	#define CRITICAL_SECTION_INTER(cs) pthread_mutex_lock(&cs);
+	#define CRITICAL_SECTION_LEAVE(cs) pthread_mutex_unlock(&cs);
+	
+	#define THREAD_H pthread_t
+	#define THREAD void*
 #endif
 
 #define TIME_IN_FRAME_MS (float)1/60

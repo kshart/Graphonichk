@@ -7,8 +7,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <GL/glew.h>
-#include <windows.h>
-#include <windowsx.h>
+
+#if defined(WIN32)
+	#include <windows.h>
+	#include <windowsx.h>
+	#include <GL/wglext.h>
+	#include <GL/glext.h>
+
+	//#define CRITICAL_SECTION 
+	#define CRITICAL_SECTION_INIT(cs) InitializeCriticalSection(&cs);
+	#define CRITICAL_SECTION_INTER(cs) EnterCriticalSection(&cs);
+	#define CRITICAL_SECTION_LEAVE(cs) LeaveCriticalSection(&cs);
+#elif defined(X11)
+	#include<stdio.h>
+	#include<stdlib.h>
+	#include<X11/X.h>
+	#include<X11/Xlib.h>
+	#include<GL/glx.h>
+
+	#define CRITICAL_SECTION pthread_mutex_t
+	#define CRITICAL_SECTION_INIT(cs) cs = PTHREAD_MUTEX_INITIALIZER;
+	#define CRITICAL_SECTION_INTER(cs) pthread_mutex_lock(&cs);
+	#define CRITICAL_SECTION_LEAVE(cs) pthread_mutex_unlock(&cs);
+#endif
 using namespace std;
 
 namespace Graphonichk {
@@ -44,95 +65,117 @@ namespace Graphonichk {
 		Model3D *model;
 	};
 	
-	
+//#ifdef WIN32
 	template<class TTask> class ProcessingQueue {
-		queue<TTask*> essentialTasks1;
-		queue<TTask*> essentialTasks2;
-		char queueIsUse;
-		CRITICAL_SECTION accessPush;
+		queue<TTask*> _essentialTasks1;
+		queue<TTask*> _essentialTasks2;
+		char _queueIsUse;
+		CRITICAL_SECTION _accessPush;
 	public:
-		ProcessingQueue(){
-			this->queueIsUse = 0;
-			InitializeCriticalSection(&this->accessPush);
+		ProcessingQueue() :_queueIsUse(0) {
+			CRITICAL_SECTION_INIT(this->_accessPush);
 		}
 		int addTask(TTask *task, int type) {
-			EnterCriticalSection(&this->accessPush);
-			if (this->queueIsUse == 1) {
-				this->essentialTasks2.push(task);
+			CRITICAL_SECTION_INTER(this->_accessPush);
+			if (this->_queueIsUse == 1) {
+				this->_essentialTasks2.push(task);
 			}else{
-				this->essentialTasks1.push(task);
+				this->_essentialTasks1.push(task);
 			}
-			LeaveCriticalSection(&this->accessPush);
+			CRITICAL_SECTION_LEAVE(this->_accessPush);
 			return true;
 		}
 		int performTasks() {
-			EnterCriticalSection(&this->accessPush);
-			this->queueIsUse = !this->queueIsUse;
-			LeaveCriticalSection(&this->accessPush);
-			if (this->queueIsUse == 1) {
+			CRITICAL_SECTION_INTER(this->_accessPush);
+			this->_queueIsUse = !this->_queueIsUse;
+			CRITICAL_SECTION_LEAVE(this->_accessPush);
+			if (this->_queueIsUse == 1) {
 				//printf("performTasks %i\n", this->essentialTasks1.size());
-				while ( !this->essentialTasks1.empty() ) {
-					this->essentialTasks1.front()->processExecute();
-					delete this->essentialTasks1.front();
-					this->essentialTasks1.pop();
+				while ( !this->_essentialTasks1.empty() ) {
+					this->_essentialTasks1.front()->processExecute();
+					delete this->_essentialTasks1.front();
+					this->_essentialTasks1.pop();
 				}
 			}else{
 				//printf("performTasks %i\n", this->essentialTasks2.size());
-				while ( !this->essentialTasks2.empty() ) {
-					this->essentialTasks2.front()->processExecute();
-					delete this->essentialTasks2.front();
-					this->essentialTasks2.pop();
+				while ( !this->_essentialTasks2.empty() ) {
+					this->_essentialTasks2.front()->processExecute();
+					delete this->_essentialTasks2.front();
+					this->_essentialTasks2.pop();
 				}
 			}
-			
-			
 			return true;
 		}
 	};
 	template<class TTask> class ProcessingQueueTimeLimited {
-		queue<TTask*> essentialTasks1;
-		queue<TTask*> essentialTasks2;
-		char queueIsUse;
-		CRITICAL_SECTION accessPush;
+		queue<TTask*> _essentialTasks1;
+		queue<TTask*> _essentialTasks2;
+		char _queueIsUse;
+		#if defined(WIN32)
+			CRITICAL_SECTION _accessPush;
+		#elif defined(X11)
+			pthread_mutex_t _accessPush;
+		#endif
 	public:
-		ProcessingQueueTimeLimited(){
-			this->queueIsUse = 0;
-			InitializeCriticalSection(&this->accessPush);
+		ProcessingQueueTimeLimited() :_queueIsUse(0) {
+			#if defined(WIN32)
+				InitializeCriticalSection(&this->_accessPush);
+			#elif defined(X11)
+				this->_accessPush = PTHREAD_MUTEX_INITIALIZER;//PTHREAD_RECURSIVE_MUTEX_INITIALIZER
+			#endif
 		}
 		int addTask(TTask *task, int type) {
-			EnterCriticalSection(&this->accessPush);
-			if (this->queueIsUse == 1) {
-				this->essentialTasks2.push(task);
+			#if defined(WIN32)
+				EnterCriticalSection(&this->_accessPush);
+			#elif defined(X11)
+				pthread_mutex_lock(&this->_accessPush);
+			#endif
+			if (this->_queueIsUse == 1) {
+				this->_essentialTasks2.push(task);
 			}else{
-				this->essentialTasks1.push(task);
+				this->_essentialTasks1.push(task);
 			}
-			LeaveCriticalSection(&this->accessPush);
+			#if defined(WIN32)
+				LeaveCriticalSection(&this->_accessPush);
+			#elif defined(X11)
+				pthread_mutex_unlock(&this->_accessPush);
+			#endif
 			return true;
 		}
 		int performTasks() {
-			EnterCriticalSection(&this->accessPush);
-			this->queueIsUse = !this->queueIsUse;
-			LeaveCriticalSection(&this->accessPush);
-			if (this->queueIsUse == 1) {
+			#if defined(WIN32)
+				EnterCriticalSection(&this->_accessPush);
+			#elif defined(X11)
+				pthread_mutex_lock(&this->_accessPush);
+			#endif
+			this->_queueIsUse = !this->_queueIsUse;
+			#if defined(WIN32)
+				LeaveCriticalSection(&this->_accessPush);
+			#elif defined(X11)
+				pthread_mutex_unlock(&this->_accessPush);
+			#endif
+			if (this->_queueIsUse == 1) {
 				//printf("performTasks %i\n", this->essentialTasks1.size());
-				while ( !this->essentialTasks1.empty() ) {
-					this->essentialTasks1.front()->processExecute();
-					delete this->essentialTasks1.front();
-					this->essentialTasks1.pop();
+				while ( !this->_essentialTasks1.empty() ) {
+					this->_essentialTasks1.front()->processExecute();
+					delete this->_essentialTasks1.front();
+					this->_essentialTasks1.pop();
 				}
 			}else{
 				//printf("performTasks %i\n", this->essentialTasks2.size());
-				while ( !this->essentialTasks2.empty() ) {
-					this->essentialTasks2.front()->processExecute();
-					delete this->essentialTasks2.front();
-					this->essentialTasks2.pop();
+				while ( !this->_essentialTasks2.empty() ) {
+					this->_essentialTasks2.front()->processExecute();
+					delete this->_essentialTasks2.front();
+					this->_essentialTasks2.pop();
 				}
 			}
-			
-			
 			return true;
 		}
 	};
+//#else
+	//#include <pthread.h>
+//#endif
+	
 };
 #endif	/* GRPROCESSINGQUEUE_H */
 

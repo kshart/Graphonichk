@@ -367,24 +367,24 @@ void Windows::saveAsXML() {
 	fclose(file);*/
 }
 void Windows::resize(short width, short height) {
-	this->width = width;
-	this->height = height;
-	RECT rect;
-	rect.left = this->x;
-	rect.top = this->y;
-	rect.bottom = this->y+this->height;
-	rect.right = this->x+this->width;
-	AdjustWindowRectEx (&rect, WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, FALSE, WS_EX_COMPOSITED|WS_EX_APPWINDOW|WS_EX_TOPMOST);
-	GetClientRect(this->hWnd, &rect);
-	this->width  = rect.right-rect.left;
-	this->height = rect.bottom-rect.top;
-	OpenGL::setViewport(0, 0, this->width, this->height);
-	ViewMatrix vm = ViewMatrixOrtho(0, this->width, 0, this->height, -1, 1);
-	OpenGL::viewMatrixBuffer[0] = vm;
-	EventWindow *e = new EventWindow();
-	e->window = this;
-	e->type = EventWindow::WIN_SIZE;
-	this->callEvent(e);
+    this->width = width;
+    this->height = height;
+    RECT rect;
+    rect.left = this->x;
+    rect.top = this->y;
+    rect.bottom = this->y+this->height;
+    rect.right = this->x+this->width;
+    AdjustWindowRectEx (&rect, WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, FALSE, WS_EX_COMPOSITED|WS_EX_APPWINDOW|WS_EX_TOPMOST);
+    GetClientRect(this->hWnd, &rect);
+    this->width  = rect.right-rect.left;
+    this->height = rect.bottom-rect.top;
+    OpenGL::setViewport(0, 0, this->width, this->height);
+    ViewMatrix vm = ViewMatrixOrtho(0, this->width, 0, this->height, -1, 1);
+    OpenGL::viewMatrixBuffer[0] = vm;
+    EventWindow *e = new EventWindow();
+    e->window = this;
+    e->type = EventWindow::WIN_SIZE;
+    this->callEvent(e);
 }
 #elif defined(X11)
 Windows::Windows(short x, short y, short width, short height) {
@@ -434,21 +434,21 @@ void Windows::close() {
 	delete this;
 }
 void Windows::resize(short width, short height) {
-	this->width = width;
-	this->height = height;
-	XResizeWindow(this->x11display, this->x11window, width, height);
-	OpenGL::setViewport(0, 0, this->width, this->height);
-	ViewMatrix vm(0, this->width, 0, this->height, -1, 1);
-	OpenGL::viewMatrixBuffer[0] = vm;
-	EventWindow *e = new EventWindow();
-	e->window = this;
-	e->type = EventWindow::WIN_SIZE;
-	this->callEvent(e);
+    this->width = width;
+    this->height = height;
+    XResizeWindow(this->x11display, this->x11window, this->width, this->height);
+    OpenGL::setViewport(0, 0, this->width, this->height);
+    ViewMatrix vm = ViewMatrixOrtho(0, this->width, 0, this->height, -1, 1);
+    OpenGL::viewMatrixBuffer[0] = vm;
+    EventWindow *e = new EventWindow();
+    e->window = this;
+    e->type = EventWindow::WIN_SIZE;
+    this->callEvent(e);
 }
 
 #endif
 
-Windows *Windows::window = NULL;
+Windows *Windows::window = nullptr;
 void Windows::redraw() {
 	glClearColor( 0.9, 0.9, 0.9, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT );
@@ -512,7 +512,11 @@ void Windows::redraw() {
 			break;// </editor-fold>
 	}
 	glFlush( );
-	SwapBuffers(this->hDC);
+	#if defined(WIN32)
+		SwapBuffers(this->hDC);
+	#elif defined(X11)
+		glXSwapBuffers(this->x11display, this->x11context);
+	#endif
 	this->renderComplete = true;
 }
 /*void Windows::redrawFBO () {
