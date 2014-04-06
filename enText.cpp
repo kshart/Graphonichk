@@ -262,6 +262,9 @@ TextField::TextField(unsigned short w, unsigned short h) :ShapeRect(0), tex(0), 
 void TextField::setString(string str) {
 	//this->strUTF8 = str;
 }
+void TextField::setFormat(TextFormat* tf) {
+	this->_tf = tf;
+}
 void TextField::trace() {
 	//printf("<Bitmap x='%i' y='%i' gx='%i' gy='%i' w='%i' h='%i' texId='%i'/>\n", this->x, this->y, this->globalx, this->globaly, this->width, this->height, this->tex);
 }
@@ -651,11 +654,10 @@ int TextField::renderGL330() {
 				point.y = this->globaly-this->height/2;
 				break;
 		}
-		point.r = 0x00;
-		point.g = 0xFF;
-		point.b = 0x00;
+		point.r = 0;
+		point.g = 0;
+		point.b = 0;
 		point.a = 0xFF;
-		printf("rrr %i %i\n", this->globalx, this->globaly);
 		glGenVertexArrays(1, &this->vao);
 		glBindVertexArray(this->vao);
 		
@@ -801,8 +803,7 @@ void ShaderTextFieldBuffer::init33() {
 			//"vec4 textBGColor = texture(textTexture, vec2(VertexIn.TexCoord.x+0.01, VertexIn.TexCoord.y+0.01));"
 			//"color.a = texc.a+textBGColor.a*(1-texc.a);"
 			//"color.rgb = vec3((texc.rgb*texc.a)+(textBGColor.rgb*textBGColor.a)*(1-texc.a))/color.a;"
-			"color.a = max(texc.a, textBGColor.a);"
-			"color.rgb = texc.rgb;"
+			"color = texc;"
 		"}",
 		*gmsh = 
 		//"#version 330 core\n"
