@@ -59,7 +59,7 @@ int ProcessingSupSuspend::addTask(SupSuspendTask *task, int type) {
 	}
 	CRITICAL_SECTION_LEAVE(this->_accessPush);
 	return true;
-}
+};
 int ProcessingSupSuspend::performTasks() {
 	LARGE_INTEGER time1, time2;
 	LARGE_INTEGER frequencyStruct;
@@ -142,7 +142,7 @@ int ProcessingSupSuspend::performTasks() {
 		}
 	}
 	return true;
-}
+};
 THREAD ProcessingSupSuspend::threadFunction (void* dataArg) {
 	((ThreadData*)dataArg)->task->processExecute(((ThreadData*)dataArg)->sush);
 	return 0;

@@ -2,6 +2,56 @@
 using namespace std;
 using namespace Graphonichk;
 
+grAlgoritm::CompositionRect::CompositionRect(unsigned short w, unsigned short h) :viewWidth(w), viewHeight(h) {
+	
+}
+int grAlgoritm::CompositionRect::addNode(Array<Rect>* rects, unsigned short imgID) {
+	this->result.outPix = SHRT_MAX;
+	this->result.rotate90 = false;
+	this->result.node = nullptr;
+	
+	this->node.addNode(rects, imgID, this->viewWidth, this->viewHeight, &this->result);
+	
+	CompositionRectNode *rn = this->result.node;
+	if (rn->child[0]!=NULL||rn->child[1]!=NULL) return false;//printf("ERRROORRR\n");
+	rn->imgWidth = rects->data[imgID].width+1;
+	rn->imgHeight = rects->data[imgID].height+1;
+	rn->imgID = imgID;
+	if (this->result.outPix==0) {
+		rn->child[0] = new CompositionRectNode();
+		rn->child[1] = nullptr;
+	}else{
+		rn->child[0] = new CompositionRectNode();
+		rn->child[1] = new CompositionRectNode();
+		if (this->node.child[0]==NULL||this->node.child[1]==NULL) printf("ERRROORRR\n");
+	}
+	return true;
+}
+void grAlgoritm::CompositionRect::trace(Array<Rect>* rects) {
+	this->node.trace(0, 0, this->viewWidth, this->viewHeight, rects);
+}
+
+int grAlgoritm::CompositionRectNode::addNode(Array<Rect>* rects, unsigned short imgID, unsigned short viewWidth, unsigned short viewHeight, grAlgoritm::CompositionRectNodeResult* result) {
+	unsigned short thisOutPix;
+	if ( rects->data[imgID].width+1 <= viewWidth && rects->data[imgID].height+1 <= viewHeight ) {
+		if (this->child[0]!=NULL&&this->child[1]!=NULL) {
+			this->child[0]->addNode(rects, imgID, viewWidth-this->imgWidth, this->imgHeight, result);
+			this->child[1]->addNode(rects, imgID, viewWidth, viewHeight-this->imgHeight, result);
+		}else if ( this->child[0]==NULL && this->child[1]==NULL ) {
+			thisOutPix = viewWidth-rects->data[imgID].width+1;
+			if (thisOutPix < result->outPix) {
+				result->node = this;
+				result->outPix = thisOutPix;
+				result->rotate90 = false;
+			}
+		}else if (this->child[0]!=NULL&&this->child[1]==NULL) {
+			this->child[0]->addNode(rects, imgID, viewWidth-this->imgWidth, viewHeight, result);
+		}
+	}else{
+
+	}
+	return true;
+}
 
 // pos short x y
 // index i
@@ -25,87 +75,6 @@ TextFormat::TextFormat() {
 }
 FontFace::FontFace(unsigned short size, size_t glyphCount) :tex(0), texCoord(0), size(size), arr(glyphCount) {
 	
-}
-
-struct stNode;
-struct stNode {
-	struct stNode* child[2];
-	unsigned short imgWidth, imgHeight, imgID;
-};
-typedef struct stNode Node;
-typedef struct {
-	Node* node;
-	unsigned short outPix;
-	bool rotate90;
-} NodeResult;
-int addImage(Array<Rect> *rects, unsigned short imgID, unsigned short viewWidth, unsigned short viewHeight,Node *in, NodeResult *result) {
-	unsigned short thisOutPix;
-	if ( rects->data[imgID].width+1 <= viewWidth && rects->data[imgID].height+1 <= viewHeight ) {
-		if (in->child[0]!=NULL&&in->child[1]!=NULL) {
-			addImage(rects, imgID, viewWidth-in->imgWidth, in->imgHeight, in->child[0], result);
-			addImage(rects, imgID, viewWidth, viewHeight-in->imgHeight, in->child[1], result);
-		}else if ( in->child[0]==NULL && in->child[1]==NULL ) {
-			thisOutPix = viewWidth-rects->data[imgID].width+1;
-			if (thisOutPix < result->outPix) {\
-				result->node = in;
-				result->outPix = thisOutPix;
-				result->rotate90 = false;
-			}
-		}else if (in->child[0]!=NULL&&in->child[1]==NULL) {
-			addImage(rects, imgID, viewWidth-in->imgWidth, viewHeight, in->child[0], result);
-		}
-	}else{
-		
-	}
-	return true;
-}
-int addNodeInResult(Array<Rect> *rects, unsigned short imgID, NodeResult *result) {
-	Node *node = result->node;
-	node->imgWidth = rects->data[imgID].width+1;
-	node->imgHeight = rects->data[imgID].height+1;
-	node->imgID = imgID;
-	if (node->child[0]!=NULL||node->child[1]!=NULL) return 1;//printf("ERRROORRR\n");
-	if (result->outPix==0) {
-		node->child[0] = new Node();
-		node->child[0]->imgID = SHRT_MAX;
-		node->child[0]->imgHeight = 0;
-		node->child[0]->imgWidth = 0;
-		node->child[0]->child[0] = NULL;
-		node->child[0]->child[1] = NULL;
-		node->child[1] = NULL;
-	}else{
-		node->child[0] = new Node();
-		node->child[0]->imgID = SHRT_MAX;
-		node->child[0]->imgHeight = 0;
-		node->child[0]->imgWidth = 0;
-		node->child[0]->child[0] = NULL;
-		node->child[0]->child[1] = NULL;
-		node->child[1] = new Node();
-		node->child[1]->imgID = SHRT_MAX;
-		node->child[1]->imgHeight = 0;
-		node->child[1]->imgWidth = 0;
-		node->child[1]->child[0] = NULL;
-		node->child[1]->child[1] = NULL;
-		if (node->child[0]==NULL||node->child[1]==NULL) printf("ERRROORRR\n");
-	}
-	return true;
-}
-void traceNods(unsigned short viewX, unsigned short viewY, unsigned short viewWidth, unsigned short viewHeight, Node *in, Array<Rect> *rects) {
-	if (in->child[0]==NULL&&in->child[1]==NULL) {
-	}else if (in->child[0]!=NULL&&in->child[1]==NULL) {
-		rects->data[in->imgID].x = viewX;
-		rects->data[in->imgID].y = viewY;
-		traceNods(viewX+in->imgWidth, viewY, viewWidth-in->imgWidth, viewHeight, in->child[0], rects);
-	}else if (in->child[0]!=NULL&&in->child[1]!=NULL) {
-		traceNods(viewX+in->imgWidth, viewY, viewWidth-in->imgWidth, viewHeight, in->child[0], rects);
-		traceNods(viewX, viewY+in->imgHeight, viewWidth, viewHeight-in->imgHeight, in->child[1], rects);
-		if (viewY+rects->data[in->imgID].height>2048) {
-			printf("1232123 %i \n", in->imgID);
-		}else{
-			rects->data[in->imgID].x = viewX;
-			rects->data[in->imgID].y = viewY;
-		}
-	}
 }
 
 FontFaceLoadTask::FontFaceLoadTask(FontFace *face, size_t sizeTexCoord) :bmpTexCoord(sizeTexCoord), face(face) {
@@ -165,12 +134,7 @@ bool Font::cached(unsigned short size) {
 	for (uint i=0; i<2048*2048; i++) imgRaw[i] = 0x55;
 	
 	FontFaceLoadTask *task = new FontFaceLoadTask(fface, glyphCount*4);
-	Node node;
-	node.imgHeight = 0;
-	node.imgWidth = 0;
-	node.imgID = SHRT_MAX;
-	node.child[0] = NULL;
-	node.child[1] = NULL;
+	grAlgoritm::CompositionRect rectNode(2048, 2048);
 	
 	for(int i=0; i<this->face->num_glyphs; i++) {
 		FT_Load_Glyph( this->face, i, FT_LOAD_DEFAULT );
@@ -201,16 +165,9 @@ bool Font::cached(unsigned short size) {
 		}
 		pix += fface->arr->data[i].bmpWidth*fface->arr->data[i].bmpHeight;*/
 		
-		NodeResult nodeRes;
-		nodeRes.node = &node;
-		nodeRes.outPix = SHRT_MAX;
-		nodeRes.rotate90 = false;
-		
-		addImage(&bmpRect, i, 2048, 2048, &node, &nodeRes);
-		//printf("%i %i\n", i, nodeRes.node);
-		addNodeInResult(&bmpRect, i, &nodeRes);
+		rectNode.addNode(&bmpRect, i);
 	}
-	traceNods(0, 0, 2048, 2048, &node, &bmpRect);
+	rectNode.trace(&bmpRect);
 	
 	for(int i=0; i<this->face->num_glyphs; i++) {
 		for (int y=0; y<bmpRect.data[i].height; y++) {
@@ -750,7 +707,7 @@ void ShaderTextField::init33() {
 	ShaderTextField::prog = sh;
 	GLShaderLoadTask *task = new GLShaderLoadTask(sh, vrsh, frsh, gmsh);
 	Windows::window->eachFrame.addTask(task, 0);
-}
+};
 
 ShaderTextFieldBuffer* ShaderTextFieldBuffer::prog = nullptr;
 ShaderTextFieldBuffer::ShaderTextFieldBuffer() :GLShader(ShaderTextFieldBuffer::CRC32) {
@@ -807,10 +764,10 @@ void ShaderTextFieldBuffer::init33() {
 			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, 0.028))*0.0044299121055113265;"
 			"textBGColor *= 0.5;"*/
 			"float tex = texture(textTexture, VertexIn.TexCoord).a;"
-			"float tex1 = texture(textTexture, VertexIn.TexCoord+vec2(0.00, 0.01)).a;"
-			"float tex2 = texture(textTexture, VertexIn.TexCoord+vec2(0.01, 0.00)).a;"
-			"float tex3 = texture(textTexture, VertexIn.TexCoord+vec2(0.00,-0.01)).a;"
-			"float tex4 = texture(textTexture, VertexIn.TexCoord+vec2(-0.01,0.00)).a;"
+			"float tex1 = texture(textTexture, VertexIn.TexCoord+vec2(0.000, 0.005)).a;"
+			"float tex2 = texture(textTexture, VertexIn.TexCoord+vec2(0.005, 0.000)).a;"
+			"float tex3 = texture(textTexture, VertexIn.TexCoord+vec2(0.000,-0.005)).a;"
+			"float tex4 = texture(textTexture, VertexIn.TexCoord+vec2(-0.005,0.000)).a;"
 			"vec4 texc = vec4(VertexIn.textColor.rgb, VertexIn.textColor.a*max(max(max(max(tex, tex1), tex2), tex3), tex4) );"
 			//"vec4 textBGColor = texture(textTexture, vec2(VertexIn.TexCoord.x+0.01, VertexIn.TexCoord.y+0.01));"
 			//"color.a = texc.a+textBGColor.a*(1-texc.a);"

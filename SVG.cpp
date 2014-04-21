@@ -164,9 +164,9 @@ const DataTypes::ColorWord DataTypes::colorWords[147] = {
 float DataTypes::getPixels(Length l) {
 	switch (l.type) {//win->dpi = round((hRes/hSize)*25.4);
 		case Length::_PX: return l.value;
-		case Length::_IN: return l.value*Windows::window->dpi;
-		case Length::_CM: return (l.value*Windows::window->dpi)/25.4*10;
-		case Length::_MM: return (l.value*Windows::window->dpi)/25.4;
+		case Length::_IN: return l.value*Screen::dpi;
+		case Length::_CM: return (l.value*Screen::dpi)/25.4*10;
+		case Length::_MM: return (l.value*Screen::dpi)/25.4;
 		case Length::_EM: return l.value;
 		case Length::_EX: return l.value;
 		case Length::_PT: return l.value;

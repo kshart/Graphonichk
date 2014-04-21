@@ -2,14 +2,41 @@
 using namespace std;
 using namespace Graphonichk;//Graphonichk
 
+float Screen::dpi = 0;
+unsigned short Screen::width = 0;
+unsigned short Screen::height = 0;
 
 #if defined(WIN32)
+BOOL CALLBACK Windows::DIEnumDevicesProc(LPCDIDEVICEINSTANCE inst, LPVOID data) {
+	Windows *win = (Windows*)data;
+	switch ((char)inst->dwDevType) {
+		case DI8DEVTYPE_KEYBOARD:
+			puts("DI8DEVTYPE_KEYBOARD");
+			break;
+		case DI8DEVTYPE_MOUSE:
+			puts("DI8DEVTYPE_MOUSE");
+			win->_dinput->CreateDevice(GUID_SysMouse, &win->_mouseDI, NULL);
+			win->_mouseDI->SetDataFormat(&c_dfDIMouse);
+			win->_mouseDI->SetCooperativeLevel(win->hWnd, DISCL_NONEXCLUSIVE);
+			win->_mouseDI->Acquire();
+			//win->device->Unacquire();
+			break;
+	}
+	printf("DIEnumDevicesProc %s\n", inst->tszInstanceName);
+	return true;
+}
 
 DWORD WINAPI Windows::threadWindow (void* sys) {
-	printf("windowThread\n");
-	//EventWindow *evWindow = new EventWindow();
 	Windows::regFirstWin();
 	Windows *win = Windows::window;
+	DirectInput8Create(System::hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&win->_dinput, NULL);
+	printf("DirectInput8Create %i\n", win->_dinput);
+	if (FAILED(DirectInput8Create(System::hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&win->_dinput, NULL))) return 0;
+	win->_dinput->EnumDevices(DI8DEVCLASS_ALL, DIEnumDevicesProc, win, DIEDFL_ATTACHEDONLY);
+	
+	
+	printf("windowThread\n");
+	//EventWindow *evWindow = new EventWindow();
 	win->hWnd = CreateWindowEx(WS_EX_COMPOSITED|WS_EX_APPWINDOW, WIN_CLASS_NAME, "111", WS_CAPTION|WS_SYSMENU|WS_SIZEBOX|WS_MINIMIZEBOX|WS_VISIBLE , win->x, win->y, win->width, win->height, NULL, NULL, System::hInstance, NULL);
 	if (!Windows::window->hWnd) {
 		printf("<Error str='CreateWindowEx fail (%d)'/>\n", GetLastError());
@@ -56,7 +83,7 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 		return 0;
 	}
 	if (!(hRCTemp = wglCreateContext(win->hDC)) || !wglMakeCurrent(win->hDC, hRCTemp)) {
-		printf("<Error str='Р В Р’В Р В Р вЂ№reating temp render context fail (%d)'/>\n", GetLastError());
+		printf("<Error str='Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р Р†РІР‚С›РІР‚вЂњreating temp render context fail (%d)'/>\n", GetLastError());
 		return 0;
 	}
 	/*
@@ -79,10 +106,10 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 	wglDeleteContext(hRCTemp);
 	*/
 	win->hRC = hRCTemp;
-	int hSize = GetDeviceCaps(win->hDC,HORZSIZE);
-	int hRes = GetDeviceCaps(win->hDC,HORZRES);
-	win->dpi = round((hRes/hSize)*25.4);
-	printf("<LCD size='%i' res='%i' dpi='%i'/>\n", hSize, hRes, win->dpi );
+	Screen::width = GetDeviceCaps(win->hDC,HORZRES);
+	Screen::height = GetDeviceCaps(win->hDC,VERTRES);
+	Screen::dpi = ( Screen::width/(float)GetDeviceCaps(win->hDC,HORZSIZE) )*25.4;
+	printf("<LCD res='%i %i' dpi='%f'/>\n", Screen::width, Screen::height, Screen::dpi );
 	OpenGL::init(OpenGL::VER_CORE_330);
 	win->resize(win->width, win->height);
 #define PARENT_SEMAPHORE ((HANDLE*)sys)[0]
@@ -111,7 +138,8 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 		win->suspendProcess.performTasks();
 		lastTime = win->suspendProcess.getTime();
 		fps = 1/lastTime;
-		printf("fps %f\n", fps );
+		
+		//printf("fps %f\n", fps );
 		if ( lastTime > 0 ) {
 			Sleep( (int)( 1000*lastTime ) );
 		}
@@ -123,6 +151,7 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 	EventMouse *eventMouse = new EventMouse();
 	EventMouseShape *eventMouseShape = new EventMouseShape();
 	EventWindow *eventWin = new EventWindow();
+	ViewMatrix vm;
 	Windows *win = Windows::window;
 	if (win->hWnd == hWnd) {
 		switch (msg) {
@@ -231,22 +260,31 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 				win->callEvent(eventWin);
 				return 0;
 			case WM_SIZING:
-				win->x = (short) ((RECT*)lParam)->left;
-				win->y = (short) ((RECT*)lParam)->top; 
-				win->width = (unsigned short)((RECT*)lParam)->right - ((RECT*)lParam)->left;
-				win->height = (unsigned short)((RECT*)lParam)->bottom - ((RECT*)lParam)->top; 
+				//win->x = (short) ((RECT*)lParam)->left;
+				//win->y = (short) ((RECT*)lParam)->top; 
+				//win->width = (unsigned short)((RECT*)lParam)->right - ((RECT*)lParam)->left;
+				//win->height = (unsigned short)((RECT*)lParam)->bottom - ((RECT*)lParam)->top; 
+				RECT rect;
+				rect.left	= (short) ((RECT*)lParam)->left;
+				rect.top	= (short) ((RECT*)lParam)->top;
+				rect.bottom = (short)((RECT*)lParam)->bottom;
+				rect.right	= (short)((RECT*)lParam)->right;
+				AdjustWindowRectEx (&rect, WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, FALSE, WS_EX_COMPOSITED|WS_EX_APPWINDOW|WS_EX_TOPMOST);
+				GetClientRect(win->hWnd, &rect);
+				win->width  = rect.right-rect.left;
+				win->height = rect.bottom-rect.top;
+				vm = ViewMatrixOrtho(0, win->width, 0, win->height, -1, 1);
+				OpenGL::viewMatrixBuffer[0] = vm;
+				
 				eventWin->window = win;
 				eventWin->type = EventWindow::WIN_SIZE;
 				win->callEvent(eventWin);
-				//return TRUE;
+				return TRUE;
 			case WM_SYSCOMMAND:
-				fprintf(stdout, "\tWM_SYSCOMMAND %i\n", wParam&0xFFF0);
+				printf("\tWM_SYSCOMMAND %i\n", wParam&0xFFF0);
 				switch (wParam & 0xFFF0) {
 					case SC_CLOSE :
 						win->close();
-						return 0;
-					case SC_SIZE :
-						win->resize(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 						return 0;
 					case SC_MINIMIZE:
 						win->hide();
@@ -287,7 +325,7 @@ void Windows::regFirstWin() {
 	}
 
 }
-Windows::Windows(short x, short y, short width, short height) {
+Windows::Windows(short x, short y, short width, short height) :_dinput(nullptr){
 	printf("Windows start WIN32\n");
 	if (Windows::window!=NULL) return;
 	Windows::window = this;
@@ -371,24 +409,49 @@ void Windows::saveAsXML() {
 	fclose(file);*/
 }
 void Windows::resize(short width, short height) {
-    this->width = width;
-    this->height = height;
-    RECT rect;
-    rect.left = this->x;
-    rect.top = this->y;
-    rect.bottom = this->y+this->height;
-    rect.right = this->x+this->width;
-    AdjustWindowRectEx (&rect, WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, FALSE, WS_EX_COMPOSITED|WS_EX_APPWINDOW|WS_EX_TOPMOST);
-    GetClientRect(this->hWnd, &rect);
-    this->width  = rect.right-rect.left;
-    this->height = rect.bottom-rect.top;
-    OpenGL::setViewport(0, 0, this->width, this->height);
-    ViewMatrix vm = ViewMatrixOrtho(0, this->width, 0, this->height, -1, 1);
-    OpenGL::viewMatrixBuffer[0] = vm;
-    EventWindow *e = new EventWindow();
-    e->window = this;
-    e->type = EventWindow::WIN_SIZE;
-    this->callEvent(e);
+	this->width = width;
+	this->height = height;
+	RECT rect;
+	rect.left = this->x;
+	rect.top = this->y;
+	rect.bottom = this->y+this->height;
+	rect.right = this->x+this->width;
+	AdjustWindowRectEx (&rect, WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, FALSE, WS_EX_COMPOSITED|WS_EX_APPWINDOW|WS_EX_TOPMOST);
+	GetClientRect(this->hWnd, &rect);
+	this->width  = rect.right-rect.left;
+	this->height = rect.bottom-rect.top;
+	
+	ViewMatrix vm = ViewMatrixOrtho(0, this->width, 0, this->height, -1, 1);
+	OpenGL::viewMatrixBuffer[0] = vm;
+	EventWindow *e = new EventWindow();
+	e->window = this;
+	e->type = EventWindow::WIN_SIZE;
+	this->callEvent(e);
+	delete e;
+}
+void Windows::fullScreen() {
+	this->x = 0;
+	this->y = 0;
+	this->width = Screen::width;
+	this->height = Screen::height;
+	RECT rect;
+	rect.left = 0;
+	rect.top = 0;
+	rect.bottom = this->height;
+	rect.right = this->width;
+	SetWindowLong(this->hWnd, GWL_STYLE, WS_POPUP);
+	SetWindowLong(this->hWnd, GWL_EXSTYLE, WS_EX_TOPMOST);
+	ShowWindow(this->hWnd,SW_SHOWMAXIMIZED);
+	SetWindowPos(this->hWnd, HWND_TOPMOST, 0, 0, Screen::width, Screen::height, SWP_SHOWWINDOW);
+	SetCapture(this->hWnd);
+	
+	ViewMatrix vm = ViewMatrixOrtho(0, this->width, 0, this->height, -1, 1);
+	OpenGL::viewMatrixBuffer[0] = vm;
+	EventWindow *e = new EventWindow();
+	e->window = this;
+	e->type = EventWindow::WIN_SIZE;
+	this->callEvent(e);
+	delete e;
 }
 #elif defined(X11)
 Windows::Windows(short x, short y, short width, short height) {
@@ -454,6 +517,7 @@ void Windows::resize(short width, short height) {
 
 Windows *Windows::window = nullptr;
 void Windows::redraw() {
+	OpenGL::setViewport(0, 0, this->width, this->height);
 	glClearColor( 0.9, 0.9, 0.9, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT );
 	OpenGL::clearViewMatrix();
@@ -501,7 +565,7 @@ void Windows::redraw() {
 			break;// </editor-fold>
 		case OpenGL::VER_CORE_330:// <editor-fold defaultstate="collapsed" desc="VER_CORE_330">
 			glEnable( GL_BLEND );
-			glFrontFace(GL_CW);
+			//glFrontFace(GL_CW);
 			//glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 			//glHint(GL_FOG_HINT, GL_NICEST);
 			//glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);

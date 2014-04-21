@@ -14,10 +14,12 @@ namespace Graphonichk {
 		THREAD_H winThread, renderThread;
 		static THREAD threadRender (void* data_args);
 		static THREAD threadWindow (void* data_args);
+		static BOOL CALLBACK DIEnumDevicesProc(LPCDIDEVICEINSTANCE inst, LPVOID data);
 		#ifdef WIN32
 			HWND hWnd;
 			HGLRC hRC;
 			HDC hDC;
+			IDirectInput8 *_dinput;
 			DWORD winThreadID, renderThreadID;
 			static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 		#else
@@ -28,6 +30,7 @@ namespace Graphonichk {
 			static bool x11EventProc();
 		#endif
 	public:
+			IDirectInputDevice8 *_mouseDI;
 		static Windows* window;
 		static void regFirstWin();
 		static void deleteLastWin();
@@ -39,6 +42,7 @@ namespace Graphonichk {
 		void setFocus();
 		void killFocus();
 		void resize(short width, short height);
+		void fullScreen();
 		
 		void saveAsXML();
 		
@@ -55,7 +59,11 @@ namespace Graphonichk {
 		ShapeGroupRect *root;
 		bool visible, renderComplete;
 		short x, y, width, height;
-		int dpi;
+	};
+	class Screen {
+	public:
+		static float dpi;
+		static unsigned short width, height;
 	};
 }
 

@@ -16,6 +16,7 @@
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 #if defined(WIN32)
+	#include <dinput.h>
 	#include <windows.h>
 	#include <windowsx.h>
 	#include <GL/wglext.h>

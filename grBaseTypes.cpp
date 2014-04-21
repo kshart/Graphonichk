@@ -21,5 +21,5 @@ void System::init() {
 	Windows::regFirstWin();
 	FileLoad::init();
 	Font::init();
-}
+};
 #endif

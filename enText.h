@@ -77,6 +77,13 @@ namespace Graphonichk {
 		vector<FontFace*> cache;
 		FontFace *getFontFace(unsigned short size);
 	};
+	/*class CharField :public ShapeRect {
+	private:
+		Font *font;
+		unsigned short fontSize;
+	public:
+		int renderGL330();
+	};*/
 	class TextLine :public ShapeBasic {
 	public:
 		TextLine();
@@ -176,5 +183,61 @@ namespace Graphonichk {
 	};
 }
 
+using namespace Graphonichk;
+
+namespace grAlgoritm {
+	class CompositionRect;
+	class CompositionRectNode;
+	class CompositionRectNodeResult;
+	
+	class CompositionRectNode {
+	public:
+		CompositionRectNode() :imgWidth(0), imgHeight(0), imgID(SHRT_MAX), rotate90(false) {
+			this->child[0] = nullptr;
+			this->child[1] = nullptr;
+		}
+		
+		int addNode(Array<Rect> *rects, unsigned short imgID, unsigned short viewWidth, unsigned short viewHeight, CompositionRectNodeResult *result);
+		void trace(unsigned short viewX, unsigned short viewY, unsigned short viewWidth, unsigned short viewHeight, Array<Rect> *rects) {
+			if (this->child[0]==NULL&&this->child[1]==NULL) {
+			}else if (this->child[0]!=NULL&&this->child[1]==NULL) {
+				rects->data[this->imgID].x = viewX;
+				rects->data[this->imgID].y = viewY;
+				this->child[0]->trace(viewX+this->imgWidth, viewY, viewWidth-this->imgWidth, viewHeight, rects);
+			}else if (this->child[0]!=NULL&&this->child[1]!=NULL) {
+				this->child[0]->trace(viewX+this->imgWidth, viewY, viewWidth-this->imgWidth, viewHeight, rects);
+				this->child[1]->trace(viewX, viewY+this->imgHeight, viewWidth, viewHeight-this->imgHeight, rects);
+				if (viewY+rects->data[this->imgID].height>2048) {
+					printf("1232123 %i \n", this->imgID);
+				}else{
+					rects->data[this->imgID].x = viewX;
+					rects->data[this->imgID].y = viewY;
+				}
+			}
+		}
+		
+		CompositionRectNode* child[2];
+		unsigned short imgWidth, imgHeight, imgID;
+		bool rotate90;
+	};
+	class CompositionRectNodeResult {
+	public:
+		CompositionRectNode* node;
+		unsigned short outPix;
+		bool rotate90;
+	};
+	class CompositionRect {
+	private:
+		unsigned short viewWidth, viewHeight;
+		CompositionRectNode node;
+		CompositionRectNodeResult result; 
+	public:
+		CompositionRect(unsigned short w, unsigned short h);
+		
+		int addNode(Array<Rect> *rects, unsigned short imgID);
+		void trace(Array<Rect> *rects);
+	};
+	
+}
 #endif	/* GRTEXT_H */
 
