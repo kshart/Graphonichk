@@ -38,9 +38,8 @@ void FlatUICheckboxMouseUp (const EventMouse *e) {
 				flsb->checked = false;
 				flsb->status = UICheckbox::UNCHECKED_NORMAL;
 				flsb->tex = MainFlatUI::flCB;
-				event = new EventCheckButton();
+				event = new EventCheckButton( EventCheckButton::CHECK_UPDATE );
 				event->checked = false;
-				event->type = EventCheckButton::CHECK_UPDATE;
 				event->obj = flsb;
 				flsb->UICheckbox::callEvent(event);
 				delete event;
@@ -48,9 +47,8 @@ void FlatUICheckboxMouseUp (const EventMouse *e) {
 				flsb->checked = true;
 				flsb->status = UICheckbox::CHECKED_NORMAL;
 				flsb->tex = MainFlatUI::flCBChk;
-				event = new EventCheckButton();
+				event = new EventCheckButton( EventCheckButton::CHECK_UPDATE );
 				event->checked = true;
-				event->type = EventCheckButton::CHECK_UPDATE;
 				event->obj = flsb;
 				flsb->UICheckbox::callEvent(event);
 				delete event;
@@ -144,9 +142,8 @@ void FlatUIRadioButtonMouseUp (const EventMouse *e) {
 					flsb->checked = false;
 					flsb->status = UIRadioButton::UNCHECKED_NORMAL;
 					flsb->tex = MainFlatUI::flRB;
-					event = new EventCheckButton();
+					event = new EventCheckButton( EventCheckButton::CHECK_UPDATE );
 					event->checked = false;
-					event->type = EventCheckButton::CHECK_UPDATE;
 					event->obj = flsb;
 					flsb->UIRadioButton::callEvent(event);
 					delete event;
@@ -156,9 +153,8 @@ void FlatUIRadioButtonMouseUp (const EventMouse *e) {
 					flsb->checked = true;
 					flsb->status = UIRadioButton::CHECKED_NORMAL;
 					flsb->tex = MainFlatUI::flRBChk;
-					event = new EventCheckButton();
+					event = new EventCheckButton( EventCheckButton::CHECK_UPDATE );
 					event->checked = true;
-					event->type = EventCheckButton::CHECK_UPDATE;
 					event->obj = flsb;
 					flsb->UIRadioButton::callEvent(event);
 					delete event;

@@ -16,16 +16,9 @@ ShapeMatrix2D::ShapeMatrix2D() :ShapeBasic(0) {
 ShapeBasic::ShapeBasic(int crc32) :crc32(crc32) {
 	
 }
-ShapeBasic::ShapeBasic() :crc32(0) {
-	
-}
 void ShapeBasic::trace() {
-	fprintf(ioshp, "<ShapeBasic empty/>\n");
+	fputs("<ShapeBasic empty/>\n", ioshp);
 	fputs("ShapeBasic::trace\n", iovir);
-}
-int ShapeBasic::renderGLComptAll() {
-	fputs("ShapeBasic::renderGLComptAll\n", iovir);
-	return false;
 }
 int ShapeBasic::renderGL400() {
 	fputs("ShapeBasic::renderGL400\n", iovir);
@@ -39,6 +32,10 @@ int ShapeBasic::renderGL210() {
 	fputs("ShapeBasic::renderGL210\n", iovir);
 	return false;
 }
+int ShapeBasic::renderGL100() {
+	fputs("ShapeBasic::renderGL100\n", iovir);
+	return false;
+}
 
 ShapeGroupBasic::ShapeGroupBasic(int crc32) :ShapeBasic(crc32) {
 	
@@ -49,10 +46,6 @@ ShapeGroupBasic::ShapeGroupBasic() :ShapeBasic(1) {
 void ShapeGroupBasic::trace() {
 	printf("<ShapeGroupBasic empty/>\n");
 	fputs("ShapeGroupBasic::trace\n", iovir);
-}
-int ShapeGroupBasic::renderGLComptAll() {
-	fputs("ShapeGroupBasic::renderGLComptAll\n", iovir);
-	return false;
 }
 int ShapeGroupBasic::renderGL400() {
 	fputs("ShapeGroupBasic::renderGL400\n", iovir);
@@ -66,12 +59,16 @@ int ShapeGroupBasic::renderGL210() {
 	fputs("ShapeGroupBasic::renderGL210\n", iovir);
 	return false;
 }
+int ShapeGroupBasic::renderGL100() {
+	fputs("ShapeGroupBasic::renderGL100\n", iovir);
+	return false;
+}
 
 ShapeGroupMatrix2D::ShapeGroupMatrix2D() {
 }
 ShapeGroupMatrix2D::ShapeGroupMatrix2D(int crc32) {
 }
-int ShapeGroupMatrix2D::renderGLComptAll() {
+int ShapeGroupMatrix2D::renderGL100() {
 	float mat[16] = {
 		this->matrix.a,	this->matrix.d,	0,	0,
 		this->matrix.b,	this->matrix.e,	0,	0,
@@ -80,7 +77,7 @@ int ShapeGroupMatrix2D::renderGLComptAll() {
 	glPushMatrix();
 	glMultMatrixf(mat);
 	for(int i=0; i<this->child.size(); i++) {
-		this->child[i]->renderGLComptAll();
+		this->child[i]->renderGL100();
 	}
 	glPopMatrix();
 	return true;
@@ -100,12 +97,12 @@ int ShapeGroupMatrix2D::renderGL210() {
 
 ShapeRectGateMatrix2D::ShapeRectGateMatrix2D() :ShapeRect(0) {
 }
-int ShapeRectGateMatrix2D::renderGLComptAll() {
+int ShapeRectGateMatrix2D::renderGL100() {
 	glPushMatrix();
 	OpenGL::pushViewport();
 	OpenGL::setViewport(this->globalx, this->globaly, this->width, this->height);
 	glMultMatrixf(this->view.a);
-	this->group.renderGLComptAll();
+	this->group.renderGL100();
 	OpenGL::popViewport();
 	glPopMatrix();
 	return true;
@@ -124,7 +121,7 @@ int ShapeRectGateMatrix2D::renderGL210() {
 }
 
 
-ShapeRect::ShapeRect(int crc32) {
+ShapeRect::ShapeRect(int crc32) :ShapeBasic(crc32) {
 	this->crc32 = crc32;
 	this->mouseEventActive = false;
 	this->mouseEventRollOver = false;
@@ -246,7 +243,7 @@ void ShapeGroupRect::trace() {
 	for (int i=0; i<this->child.size(); i++) this->child[i]->trace(); 
 	printf("</ShapeGroupRect>\n");
 }
-int ShapeGroupRect::renderGLComptAll() {
+int ShapeGroupRect::renderGL100() {
 	bool ctr = false;
 	if (this->cutTheRect) {
 		ctr = true;
@@ -277,12 +274,12 @@ int ShapeGroupRect::renderGLComptAll() {
 		printf("ShapeGroupRect shapeCache\n");
 		#endif
 		/*for (int i=0; i<this->shapeCache->size(); i++) {
-			(this->shapeCache->at(i))->renderGLComptAll();
+			(this->shapeCache->at(i))->renderGL100();
 		}*/
 	}else{
 		WaitForSingleObject(this->addChildLock, INFINITE);
 		for (vector<ShapeRect*>::const_iterator it=this->child.begin(), end=this->child.end(); it!=end; ++it) {
-			if ( (*it)->visible) (*it)->renderGLComptAll();
+			if ( (*it)->visible) (*it)->renderGL100();
 		}
 		ReleaseMutex(this->addChildLock);
 	}
@@ -368,7 +365,7 @@ int ShapeGroupRect::bufferGLComptAll() {
 	glClearColor( 0.1, 0, 0, 0.1 );
 	glClear( GL_COLOR_BUFFER_BIT );
 	
-	this->renderGLComptAll();
+	this->renderGL100();
 	
 	
 	//glDeleteFramebuffers(1, &root.window->ogl->FBOGL);
@@ -613,7 +610,7 @@ ShapeRect* ShapeGroupRect::globalHitTest(short x, short y) {
 	return NULL;
 }
 int ShapeGroupRect::callEvent(EventMouseShape* event) {
-	EventMouseShape* eventRollOver;
+	EventMouseShape* eventRollOver = nullptr;
 	event->shape = this;
 	event->localx = event->globalx - this->globalx;
 	event->localy = event->globaly - this->globaly;
@@ -632,19 +629,21 @@ int ShapeGroupRect::callEvent(EventMouseShape* event) {
 				event->localy<sh->y+sh->offsetPos.y+sh->height) {
 				if (!sh->mouseEventRollOver) {
 					sh->mouseEventRollOver = true;
-					eventRollOver = new EventMouseShape();
+					eventRollOver = new EventMouseShape( EventMouseShape::MOUSE_ROLL_OVER );
 					memcpy(eventRollOver, event, sizeof(EventMouseShape));
 					eventRollOver->type = EventMouseShape::MOUSE_ROLL_OVER;
 					sh->callEvent(eventRollOver);
+					delete eventRollOver;
 				}
 				sh->callEvent(event);
 				break;
 			}else if (sh->mouseEventRollOver) {
 				sh->mouseEventRollOver = false;
-				eventRollOver = new EventMouseShape();
+				eventRollOver = new EventMouseShape( EventMouseShape::MOUSE_ROLL_OVER );
 				memcpy(eventRollOver, event, sizeof(EventMouseShape));
 				eventRollOver->type = EventMouseShape::MOUSE_ROLL_OUT;
 				sh->callEvent(eventRollOver);
+				delete eventRollOver;
 			}
 		}
 	}
@@ -663,7 +662,7 @@ Bitmap::Bitmap(Texture *tex) :ShapeRect(Bitmap::CRC32), vao(0) {
 void Bitmap::trace() {
 	printf("<Bitmap a='%i' x='%i' y='%i' gx='%i' gy='%i' w='%i' h='%i' texId='%i'/>\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->width, this->height, this->tex);
 }
-int Bitmap::renderGLComptAll() {
+int Bitmap::renderGL100() {
 	Texture *tex = this->tex;
 	//printf("tex->GLID = %i", tex->GLID);
 	if (GLShader::shader!=NULL && GLShader::shader->crc32!=1) GLShader::setShader(ShaderBitmap::prog);
@@ -796,7 +795,7 @@ FPoint::FPoint(int rad, uint32_t color=0 ) :ShapeRect(FPoint::CRC32) {
 	this->radius = rad;
 	this->color.color = color;
 }
-int FPoint::renderGLComptAll() {
+int FPoint::renderGL100() {
 	glPushMatrix();
 	//glTranslatef();
 	//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPEAT);
@@ -814,7 +813,7 @@ FLines::FLines(void *arr, short length, short w, unsigned int color=0) :ShapeRec
 	this->lineWidth = w;
 	this->color.color = color;
 }
-int FLines::renderGLComptAll() {
+int FLines::renderGL100() {
 	glPushMatrix();
 	glLineWidth(this->lineWidth);
 	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
@@ -836,7 +835,7 @@ FRect::FRect(short width, short height, uint32_t backgroundColor) :ShapeRect(FRe
 	this->height = height;
 	this->backgroundColor.color = backgroundColor;
 }
-int FRect::renderGLComptAll() {
+int FRect::renderGL100() {
 	glPushMatrix();
 	glBegin(GL_QUADS);
 		glColor3ub(this->backgroundColor.r, this->backgroundColor.g, this->backgroundColor.b );
@@ -886,7 +885,7 @@ Scene3D::Scene3D():ShapeRect(1232123) {
 	this->height = Windows::window->height;
 	this->model = nullptr;
 }
-int Scene3D::renderGLComptAll() {
+int Scene3D::renderGL100() {
 	OpenGL::pushViewport();
 	OpenGL::pushViewMatrix();
 	OpenGL::setViewport(this->globalx+this->offsetPos.x, 
@@ -894,7 +893,7 @@ int Scene3D::renderGLComptAll() {
 			this->width, this->height);
 	OpenGL::setViewMatrix(this->viewMatrix);
 	
-	//this->root.renderGLComptAll();
+	//this->root.renderGL100();
 	
 	OpenGL::popViewMatrix();
 	OpenGL::popViewport();

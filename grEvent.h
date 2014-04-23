@@ -12,8 +12,8 @@ using namespace std;
 
 namespace Graphonichk {
 	class Event;
-	template<class TEvent> class EventDispatcher;//handler
-	template<class TEvent, class TObject> class EventDispatcherObject;//handler
+	template<class TEvent> class EventDispatcher;
+	template<class TEvent, class TObject> class EventDispatcherObject;
 	class EventHandler;
 	struct EventLinc;
 	
@@ -28,12 +28,9 @@ namespace Graphonichk {
 		void (*fun)(const Event*);
 	};
 	class Event {
-	  public:
-		enum EVENT:char{
-			KEYBOARD,
-			MOUSE
-		};
-		Event();
+	public:
+		Event(int type);
+		Event(int type, void *obj);
 		int type;
 		void *obj;
 	};
@@ -44,7 +41,7 @@ namespace Graphonichk {
 			KEY_DOWN,
 			KEY_UP
 		};
-		EventKeyboard();
+		EventKeyboard(int type);
 		bool ctrlKey, shiftKey, altKey;
 		char keyCode;
 	};
@@ -56,7 +53,7 @@ namespace Graphonichk {
 			MOUSE_MOVE,
 			MOUSE_WHEEL
 		};
-		EventMouse();
+		EventMouse(int type);
 		bool ctrlKey, shiftKey, leftKey, middleKey, rightKey, firstX, secondX;
 		char keyCode;
 		short x, y, wheelDelta;
@@ -72,8 +69,8 @@ namespace Graphonichk {
 			WIN_HIDE,
 			WIN_ACTIVATE
 		};
-		EventWindow();
-		bool visible;
+		EventWindow(int type);
+		EventWindow(int type, Windows *window);
 		Windows *window;
 	};
 	
@@ -87,7 +84,7 @@ namespace Graphonichk {
 			MOUSE_ROLL_OVER,
 			MOUSE_MOVE
 		};
-		EventMouseShape();
+		EventMouseShape(int type);
 		bool ctrlKey, shiftKey, leftKey, middleKey, rightKey, firstX, secondX;
 		char keyCode;
 		short localx, localy, globalx, globaly;

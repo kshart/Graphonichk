@@ -373,8 +373,7 @@ int UIButton::callEvent(EventMouseShape* event) {
 	return false;
 }
 
-EventCheckButton::EventCheckButton() {
-	
+EventCheckButton::EventCheckButton(int type) :Event(type) {
 }
 UICheckbox::UICheckbox() :
 	press(false),
@@ -393,8 +392,7 @@ bool UIRadioButtonGroup::addRadioButton(UIRadioButton* rb) {
 bool UIRadioButtonGroup::setActiveButton(UIRadioButton* rb) {
 	UIRadioButton *rb1;
 	bool searchRB = false;
-	EventCheckButton *event = new EventCheckButton();
-	event->type = EventCheckButton::CHECK_UPDATE;
+	EventCheckButton *event = new EventCheckButton( EventCheckButton::CHECK_UPDATE );
 	for (int i=this->_buttons.size()-1; i>=0; i--) {
 		rb1 = this->_buttons[i]; 
 		if (rb1 == rb) {

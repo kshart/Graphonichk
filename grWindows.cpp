@@ -9,6 +9,11 @@ unsigned short Screen::height = 0;
 Device* Device::device = nullptr;
 
 #if defined(WIN32)
+EventDeviceMouse::EventDeviceMouse(int type) :Event(type) {
+}
+EventDeviceKeyboard::EventDeviceKeyboard(int type) :Event(type) {
+}
+
 Device::Device() :_dinput(nullptr), _mouseDI(nullptr), _keyboardDI(nullptr) {
 	Device::device = this;
 	DirectInput8Create(System::hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&this->_dinput, NULL);
@@ -16,10 +21,10 @@ Device::Device() :_dinput(nullptr), _mouseDI(nullptr), _keyboardDI(nullptr) {
 	if ( FAILED(DirectInput8Create(System::hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&this->_dinput, NULL)) ) TerminateProcess(System::hInstance, 1);
 	TerminateProcess(System::hInstance, 1);
 	this->_dinput->EnumDevices(DI8DEVCLASS_ALL, Device::DIEnumDevicesProc, this, DIEDFL_ATTACHEDONLY);
-	this->updateDevicesThread = CreateThread(NULL, 0, Windows::threadRender, nullptr, 0, 0);
+	this->updateDevicesThread = THREAD_START(Windows::threadRender, nullptr);
 }
 Device::~Device() {
-	CloseHandle(this->updateDevicesThread);
+	THREAD_CLOSE(this->updateDevicesThread);
 	Device::device = nullptr;
 	if (this->_mouseDI!=nullptr) this->_mouseDI->Unacquire();
 	if (this->_keyboardDI!=nullptr) this->_keyboardDI->Unacquire();
@@ -63,7 +68,6 @@ DWORD WINAPI Windows::threadWindow (void* sys) {
 	Windows::regFirstWin();
 	Windows *win = Windows::window;
 	printf("windowThread\n");
-	//EventWindow *evWindow = new EventWindow();
 	win->hWnd = CreateWindowEx(WS_EX_COMPOSITED|WS_EX_APPWINDOW, WIN_CLASS_NAME, "111", WS_CAPTION|WS_SYSMENU|WS_SIZEBOX|WS_MINIMIZEBOX|WS_VISIBLE , win->x, win->y, win->width, win->height, NULL, NULL, System::hInstance, NULL);
 	if (!Windows::window->hWnd) {
 		printf("<Error str='CreateWindowEx fail (%d)'/>\n", GetLastError());
@@ -73,19 +77,18 @@ DWORD WINAPI Windows::threadWindow (void* sys) {
 		printf("<Error str='GetDC fail (%d)'/>\n", GetLastError());
 		return 0;
 	}
-	Device *device = new Device();
 	
 	HANDLE semaphore = CreateSemaphore(NULL, 0, 1, NULL);
-	win->renderThread = CreateThread(NULL, 0, Windows::threadRender, &semaphore, 0, &win->renderThreadID);
+	win->renderThread = THREAD_START(Windows::threadRender, &semaphore);
+	SetThreadPriority(win->renderThread, THREAD_PRIORITY_HIGHEST);
 	WaitForSingleObject(semaphore, INFINITE);
-	CloseHandle(semaphore);
 	ShowWindow(win->hWnd, SW_SHOW);
 	SetForegroundWindow(win->hWnd);
 	UpdateWindow(win->hWnd);
 	SetFocus(win->hWnd);
-#define PARENT_SEMAPHORE ((HANDLE*)sys)[0]
-	ReleaseSemaphore(PARENT_SEMAPHORE, 1, NULL);
-#undef PARENT_SEMAPHORE
+	ReleaseSemaphore(*(HANDLE*)sys, 1, NULL);
+	CloseHandle(semaphore);
+	
 	MSG msg;
 	while (IsWindow(win->hWnd)) {
 		while(PeekMessage(&msg, win->hWnd, 0, 0, PM_REMOVE)) DispatchMessage(&msg);
@@ -94,6 +97,7 @@ DWORD WINAPI Windows::threadWindow (void* sys) {
 	return 0;
 }
 DWORD WINAPI Windows::threadRender (void* sys) {
+	if (sys==nullptr) return 0;
 	int format;
 	PIXELFORMATDESCRIPTOR pfd;
 	HGLRC hRCTemp;
@@ -141,13 +145,11 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 	printf("<LCD res='%i %i' dpi='%f'/>\n", Screen::width, Screen::height, Screen::dpi );
 	OpenGL::init(OpenGL::VER_CORE_330);
 	win->resize(win->width, win->height);
-#define PARENT_SEMAPHORE ((HANDLE*)sys)[0]
-	ReleaseSemaphore(PARENT_SEMAPHORE, 1, NULL);
-#undef PARENT_SEMAPHORE
+	ReleaseSemaphore(  *(HANDLE*)sys, 1, NULL);
 	
 	LARGE_INTEGER frequencyStruct;
 	float frequency, time;
-	printf("QueryPerformanceFrequency %i\n", QueryPerformanceFrequency(&frequencyStruct));
+	QueryPerformanceFrequency(&frequencyStruct);
 	frequency = (float)frequencyStruct.QuadPart;
 	while (IsWindow(win->hWnd)) {
 		LARGE_INTEGER time1, time2;
@@ -176,51 +178,93 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 	return 0;
 }
 LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-	EventKeyboard *eventKey = new EventKeyboard();
-	EventMouse *eventMouse = new EventMouse();
-	EventMouseShape *eventMouseShape = new EventMouseShape();
-	EventWindow *eventWin = new EventWindow();
+	EventDeviceKeyboard	*eventDKey			= nullptr;
+	EventDeviceMouse	*eventDMouse		= nullptr;
+	EventKeyboard		*eventKey			= nullptr;
+	EventMouse			*eventMouse			= nullptr;
+	EventMouseShape		*eventMouseShape	= nullptr;
+	EventWindow			*eventWin			= nullptr;
+	
 	ViewMatrix vm;
 	Windows *win = Windows::window;
+	
 	if (win->hWnd == hWnd) {
 		switch (msg) {
-		/*	case WM_KEYDOWN:
+			/*	case WM_KEYDOWN:
 				case WM_SETFOCUS:
 				case WM_KILLFOCUS:
 				case WM_ACTIVATE:
-				case WA_CLICKACTIVE:*/
-			case WM_KEYDOWN:
-				eventKey->type = EventKeyboard::KEY_DOWN;
+				case WA_CLICKACTIVE:
+				case WM_CLOSE:
+				fprintf(stdout, "WndProc CLOSE\n");
+				PostQuitMessage(0);
+				return 0;
+			case WM_DESTROY:
+				fprintf(stdout, "WndProc WM_DESTROY\n");
+				PostQuitMessage(0);
+				return 0;*/
+			case WM_KEYUP:
+				eventDKey = new EventDeviceKeyboard( EventDeviceKeyboard::DEVICE_KEYBOARD_UP );
+				Device::device->events.keyboard.callEvent(eventDKey);
+				eventKey = new EventKeyboard( EventKeyboard::KEY_UP );
 				eventKey->keyCode = (char)wParam;
 				win->events.keyboard.callEvent(eventKey);
+				delete eventDKey;
+				delete eventKey;
+				return 0;
+			case WM_KEYDOWN:
+				eventDKey = new EventDeviceKeyboard( EventDeviceKeyboard::DEVICE_KEYBOARD_DOWN );
+				Device::device->events.keyboard.callEvent(eventDKey);
+				eventKey = new EventKeyboard( EventKeyboard::KEY_DOWN );
+				eventKey->keyCode = (char)wParam;
+				win->events.keyboard.callEvent(eventKey);
+				delete eventDKey;
+				delete eventKey;
 				return 0;
 			
 			case WM_MOUSEMOVE:
-				eventMouse->type = EventMouse::MOUSE_MOVE;
+				eventDMouse = new EventDeviceMouse( EventDeviceMouse::DEVICE_MOUSE_MOVE );
+				Device::device->events.mouse.callEvent(eventDMouse);
+				
+				eventMouse = new EventMouse( EventMouse::MOUSE_MOVE );
 				eventMouse->x = GET_X_LPARAM(lParam); 
 				eventMouse->y = GET_Y_LPARAM(lParam);
 				eventMouse->ctrlKey = (wParam&MK_CONTROL);
 				eventMouse->shiftKey = (wParam&MK_SHIFT);
-				eventMouseShape->type = EventMouseShape::MOUSE_MOVE;
+				win->events.mouse.callEvent(eventMouse);
+				
+				eventMouseShape = new EventMouseShape( EventMouseShape::MOUSE_MOVE );
 				eventMouseShape->globalx = GET_X_LPARAM(lParam);
 				eventMouseShape->globaly = GET_Y_LPARAM(lParam);
 				eventMouseShape->ctrlKey = (wParam&MK_CONTROL);
 				eventMouseShape->shiftKey = (wParam&MK_SHIFT);
-				win->events.mouse.callEvent(eventMouse);
 				win->root->callEvent(eventMouseShape);
+				
+				delete eventDMouse;
+				delete eventMouse;
+				delete eventMouseShape;
 				return 0;
-			case WM_MOUSEWHEEL://GET_KEYSTATE_WPARAM
-				eventMouse->type = EventMouse::MOUSE_WHEEL;
+			case WM_MOUSEWHEEL:
+				eventDMouse = new EventDeviceMouse( EventDeviceMouse::DEVICE_MOUSE_MOVE );
+				Device::device->events.mouse.callEvent(eventDMouse);
+				
+				eventMouse = new EventMouse( EventMouse::MOUSE_WHEEL );
 				eventMouse->wheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
 				eventMouse->ctrlKey = (wParam&MK_CONTROL);
 				eventMouse->shiftKey = (wParam&MK_SHIFT);
 				win->events.mouse.callEvent(eventMouse);
+				
+				delete eventDMouse;
+				delete eventMouse;
 				return 0;
 			case WM_LBUTTONDOWN:
 			case WM_MBUTTONDOWN:
 			case WM_RBUTTONDOWN:
 			case 0x020B://WM_XBUTTONDOWN
-				eventMouse->type = EventMouse::MOUSE_DOWN;
+				eventDMouse = new EventDeviceMouse( EventDeviceMouse::DEVICE_MOUSE_KEYDOWN );
+				Device::device->events.mouse.callEvent(eventDMouse);
+				
+				eventMouse = new EventMouse( EventMouse::MOUSE_DOWN );
 				eventMouse->ctrlKey = (wParam&MK_CONTROL);
 				eventMouse->shiftKey = (wParam&MK_SHIFT);
 				eventMouse->leftKey = (wParam&MK_LBUTTON);
@@ -230,7 +274,9 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 				eventMouse->secondX = (wParam&0x0040);//MK_XBUTTON2
 				eventMouse->x = GET_X_LPARAM(lParam);
 				eventMouse->y = GET_Y_LPARAM(lParam);
-				eventMouseShape->type = EventMouseShape::MOUSE_DOWN;
+				win->events.mouse.callEvent(eventMouse);
+				
+				eventMouseShape = new EventMouseShape( EventMouseShape::MOUSE_DOWN );
 				eventMouseShape->ctrlKey = (wParam&MK_CONTROL);
 				eventMouseShape->shiftKey = (wParam&MK_SHIFT);
 				eventMouseShape->leftKey = (wParam&MK_LBUTTON);
@@ -240,14 +286,20 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 				eventMouseShape->secondX = (wParam&0x0040);
 				eventMouseShape->globalx = GET_X_LPARAM(lParam);
 				eventMouseShape->globaly = GET_Y_LPARAM(lParam);
-				win->events.mouse.callEvent(eventMouse);
 				win->root->callEvent(eventMouseShape);
+				
+				delete eventDMouse;
+				delete eventMouse;
+				delete eventMouseShape;
 				return 0;
 			case WM_LBUTTONUP:
 			case WM_MBUTTONUP:
 			case WM_RBUTTONUP:
 			case 0x020C://WM_XBUTTONUP
-				eventMouse->type = EventMouse::MOUSE_UP;
+				eventDMouse = new EventDeviceMouse( EventDeviceMouse::DEVICE_MOUSE_KEYUP );
+				Device::device->events.mouse.callEvent(eventDMouse);
+				
+				eventMouse = new EventMouse( EventMouse::MOUSE_UP );
 				eventMouse->ctrlKey = (wParam&MK_CONTROL);
 				eventMouse->shiftKey = (wParam&MK_SHIFT);
 				eventMouse->leftKey = (wParam&MK_LBUTTON);
@@ -257,7 +309,9 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 				eventMouse->secondX = (wParam&0x0040);//MK_XBUTTON2
 				eventMouse->x = GET_X_LPARAM(lParam); 
 				eventMouse->y = GET_Y_LPARAM(lParam);
-				eventMouseShape->type = EventMouseShape::MOUSE_UP;
+				win->events.mouse.callEvent(eventMouse);
+				
+				eventMouseShape = new EventMouseShape( EventMouseShape::MOUSE_UP );
 				eventMouseShape->ctrlKey = (wParam&MK_CONTROL);
 				eventMouseShape->shiftKey = (wParam&MK_SHIFT);
 				eventMouseShape->leftKey = (wParam&MK_LBUTTON);
@@ -267,35 +321,28 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 				eventMouseShape->secondX = (wParam&0x0040);
 				eventMouseShape->globalx = GET_X_LPARAM(lParam);
 				eventMouseShape->globaly = GET_Y_LPARAM(lParam);
-				win->events.mouse.callEvent(eventMouse);
 				win->root->callEvent(eventMouseShape);
+				
+				delete eventDMouse;
+				delete eventMouse;
+				delete eventMouseShape;
 				return 0;
 			case WM_PAINT:
 				if (win->visible) win->renderComplete = false;
 				return 0;
-			/*case WM_CLOSE:
-				fprintf(stdout, "WndProc CLOSE\n");
-				PostQuitMessage(0);
-				return 0;
-			case WM_DESTROY:
-				fprintf(stdout, "WndProc WM_DESTROY\n");
-				PostQuitMessage(0);
-				return 0;*/
 			case WM_MOVE:
 				win->x = (short) LOWORD(lParam);
-				win->y = (short) HIWORD(lParam); 
-				eventWin->window = win;
-				eventWin->type = EventWindow::WIN_MOVE;
+				win->y = (short) HIWORD(lParam);
+				
+				eventWin = new EventWindow( EventWindow::WIN_MOVE, win );
 				win->callEvent(eventWin);
+				delete eventWin;
+				
 				return 0;
 			case WM_SIZING:
-				//win->x = (short) ((RECT*)lParam)->left;
-				//win->y = (short) ((RECT*)lParam)->top; 
-				//win->width = (unsigned short)((RECT*)lParam)->right - ((RECT*)lParam)->left;
-				//win->height = (unsigned short)((RECT*)lParam)->bottom - ((RECT*)lParam)->top; 
 				RECT rect;
-				rect.left	= (short) ((RECT*)lParam)->left;
-				rect.top	= (short) ((RECT*)lParam)->top;
+				rect.left	= (short)((RECT*)lParam)->left;
+				rect.top	= (short)((RECT*)lParam)->top;
 				rect.bottom = (short)((RECT*)lParam)->bottom;
 				rect.right	= (short)((RECT*)lParam)->right;
 				AdjustWindowRectEx (&rect, WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, FALSE, WS_EX_COMPOSITED|WS_EX_APPWINDOW|WS_EX_TOPMOST);
@@ -305,9 +352,10 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 				vm = ViewMatrixOrtho(0, win->width, 0, win->height, -1, 1);
 				OpenGL::viewMatrixBuffer[0] = vm;
 				
-				eventWin->window = win;
-				eventWin->type = EventWindow::WIN_SIZE;
+				eventWin = new EventWindow( EventWindow::WIN_SIZE, win );
 				win->callEvent(eventWin);
+				delete eventWin;
+				
 				return TRUE;
 			case WM_SYSCOMMAND:
 				printf("\tWM_SYSCOMMAND %i\n", wParam&0xFFF0);
@@ -333,8 +381,6 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 				break;
 		}
 	}
-	//printf("WndProc msg=%i\n", msg);
-	//fprintf(stdout, "WndProc msg=%i window.size=%i\n", msg, Windows::window.size());
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
@@ -352,24 +398,29 @@ void Windows::regFirstWin() {
 		printf("RegisterClassEx fail (%d)\n", GetLastError());
 		return;
 	}
-
 }
-Windows::Windows(short x, short y, short width, short height) {
-	printf("Windows start WIN32\n");
-	if (Windows::window!=NULL) return;
+Windows::Windows(short x, short y, short width, short height) :
+		x(x), 
+		y(y), 
+		width(width), 
+		height(height),
+		visible(false), 
+		renderComplete(false) {
+	if (Windows::window!=nullptr) return;
+	Windows::regFirstWin();
+	
+	puts("<Windows message='start WIN32'/>");
 	Windows::window = this;
-	this->visible = false;
-	this->renderComplete = false;
 	this->root = new ShapeGroupRect();
-	this->x = x;
-	this->y = y;
-	this->width = width;
-	this->height = height;
-	HANDLE semaphore = CreateSemaphore(NULL, 0, 1, NULL);//CreateSemaphore
-	this->winThread = CreateThread(NULL, 0, Windows::threadWindow, &semaphore, 0, &this->winThreadID);
+	HANDLE semaphore = CreateSemaphore(NULL, 0, 1, NULL);
+	this->winThread = THREAD_START(Windows::threadWindow, &semaphore);
 	WaitForSingleObject(semaphore, INFINITE);
 	CloseHandle(semaphore);
-	printf("Windows end\n");
+	
+	FileLoad::init();
+	Font::init();
+	Device *device = new Device();
+	puts("<Windows message='end'/>");
 	/*int attributes[] = {
 		WGL_CONTEXT_MAJOR_VERSION_ARB,	3,
 		WGL_CONTEXT_MINOR_VERSION_ARB,	3,
@@ -387,7 +438,7 @@ Windows::Windows(short x, short y, short width, short height) {
 	wglDeleteContext(hRCTemp);*/
 }
 void Windows::show() {
-	fprintf(stdout, "Win show\n");
+	puts("<Windows message='show'/>");
 	SetWindowPos(this->hWnd, HWND_TOP, this->x, this->y, this->width+this->x, this->height+this->y, SWP_SHOWWINDOW );
 	ShowWindow(this->hWnd, SW_SHOWNORMAL);
 	this->visible = true;
@@ -395,27 +446,24 @@ void Windows::show() {
 	SetForegroundWindow(this->hWnd);
 	SetFocus(this->hWnd);
 	UpdateWindow(this->hWnd);
-	EventWindow *e = new EventWindow();
-	e->window = this;
-	e->type = EventWindow::WIN_SHOW;
+	EventWindow *e = new EventWindow( EventWindow::WIN_SHOW, this );
 	this->callEvent(e);
 	delete e;
 }
 void Windows::hide() {
-	fprintf(stdout, "Win hide\n");
+	puts("<Windows message='hide'/>");
 	ShowWindow(this->hWnd, SW_MINIMIZE);
-	SuspendThread(this->renderThread);
+	THREAD_SUSPEND(this->renderThread);
 	this->visible = false;
-	EventWindow *e = new EventWindow();
-	e->window = this;
-	e->type = EventWindow::WIN_HIDE;
+	EventWindow *e = new EventWindow( EventWindow::WIN_HIDE, this );
 	this->callEvent(e);
 	delete e;
 }
 void Windows::close() {
-	CloseHandle(this->renderThread);
-	CloseHandle(this->winThread);
+	THREAD_CLOSE(this->renderThread);
+	THREAD_CLOSE(this->winThread);
 	delete Device::device;
+	delete Windows::window->root;
 	wglDeleteContext(this->hRC);
 	PostQuitMessage(0);
 	DestroyWindow(this->hWnd);
@@ -438,9 +486,7 @@ void Windows::resize(short width, short height) {
 	
 	ViewMatrix vm = ViewMatrixOrtho(0, this->width, 0, this->height, -1, 1);
 	OpenGL::viewMatrixBuffer[0] = vm;
-	EventWindow *e = new EventWindow();
-	e->window = this;
-	e->type = EventWindow::WIN_SIZE;
+	EventWindow *e = new EventWindow( EventWindow::WIN_SIZE, this );
 	this->callEvent(e);
 	delete e;
 }
@@ -462,9 +508,8 @@ void Windows::fullScreen() {
 	
 	ViewMatrix vm = ViewMatrixOrtho(0, this->width, 0, this->height, -1, 1);
 	OpenGL::viewMatrixBuffer[0] = vm;
-	EventWindow *e = new EventWindow();
+	EventWindow *e = new EventWindow( EventWindow::WIN_SIZE );
 	e->window = this;
-	e->type = EventWindow::WIN_SIZE;
 	this->callEvent(e);
 	delete e;
 }
@@ -497,9 +542,7 @@ Windows::Windows(short x, short y, short width, short height) {
 	pthread_kill(this->renderThread, SIGCONT);
 	XSetInputFocus(this->x11display, this->x11window);
 	UpdateWindow(this->hWnd);
-	EventWindow *e = new EventWindow();
-	e->window = this;
-	e->type = EventWindow::WIN_SHOW;
+	EventWindow *e = new EventWindow( EventWindow::WIN_SHOW, this);
 	this->callEvent(e);
 	delete e;
 }*/
@@ -522,10 +565,9 @@ void Windows::resize(short width, short height) {
     OpenGL::setViewport(0, 0, this->width, this->height);
     ViewMatrix vm = ViewMatrixOrtho(0, this->width, 0, this->height, -1, 1);
     OpenGL::viewMatrixBuffer[0] = vm;
-    EventWindow *e = new EventWindow();
-    e->window = this;
-    e->type = EventWindow::WIN_SIZE;
+    EventWindow *e = new EventWindow( EventWindow::WIN_SIZE, this );
     this->callEvent(e);
+	delete e;
 }
 
 #endif
@@ -537,7 +579,7 @@ void Windows::redraw() {
 	glClear( GL_COLOR_BUFFER_BIT );
 	OpenGL::clearViewMatrix();
 	switch (OpenGL::ver) {
-		case OpenGL::VER_COMPTABLE_ALL:// <editor-fold defaultstate="collapsed" desc="GL_COMPTABLE_ALL">
+		case OpenGL::VER_CORE_100:// <editor-fold defaultstate="collapsed" desc="GL_COMPTABLE_ALL">
 			glShadeModel(GL_SMOOTH);
 			glEnable( GL_BLEND );
 			
@@ -555,7 +597,7 @@ void Windows::redraw() {
 			//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 			glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 			
-			this->root->renderGLComptAll();
+			this->root->renderGL100();
 			
 			glDisable( GL_LINE_SMOOTH );
 			glDisable( GL_POINT_SMOOTH );

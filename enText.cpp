@@ -764,11 +764,7 @@ void ShaderTextFieldBuffer::init33() {
 			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, 0.028))*0.0044299121055113265;"
 			"textBGColor *= 0.5;"*/
 			"float tex = texture(textTexture, VertexIn.TexCoord).a;"
-			"float tex1 = texture(textTexture, VertexIn.TexCoord+vec2(0.000, 0.005)).a;"
-			"float tex2 = texture(textTexture, VertexIn.TexCoord+vec2(0.005, 0.000)).a;"
-			"float tex3 = texture(textTexture, VertexIn.TexCoord+vec2(0.000,-0.005)).a;"
-			"float tex4 = texture(textTexture, VertexIn.TexCoord+vec2(-0.005,0.000)).a;"
-			"vec4 texc = vec4(VertexIn.textColor.rgb, VertexIn.textColor.a*max(max(max(max(tex, tex1), tex2), tex3), tex4) );"
+			"vec4 texc = vec4(VertexIn.textColor.rgb, VertexIn.textColor.a*tex );"
 			//"vec4 textBGColor = texture(textTexture, vec2(VertexIn.TexCoord.x+0.01, VertexIn.TexCoord.y+0.01));"
 			//"color.a = texc.a+textBGColor.a*(1-texc.a);"
 			//"color.rgb = vec3((texc.rgb*texc.a)+(textBGColor.rgb*textBGColor.a)*(1-texc.a))/color.a;"

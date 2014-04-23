@@ -17,9 +17,5 @@ void System::init() {
 	System::hInstance = GetModuleHandle(NULL);
 	GetSystemInfo(&sysInfo);
 	System::countProcessors = sysInfo.dwNumberOfProcessors;
-	printf("count proc %i\n", System::countProcessors);
-	Windows::regFirstWin();
-	FileLoad::init();
-	Font::init();
 };
 #endif

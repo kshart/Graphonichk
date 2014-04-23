@@ -29,6 +29,10 @@
 
 	#define THREAD_H HANDLE
 	#define THREAD DWORD WINAPI
+	
+	#define THREAD_START(thread, data) CreateThread(NULL, 0, thread, data, 0, 0);
+	#define THREAD_SUSPEND(thread) SuspendThread(thread);
+	#define THREAD_CLOSE(thread) CloseHandle(thread);
 #elif defined(X11)
 	#include<stdio.h>
 	#include<stdlib.h>

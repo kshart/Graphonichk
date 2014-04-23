@@ -16,7 +16,7 @@ namespace Graphonichk {
 			FILE_ERROR,
 			FILE_PROCESS
 		};
-		EventFileLoad();
+		EventFileLoad(int type, FileLoad *file);
 		FileLoad *file;
 	};
 	class FileLoad:public EventDispatcher<EventFileLoad> {

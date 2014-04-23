@@ -312,21 +312,17 @@ bool Image::load(char* data, unsigned int size) {
 				memcpy( (void*)((intptr_t)(this->raw)+y*rowSize), rowData, bytesPerRow);
 			}
 			png_destroy_read_struct(&png_ptr, NULL, NULL);
-			printf("Image size=%iKB w=%i h=%i depth=%i color=%i rowSize=%i\n", d1.size/1024, this->width, this->height, bitDepth, colorType, (int)bytesPerRow);// </editor-fold>
+			printf("Image size=%fKB w=%i h=%i depth=%i color=%i rowSize=%i\n", (float)d1.size/1024.0f, this->width, this->height, bitDepth, colorType, (int)bytesPerRow);// </editor-fold>
 		}else if ( ((uint16_t*)data)[0] == 0xD8FFL) {// <editor-fold defaultstate="collapsed" desc="JPEG">
-			printf("JPEG\n");
+			puts("JPEG");
 			struct jpeg_decompress_struct cinfo;
 			my_error_mgr jerr;
-			//FILE * infile;
 			JSAMPARRAY buffer;
 			int row_stride;
-			//src = reinterpret_cast<JpegStream*> (cinfo->src);
 			cinfo.err = jpeg_std_error(&jerr.pub);
-			//jerr.pub.error_exit = my_error_exit;
 			if (setjmp(jerr.setjmp_buffer)) {
-				printf("ERROR JPEG\n");
+				puts("ERROR JPEG");
 				jpeg_destroy_decompress(&cinfo);
-				//fclose(infile);
 				this->status = Image::ERR_LOAD;
 				return false;
 			}

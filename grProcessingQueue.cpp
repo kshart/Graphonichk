@@ -78,7 +78,7 @@ int ProcessingSupSuspend::performTasks() {
 			if (this->_threadHandle==nullptr) {
 				data.sush = &this->_suspendHandle;
 				data.task = this->_essentialTasks1.front();
-				this->_threadHandle = CreateThread(NULL, 0, ProcessingSupSuspend::threadFunction, &data, 0, 0);
+				this->_threadHandle = THREAD_START(ProcessingSupSuspend::threadFunction, &data);
 			}
 			GetExitCodeThread(this->_threadHandle, &exitCode);
 			while (exitCode == STILL_ACTIVE ) {
@@ -98,7 +98,7 @@ int ProcessingSupSuspend::performTasks() {
 				GetExitCodeThread(this->_threadHandle, &exitCode);
 			}
 			puts("CLOSE");
-			CloseHandle(this->_threadHandle);
+			THREAD_CLOSE(this->_threadHandle);
 			this->_threadHandle = nullptr;
 			delete this->_essentialTasks1.front();
 			this->_essentialTasks1.pop();
@@ -112,7 +112,7 @@ int ProcessingSupSuspend::performTasks() {
 			if (this->_threadHandle==nullptr) {
 				data.sush = &this->_suspendHandle;
 				data.task = this->_essentialTasks2.front();
-				this->_threadHandle = CreateThread(NULL, 0, ProcessingSupSuspend::threadFunction, &data, 0, 0);
+				this->_threadHandle = THREAD_START(ProcessingSupSuspend::threadFunction, &data);
 			}
 			GetExitCodeThread(this->_threadHandle, &exitCode);
 			while (exitCode == STILL_ACTIVE ) {
@@ -132,7 +132,7 @@ int ProcessingSupSuspend::performTasks() {
 				GetExitCodeThread(this->_threadHandle, &exitCode);
 			}
 			puts("CLOSE");
-			CloseHandle(this->_threadHandle);
+			THREAD_CLOSE(this->_threadHandle);
 			this->_threadHandle = nullptr;
 			delete this->_essentialTasks2.front();
 			this->_essentialTasks2.pop();

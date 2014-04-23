@@ -88,7 +88,7 @@ namespace Graphonichk {
 	class OpenGL {
 	  public:
 		enum OPENGL_VER:char{
-			VER_COMPTABLE_ALL,
+			VER_CORE_100,
 			VER_CORE_210,
 			VER_CORE_330,
 			VER_CORE_400

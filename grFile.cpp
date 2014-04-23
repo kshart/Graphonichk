@@ -11,12 +11,9 @@ vector<FileLoad*> FileLoad::buffer;
 
 #ifdef WIN32
 DWORD WINAPI FileLoad::loaderThread (void* sys) {
-	FileLoad *fl;
-	EventFileLoad *eventFile;
-	printf("Start loaderThread\n");
-	#define PARENT_MUTEX ((HANDLE*)sys)[0]
-	ReleaseMutex(PARENT_MUTEX);
-	#undef PARENT_MUTEX
+	FileLoad *fl = nullptr;
+	EventFileLoad *eventFile = nullptr;
+	ReleaseMutex(*(HANDLE*)sys);
 	while(true) {
 		for(int i=0; i<FileLoad::buffer.size(); i++) {
 			fl = FileLoad::buffer[i];
@@ -65,16 +62,13 @@ DWORD WINAPI FileLoad::loaderThread (void* sys) {
 							printf("WAIT_ABANDONED\n");
 							break;
 						case WAIT_OBJECT_0:
-							printf("<FileLoad size='%iKB'>\n", fl->progres/1024);
+							printf("<FileLoad size='%iKB'/>\n", fl->progres/1024);
 							fl->status = STATUS::SUCCESS;
 							FileLoad::buffer.erase(FileLoad::buffer.begin()+i);
 							i--;
-							eventFile = new EventFileLoad();
-							eventFile->file = fl;
-							eventFile->type = EventFileLoad::FILE_SUCCESS;
-							//root.events.fileLoader.callEvent(eventFile);
+							eventFile = new EventFileLoad( EventFileLoad::FILE_SUCCESS, fl );
 							fl->callEvent(eventFile);
-							//printf("%s</FileLoad>\n", fl->data);
+							delete eventFile;
 							break;
 						case WAIT_TIMEOUT:
 							printf("<FileLoad size='%iKB'/>\n", fl->progres/1024);
@@ -85,7 +79,7 @@ DWORD WINAPI FileLoad::loaderThread (void* sys) {
 							free(fl->data);
 							CloseHandle(fl->fileHandle);
 							CloseHandle(fl->ovl.hEvent);
-							printf("WAIT_FAILED\n");
+							puts("WAIT_FAILED\n");
 							break;
 					}
 					printf("FileLoad::PROCESS\n");
@@ -99,7 +93,7 @@ DWORD WINAPI FileLoad::loaderThread (void* sys) {
 
 void FileLoad::init () {
 	HANDLE mutex = CreateMutex(NULL, TRUE, NULL);
-	CreateThread(NULL, 0, FileLoad::loaderThread, &mutex, 0, NULL);
+	THREAD_START(FileLoad::loaderThread, &mutex);
 	WaitForSingleObject(mutex, INFINITE);
 	CloseHandle(mutex);
 }

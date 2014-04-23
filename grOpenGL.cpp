@@ -42,8 +42,7 @@ int OpenGL::init(OPENGL_VER ver) {
 	vp.width = 0;
 	vp.height = 0;
 	OpenGL::viewportBuffer.push_back(vp);
-	ViewMatrix vpm;
-	OpenGL::viewMatrixBuffer.push_back(vpm);
+	OpenGL::viewMatrixBuffer.push_back(ViewMatrixIdentity());
 	
 	float circle[8192+100];
 	circle[0] = 0;
@@ -54,25 +53,21 @@ int OpenGL::init(OPENGL_VER ver) {
 		circle[i] = cos(a);
 		circle[i+1] = sin(a);
 	}
-	/*for(int i=8192; i<8292; i+=2) {
-		circle[i] = 100+200;
-		circle[i+1] = 200;
-	}*/
 		
 	glGenBuffers(1, &OpenGL::circleBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, OpenGL::circleBuffer);
 	glBufferData(GL_ARRAY_BUFFER, (8192+100)*sizeof(float), circle, GL_STATIC_DRAW);
-	if ( ver==VER_COMPTABLE_ALL || ver==VER_CORE_210) {
+	if ( ver==VER_CORE_100 || ver==VER_CORE_210) {
 	}else if (ver==VER_CORE_330) {
 		glGenBuffers(1, &OpenGL::grShaderData);
 		glBindBuffer(GL_UNIFORM_BUFFER, OpenGL::grShaderData);
 		glBufferData(GL_UNIFORM_BUFFER, 4*4*sizeof(float), nullptr, GL_DYNAMIC_DRAW);
 		
-		//ShaderBitmap::prog = new ShaderBitmap();
-		//ShaderSVGmain::prog = new ShaderSVGmain();
-		//ShaderFPrimitiv::prog = new ShaderFPrimitiv();
-		//ShaderF3D::prog = new ShaderF3D();
-		/*glslStr *BitmapChars = new glslStr();
+		/*ShaderBitmap::prog = new ShaderBitmap();
+		ShaderSVGmain::prog = new ShaderSVGmain();
+		ShaderFPrimitiv::prog = new ShaderFPrimitiv();
+		ShaderF3D::prog = new ShaderF3D();
+		glslStr *BitmapChars = new glslStr();
 		FileLoad *vsBitmapChar = new FileLoad("glsl/ShaderBitmap.vs"),
 				*gsBitmapChar = new FileLoad("glsl/ShaderBitmap.gs"),
 				*fsBitmapChar = new FileLoad("glsl/ShaderBitmap.fs");
@@ -86,15 +81,6 @@ int OpenGL::init(OPENGL_VER ver) {
 		
 		GLShader::setShader(ShaderBitmap::prog);
 		glActiveTexture(GL_TEXTURE0);
-		//GLShader::matrixProjection = glGetUniformLocation(glsl->shaderProgram, "matrixProjection");
-		//GLShader::matrixProjection = glGetUniformLocation(glsl->shaderProgram, "matrixProjection");
-		//if (GLShader::matrixProjection != -1)
-			//glUniformMatrix4fv(GLShader::matrixProjection, 1, GL_TRUE, matrix);
-		//GLShader::colorTexture = glGetUniformLocation(glsl->shaderProgram, "texture");
-		//if (GLShader::colorTexture != -1)
-			//glUniform1i(GLShader::colorTexture , 0);
-		printf("Windows size %i %i\n", Windows::window->width, Windows::window->height);
-		printf("ERROR %i\n", glGetError());
 	}
 }
 void OpenGL::pushViewport() {
@@ -136,7 +122,7 @@ void OpenGL::setViewMatrix(ViewMatrix matrix) {
 	OpenGL::viewMatrixBuffer[OpenGL::viewMatrixBuffer.size()-1] = matrix;
 	float transposeMatrix[16];
 	switch (OpenGL::ver) {
-		case VER_COMPTABLE_ALL:
+		case VER_CORE_100:
 			transposeMatrix[0] = matrix.a[0];
 			transposeMatrix[1] = matrix.a[4];
 			transposeMatrix[2] = matrix.a[8];

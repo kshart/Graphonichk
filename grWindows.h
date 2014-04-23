@@ -10,20 +10,23 @@
 using namespace std;
 namespace Graphonichk {
 	class EventDeviceMouse :public Event {
-	  public:
+	public:
 		enum :int{
-			DEVICE_MOUSE_UPDATE
+			DEVICE_MOUSE_KEYDOWN,
+			DEVICE_MOUSE_KEYUP,
+			DEVICE_MOUSE_MOVE
 		};
-		EventDeviceMouse();
+		EventDeviceMouse( int type );
 		int x, y, z;
 		char button[8];
 	};
 	class EventDeviceKeyboard :public Event {
-	  public:
+	public:
 		enum :int{
-			DEVICE_KEYBOARD_UPDATE
+			DEVICE_KEYBOARD_UP,
+			DEVICE_KEYBOARD_DOWN
 		};
-		EventDeviceKeyboard();
+		EventDeviceKeyboard(int type);
 		char key[256];
 	};
 	class Device {
@@ -41,6 +44,7 @@ namespace Graphonichk {
 	public:
 		Device();
 		~Device();
+		
 		struct {
 			EventDispatcher<EventDeviceKeyboard> keyboard;
 			EventDispatcher<EventDeviceMouse> mouse;
@@ -58,7 +62,6 @@ namespace Graphonichk {
 			HWND hWnd;
 			HGLRC hRC;
 			HDC hDC;
-			DWORD winThreadID, renderThreadID;
 			static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 			friend Device;
 		#else

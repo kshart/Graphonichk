@@ -5,10 +5,11 @@ using namespace std;
 using namespace Graphonichk;
 
 
-Event::Event() {
-	this->type = 1;
-	this->obj = NULL;
+Event::Event(int type) :type(type) {
 }
+Event::Event(int type, void *obj) :type(type), obj(obj) {
+}
+
 /*
 template<class TEvent> int EventDispatcher<TEvent>::addEventHandler(int type, void(*fun)(const TEvent*), void* obj) {
 	EventLinc el;
@@ -29,23 +30,17 @@ template<class TEvent> int EventDispatcher<TEvent>::removeEventHandler( void(*fu
 	
 }
 */
-EventKeyboard::EventKeyboard() {
-	
+EventKeyboard::EventKeyboard(int type) :Event(type) {
 }
-
-EventMouse::EventMouse() {
-	
+EventMouse::EventMouse(int type) :Event(type) {
 }
-EventMouseShape::EventMouseShape() {
-	
+EventMouseShape::EventMouseShape(int type) :Event(type) {
 }
-
-EventWindow::EventWindow() {
-	this->visible = false;
-	this->window = NULL;
+EventWindow::EventWindow(int type) :Event(type), window(nullptr) {
 }
-EventFileLoad::EventFileLoad() {
-	this->file = NULL;
+EventWindow::EventWindow(int type, Windows *window) :Event(type), window(window) {
+}
+EventFileLoad::EventFileLoad(int type, FileLoad *file) :Event(type), file(file) {
 }
 
 //:Event(Event::EVENT_KEYBOARD)

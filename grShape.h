@@ -45,15 +45,16 @@ namespace Graphonichk {
 	
 	
 	class ShapeBasic {
+	//CHECKED
+	//CROSS
 	protected:
 		ShapeBasic(int crc32);
 	public:
-		ShapeBasic();
 		virtual void trace();
-		virtual int renderGLComptAll();
 		virtual int renderGL400();
 		virtual int renderGL330();
 		virtual int renderGL210();
+		virtual int renderGL100();
 		int crc32;
 	};
 	class ShapeGroupBasic :public ShapeBasic {
@@ -62,10 +63,10 @@ namespace Graphonichk {
 	public:
 		ShapeGroupBasic();
 		virtual void trace();
-		virtual int renderGLComptAll();
 		virtual int renderGL400();
 		virtual int renderGL330();
 		virtual int renderGL210();
+		virtual int renderGL100();
 		vector<ShapeBasic*> child;
 	};
 	class ShapeRect :public EventDispatcher<EventMouseShape>, public ShapeBasic {
@@ -118,7 +119,7 @@ namespace Graphonichk {
 		virtual void updateRect(ShapeRect *sh);
 		virtual void setBuffer(BUFFER_TYPE, char);
 		
-		virtual int renderGLComptAll();
+		virtual int renderGL100();
 		virtual int renderGL400();
 		virtual int renderGL330();
 		virtual int renderGL210();
@@ -159,7 +160,7 @@ namespace Graphonichk {
 	public:
 		ShapeGroupMatrix2D();
 		//virtual void trace();
-		virtual int renderGLComptAll();
+		virtual int renderGL100();
 		virtual int renderGL400();
 		virtual int renderGL330();
 		virtual int renderGL210();
@@ -171,7 +172,7 @@ namespace Graphonichk {
 	public:
 		ShapeRectGateMatrix2D();
 		//virtual void trace();
-		virtual int renderGLComptAll();
+		virtual int renderGL100();
 		virtual int renderGL400();
 		virtual int renderGL330();
 		virtual int renderGL210();
@@ -183,7 +184,7 @@ namespace Graphonichk {
 	public:
 		ShapeRectGateMatrix3D();
 		//virtual void trace();
-		virtual int renderGLComptAll();
+		virtual int renderGL100();
 		virtual int renderGL400();
 		virtual int renderGL330();
 		virtual int renderGL210();
@@ -204,7 +205,7 @@ namespace Graphonichk {
 		Bitmap(Texture*);
 		//~Bitmap();
 		void trace();
-		int renderGLComptAll();
+		int renderGL100();
 		int renderGL400();
 		int renderGL330();
 		int renderGL210();
@@ -218,7 +219,7 @@ namespace Graphonichk {
 	  public:
 		enum {CRC32=0xD88563EF};
 		FPoint(int, uint32_t);
-		int renderGLComptAll();
+		int renderGL100();
 		int radius;
 		argb color;
 	};
@@ -226,7 +227,7 @@ namespace Graphonichk {
 	  public:
 		enum {CRC32=0x20211C5D};
 		FLines(void*, short, short, uint32_t);
-		int renderGLComptAll();
+		int renderGL100();
 		short length, lineWidth;
 		argb color;
 		short *arr;
@@ -235,7 +236,7 @@ namespace Graphonichk {
 	  public:
 		enum {CRC32=0x27311957};
 		FRect(short width, short height, uint32_t backgroundColor);
-		int renderGLComptAll();
+		int renderGL100();
 		int renderGL330();
 		argb backgroundColor;
 		GLuint vao, vbo;
@@ -245,7 +246,7 @@ namespace Graphonichk {
 	class Scene3D :public ShapeRect {
 	public:
 		Scene3D();
-		int renderGLComptAll();
+		int renderGL100();
 		int renderGL330();
 		ViewMatrix viewMatrix;
 		TransformMatrix3D viewPosMatrix;
