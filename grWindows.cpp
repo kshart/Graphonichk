@@ -1,40 +1,67 @@
 #include "grWindows.h"
 using namespace std;
-using namespace Graphonichk;//Graphonichk
+using namespace Graphonichk;
 
 float Screen::dpi = 0;
 unsigned short Screen::width = 0;
 unsigned short Screen::height = 0;
 
+Device* Device::device = nullptr;
+
 #if defined(WIN32)
-BOOL CALLBACK Windows::DIEnumDevicesProc(LPCDIDEVICEINSTANCE inst, LPVOID data) {
-	Windows *win = (Windows*)data;
+Device::Device() :_dinput(nullptr), _mouseDI(nullptr), _keyboardDI(nullptr) {
+	Device::device = this;
+	DirectInput8Create(System::hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&this->_dinput, NULL);
+	printf("<DirectInput8Create ptr='%i'/>\n", this->_dinput);
+	if ( FAILED(DirectInput8Create(System::hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&this->_dinput, NULL)) ) TerminateProcess(System::hInstance, 1);
+	TerminateProcess(System::hInstance, 1);
+	this->_dinput->EnumDevices(DI8DEVCLASS_ALL, Device::DIEnumDevicesProc, this, DIEDFL_ATTACHEDONLY);
+	this->updateDevicesThread = CreateThread(NULL, 0, Windows::threadRender, nullptr, 0, 0);
+}
+Device::~Device() {
+	CloseHandle(this->updateDevicesThread);
+	Device::device = nullptr;
+	if (this->_mouseDI!=nullptr) this->_mouseDI->Unacquire();
+	if (this->_keyboardDI!=nullptr) this->_keyboardDI->Unacquire();
+	delete this->_mouseDI;
+	delete this->_keyboardDI;
+	delete this->_dinput;
+}
+DWORD WINAPI Device::threadUpdateDevices (void* data) {
+	while (true) {
+		Sleep(10);
+	}
+	return 0;
+}
+BOOL CALLBACK Device::DIEnumDevicesProc(LPCDIDEVICEINSTANCE inst, LPVOID data) {
+	Device *dvc = (Device*)data;
 	switch ((char)inst->dwDevType) {
 		case DI8DEVTYPE_KEYBOARD:
-			puts("DI8DEVTYPE_KEYBOARD");
+			puts("DI8DEVTYPE_KEYBOARD ");
+			dvc->_dinput->CreateDevice(GUID_SysKeyboard, &dvc->_keyboardDI, NULL);
+			if (dvc->_keyboardDI==nullptr) break;
+			dvc->_keyboardDI->SetDataFormat(&c_dfDIKeyboard);
+			dvc->_keyboardDI->SetCooperativeLevel(Windows::window->hWnd, DISCL_NONEXCLUSIVE);
+			dvc->_keyboardDI->Acquire();
 			break;
 		case DI8DEVTYPE_MOUSE:
-			puts("DI8DEVTYPE_MOUSE");
-			win->_dinput->CreateDevice(GUID_SysMouse, &win->_mouseDI, NULL);
-			win->_mouseDI->SetDataFormat(&c_dfDIMouse);
-			win->_mouseDI->SetCooperativeLevel(win->hWnd, DISCL_NONEXCLUSIVE);
-			win->_mouseDI->Acquire();
-			//win->device->Unacquire();
+			puts("DI8DEVTYPE_MOUSE ");
+			dvc->_dinput->CreateDevice(GUID_SysMouse, &dvc->_mouseDI, NULL);
+			if (dvc->_mouseDI==nullptr) break;
+			dvc->_mouseDI->SetDataFormat(&c_dfDIMouse);
+			dvc->_mouseDI->SetCooperativeLevel(Windows::window->hWnd, DISCL_NONEXCLUSIVE);
+			dvc->_mouseDI->Acquire();
 			break;
 	}
+	
 	printf("DIEnumDevicesProc %s\n", inst->tszInstanceName);
-	return true;
+	return DIENUM_CONTINUE;
 }
+
 
 DWORD WINAPI Windows::threadWindow (void* sys) {
 	Windows::regFirstWin();
 	Windows *win = Windows::window;
-	DirectInput8Create(System::hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&win->_dinput, NULL);
-	printf("DirectInput8Create %i\n", win->_dinput);
-	if (FAILED(DirectInput8Create(System::hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&win->_dinput, NULL))) return 0;
-	win->_dinput->EnumDevices(DI8DEVCLASS_ALL, DIEnumDevicesProc, win, DIEDFL_ATTACHEDONLY);
-	
-	
 	printf("windowThread\n");
 	//EventWindow *evWindow = new EventWindow();
 	win->hWnd = CreateWindowEx(WS_EX_COMPOSITED|WS_EX_APPWINDOW, WIN_CLASS_NAME, "111", WS_CAPTION|WS_SYSMENU|WS_SIZEBOX|WS_MINIMIZEBOX|WS_VISIBLE , win->x, win->y, win->width, win->height, NULL, NULL, System::hInstance, NULL);
@@ -46,6 +73,8 @@ DWORD WINAPI Windows::threadWindow (void* sys) {
 		printf("<Error str='GetDC fail (%d)'/>\n", GetLastError());
 		return 0;
 	}
+	Device *device = new Device();
+	
 	HANDLE semaphore = CreateSemaphore(NULL, 0, 1, NULL);
 	win->renderThread = CreateThread(NULL, 0, Windows::threadRender, &semaphore, 0, &win->renderThreadID);
 	WaitForSingleObject(semaphore, INFINITE);
@@ -83,7 +112,7 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 		return 0;
 	}
 	if (!(hRCTemp = wglCreateContext(win->hDC)) || !wglMakeCurrent(win->hDC, hRCTemp)) {
-		printf("<Error str='Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р Р†РІР‚С›РІР‚вЂњreating temp render context fail (%d)'/>\n", GetLastError());
+		printf("<Error str='Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р Р†РІР‚С›РЎС›Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р В РІР‚В Р В Р’В Р Р†Р вЂљРЎв„ўР В Р вЂ Р Р†Р вЂљРЎвЂєР РЋРЎвЂєР В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р Р†РІР‚С›РЎС›Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р Р†РІР‚С›РЎС›Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р РЋРІвЂћСћР В Р’В Р В РІР‚В Р В Р вЂ Р В РІР‚С™Р РЋРІР‚С”Р В Р вЂ Р В РІР‚С™Р Р†Р вЂљРЎС™reating temp render context fail (%d)'/>\n", GetLastError());
 		return 0;
 	}
 	/*
@@ -325,7 +354,7 @@ void Windows::regFirstWin() {
 	}
 
 }
-Windows::Windows(short x, short y, short width, short height) :_dinput(nullptr){
+Windows::Windows(short x, short y, short width, short height) {
 	printf("Windows start WIN32\n");
 	if (Windows::window!=NULL) return;
 	Windows::window = this;
@@ -386,27 +415,13 @@ void Windows::hide() {
 void Windows::close() {
 	CloseHandle(this->renderThread);
 	CloseHandle(this->winThread);
+	delete Device::device;
 	wglDeleteContext(this->hRC);
 	PostQuitMessage(0);
 	DestroyWindow(this->hWnd);
-	Windows::window = NULL;
-	printf("Windows close\n");
+	Windows::window = nullptr;
+	puts("<window close/>");
 	delete this;
-}
-void Windows::setFocus() {
-	fprintf(stdout, "Win setFocus\n");
-}
-void Windows::saveAsXML() {
-	/*FILE *file = fopen("root.xml", "wb");
-	fprintf(file, "<?xml version='1.0' encoding='utf-8'?>\n<xml>\n\t<Textures>\n");
-	for(int i=0; i<this->texture.buffer.size(); i++) {
-		this->texture.buffer[i]->saveAsXML(file, 2);
-	}
-	fprintf(file, "\t</Textures>\n\t<WindowsRootShapes>\n");
-	this->root->saveAsXML(file, 1);
-	fprintf(file, "\t</WindowsRootShapes>\n");
-	fprintf(file, "</xml>\n");
-	fclose(file);*/
 }
 void Windows::resize(short width, short height) {
 	this->width = width;
@@ -587,59 +602,7 @@ void Windows::redraw() {
 	#endif
 	this->renderComplete = true;
 }
-/*void Windows::redrawFBO () {
-	//Directory *dir;
-	//GLuint fb;
-	//glGenFramebuffers(1, &fb);
-	//glBindFramebuffer(GL_FRAMEBUFFER, fb);
-	//typeid
-	//glGenFramebuffers(1, &Windows::FBOGL);
-	//glBindFramebuffer(GL_FRAMEBUFFER, Windows::FBOGL);
-	unsigned int countUpdateFBO = 0;
-	Buffer *buf;
-	for(int i=0; i<this->FBOBuffer.size()-countUpdateFBO; i++) {
-		buf = this->FBOBuffer[i];
-		if (buf->bufferFrame==0) glGenFramebuffers(1, &(buf->bufferFrame));
-		if ( buf->bufferGLComptAll() ) {
-			buf->bufferInit = true;
-			this->renderComplete = false;
-			countUpdateFBO++;
-			if (countUpdateFBO >= this->FBOBuffer.size()) {
-				this->FBOBuffer.clear();
-				break;
-			}
-			this->FBOBuffer[i] = this->FBOBuffer[ this->FBOBuffer.size()-countUpdateFBO ]; 
-			this->FBOBuffer[ this->FBOBuffer.size()-countUpdateFBO ] = NULL;
-		}
-	}
-	if (countUpdateFBO < this->FBOBuffer.size()) {
-		this->FBOBuffer.resize( this->FBOBuffer.size()-countUpdateFBO );
-	}
-	//Windows::FBOBuffer.clear();
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	//glDeleteFramebuffers(1, &Windows::FBOGL);
-	//glViewport(0, 0, this->width, this->height);
-	//OpenGL::setViewMatrix(0, 0, this->width, this->height);
-}
-
-int Windows::addEventHandler(int type, void(*fun)(const EventWindows*)) {
-	EventLinc el;
-	el.type = type;
-	el.fun = (void(*)(const Event*))fun;
-	Keyboard::arr.push_back( el );
-}
-int Windows::callEvent(const EventWindows *event) {
-	for(int i=0, s=Keyboard::arr.size(); i<s; i++) {
-		if (Keyboard::arr[i].type == event->type) {
-			Keyboard::arr[i].fun(event);
-		}
-	}
-}
-int Windows::removeEventHandler( void(*fun)(const EventWindows*) ) {
-	
-}
-vector<EventLinc> Windows::arr;
- * int ft_init () {
+/*int ft_init () {
 	FT_Library library;
 	FT_Face face;
 	//FT_Glyph  glyph;
@@ -682,61 +645,4 @@ vector<EventLinc> Windows::arr;
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	//printf("GLERR %i\n");
 	return error;
-}
- * void FBO () {
-	GLuint fb, color_tex;
-	
-	glGenTextures(1, &color_tex);
-	glBindTexture(GL_TEXTURE_2D, color_tex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 2000, 2000, 0, GL_ALPHA, GL_UNSIGNED_BYTE, NULL);
-
-	glGenFramebuffers(1, &fb);
-	glBindFramebuffer(GL_FRAMEBUFFER_EXT, fb);
-	glFramebufferTexture2D(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, color_tex, 0);
-
-		glViewport( 0, 0, 2000, 2000 );
-		glLoadIdentity();
-		gluOrtho2D( 0, 2000, 0, 2000 );
-		/*glViewport( 0, 0, 994, 571 );
-		glLoadIdentity();
-		gluOrtho2D( 0, 994, 0, 571 );
-		
-		glClearColor(1.0, 0.0, 0.0, 0.1);
-		glClear(GL_COLOR_BUFFER_BIT);
-		
-		glEnable( GL_BLEND );
-		glEnable( GL_ALPHA_TEST );
-		glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-		glEnable( GL_LINE_SMOOTH );
-			glBegin( GL_LINES );
-				glColor4ub(0xFF, 0, 0, 0xFF); glVertex2i(0, 0);
-				glColor4ub(0xFF, 0, 0, 0xFF); glVertex2i(2000, 2000);
-			glEnd();
-		glDisable( GL_LINE_SMOOTH );
-			ft_init();
-		glDisable( GL_BLEND );
-		glDisable( GL_ALPHA_TEST );
-	glBindFramebuffer(GL_FRAMEBUFFER_EXT, 0);
-	glViewport( 0, 0, 994, 571 );
-	glLoadIdentity( );
-	gluOrtho2D( 0, 994, 571, 0 );
-	
-	glEnable( GL_BLEND );
-	glEnable( GL_ALPHA_TEST );
-	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-	glEnable( GL_TEXTURE_2D );
-		glBindTexture(GL_TEXTURE_2D, color_tex);
-		glColor4ub(0xFF,0xFF,0xFF,0xFF);
-		glBegin( GL_QUADS );
-			glTexCoord2d( 0.0, 0.0 );	glVertex2i(100, 0 );
-			glTexCoord2d( 0.0, 1.0 );	glVertex2i(100, 2000 );
-			glTexCoord2d( 1.0, 1.0 );	glVertex2i(2100, 2000 );
-			glTexCoord2d( 1.0, 0.0 );	glVertex2i(2100, 0 );
-		glEnd();
-	glDisable( GL_TEXTURE_2D );
-}
-*/
+}*/

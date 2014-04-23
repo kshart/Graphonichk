@@ -9,19 +9,58 @@
 //Graphonichk
 using namespace std;
 namespace Graphonichk {
+	class EventDeviceMouse :public Event {
+	  public:
+		enum :int{
+			DEVICE_MOUSE_UPDATE
+		};
+		EventDeviceMouse();
+		int x, y, z;
+		char button[8];
+	};
+	class EventDeviceKeyboard :public Event {
+	  public:
+		enum :int{
+			DEVICE_KEYBOARD_UPDATE
+		};
+		EventDeviceKeyboard();
+		char key[256];
+	};
+	class Device {
+	private:
+		THREAD_H updateDevicesThread;
+		static THREAD threadUpdateDevices(void* data);
+		#ifdef WIN32
+			static BOOL CALLBACK DIEnumDevicesProc(LPCDIDEVICEINSTANCE inst, LPVOID data);
+			IDirectInput8 *_dinput;
+			
+			IDirectInputDevice8 *_mouseDI;
+			IDirectInputDevice8 *_keyboardDI;
+		#else
+		#endif
+	public:
+		Device();
+		~Device();
+		struct {
+			EventDispatcher<EventDeviceKeyboard> keyboard;
+			EventDispatcher<EventDeviceMouse> mouse;
+		} events;
+		
+		static Device* device;
+	};
+	
 	class Windows :public EventDispatcher<EventWindow> {
 	private:
 		THREAD_H winThread, renderThread;
 		static THREAD threadRender (void* data_args);
 		static THREAD threadWindow (void* data_args);
-		static BOOL CALLBACK DIEnumDevicesProc(LPCDIDEVICEINSTANCE inst, LPVOID data);
 		#ifdef WIN32
 			HWND hWnd;
 			HGLRC hRC;
 			HDC hDC;
-			IDirectInput8 *_dinput;
 			DWORD winThreadID, renderThreadID;
 			static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+			friend Device;
 		#else
 			Display *x11display;
 			Window x11window;
@@ -30,7 +69,6 @@ namespace Graphonichk {
 			static bool x11EventProc();
 		#endif
 	public:
-			IDirectInputDevice8 *_mouseDI;
 		static Windows* window;
 		static void regFirstWin();
 		static void deleteLastWin();
