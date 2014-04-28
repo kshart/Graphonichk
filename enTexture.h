@@ -1,6 +1,6 @@
 #ifndef GRTEXTURE_H
 #define	GRTEXTURE_H
-#include "grBaseTypes.h"
+#include "grMain.h"
 
 using namespace std;
 namespace Graphonichk {
@@ -57,7 +57,7 @@ namespace Graphonichk {
 		//static vector<Texture*> buffer;
 		//static uint toUpdate, toDelete;
 		bool _loadedInFile;
-		Texture();
+		Texture(unsigned short rectCount=0, usvec4 *rect=nullptr);
 	public:
 		enum EVENT:char {
 			NONE,
@@ -65,9 +65,9 @@ namespace Graphonichk {
 			TO_UPDATE,
 			LOADED
 		};
-		Texture(string path);
-		Texture(Image *img);
-		Texture(unsigned short w, unsigned short h, GLuint format, GLuint type);
+		Texture(string path, unsigned short rectCount=0, usvec4 *rect=nullptr);
+		Texture(Image *img, unsigned short rectCount=0, usvec4 *rect=nullptr);
+		Texture(unsigned short w, unsigned short h, GLuint format, GLuint type, unsigned short rectCount=0, usvec4 *rect=nullptr);
 		~Texture();
 		
 		Image *getImage();
@@ -76,12 +76,12 @@ namespace Graphonichk {
 		
 		EVENT event;
 		Image *img;
+		Array<usvec4> *rects;
 		unsigned short width, height;
-		GLuint format, type, GLID;
+		GLuint format, type, GLID, rectGLID;
 		
-		static Texture* getTexture(unsigned short w, unsigned short h, GLuint format, GLuint type);
+		static Texture* getTexture(unsigned short w, unsigned short h, GLuint format, GLuint type, unsigned short rectCount=0, usvec4 *rect=nullptr);
 	};
-	
 	
 	class TextureToUpdateTask :public EachFrameTask {
 	private:

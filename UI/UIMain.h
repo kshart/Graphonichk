@@ -2,7 +2,7 @@
 #define	UIWORKSPACE_H
 
 #include <vector>
-#include "../grBaseTypes.h"
+#include "../grMain.h"
 
 using namespace std;
 

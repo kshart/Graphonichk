@@ -1,4 +1,4 @@
-#include "grBaseTypes.h"
+#include "grMain.h"
 #include "SVG.h"
 #include "grMatrix.h"
 using namespace SVG;
@@ -573,7 +573,7 @@ int BasicShapeRect::renderGL330() {
 	mat.a[11] = 1;
 	OpenGL::pushViewMatrix();
 	OpenGL::multViewMatrix(mat);
-	if (GLShader::shader->crc32!=ShaderSVGmain::CRC32) GLShader::setShader(ShaderSVGmain::prog);
+	SET_SHADER(ShaderSVGmain);
 	if (this->vao==0) {
 		float vertex[8] = {
 			DataTypes::getPixels(this->x),										DataTypes::getPixels(this->y),
@@ -587,8 +587,8 @@ int BasicShapeRect::renderGL330() {
 		glGenBuffers(1, &this->vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
 		glBufferData(GL_ARRAY_BUFFER, 8*sizeof(float), vertex, GL_STATIC_DRAW);
-		glVertexAttribPointer(ShaderBitmap::prog->position, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-		glEnableVertexAttribArray(ShaderBitmap::prog->position);
+		glVertexAttribPointer(ShaderSVGmain::prog->position, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+		glEnableVertexAttribArray(ShaderSVGmain::prog->position);
 	}
 	glBindVertexArray(this->vao);
 	glUniform1i(ShaderSVGmain::prog->typeShape, BasicShapeRect::CRC32);
@@ -673,14 +673,14 @@ int BasicShapeCircle::renderGL330() {
 	mat.a[11] = 1;
 	OpenGL::pushViewMatrix();
 	OpenGL::multViewMatrix(mat);
-	if (GLShader::shader->crc32!=ShaderSVGmain::CRC32) GLShader::setShader(ShaderSVGmain::prog);
+	SET_SHADER(ShaderSVGmain);
 	if (this->vao==0) {
 		glGenVertexArrays(1, &this->vao);
 		glBindVertexArray(this->vao);
 		
 		glBindBuffer(GL_ARRAY_BUFFER, OpenGL::circleBuffer);
-		glVertexAttribPointer(ShaderBitmap::prog->position, 2, GL_FLOAT, GL_TRUE, 32*2*sizeof(float), 0);//256*sizeof(float)
-		glEnableVertexAttribArray(ShaderBitmap::prog->position);
+		glVertexAttribPointer(ShaderSVGmain::prog->position, 2, GL_FLOAT, GL_TRUE, 32*2*sizeof(float), 0);//256*sizeof(float)
+		glEnableVertexAttribArray(ShaderSVGmain::prog->position);
 	}
 	glBindVertexArray(this->vao);
 	glUniform1i(ShaderSVGmain::prog->typeShape, BasicShapeCircle::CRC32);
@@ -827,7 +827,7 @@ int BasicShapeLine::renderGL330() {
 	mat.a[11] = 1;
 	OpenGL::pushViewMatrix();
 	OpenGL::multViewMatrix(mat);
-	if (GLShader::shader->crc32!=ShaderSVGmain::CRC32) GLShader::setShader(ShaderSVGmain::prog);
+	SET_SHADER(ShaderSVGmain);
 	if (this->vao==0) {
 		float vertex[4] = {
 			DataTypes::getPixels(this->x1),	DataTypes::getPixels(this->y1),
@@ -839,8 +839,8 @@ int BasicShapeLine::renderGL330() {
 		glGenBuffers(1, &this->vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
 		glBufferData(GL_ARRAY_BUFFER, 4*sizeof(float), vertex, GL_STATIC_DRAW);
-		glVertexAttribPointer(ShaderBitmap::prog->position, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-		glEnableVertexAttribArray(ShaderBitmap::prog->position);
+		glVertexAttribPointer(ShaderSVGmain::prog->position, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+		glEnableVertexAttribArray(ShaderSVGmain::prog->position);
 	}
 	glBindVertexArray(this->vao);
 	glUniform1i(ShaderSVGmain::prog->typeShape, BasicShapeLine::CRC32);

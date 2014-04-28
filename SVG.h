@@ -1,7 +1,7 @@
 #ifndef SVG_H
 #define	SVG_H
 
-#include "grBaseTypes.h"
+#include "grMain.h"
 using namespace std;
 using Graphonichk::Array;
 using Graphonichk::TransformMatrix;

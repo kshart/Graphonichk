@@ -8,7 +8,7 @@
 #ifndef GRSVG_H
 #define	GRSVG_H
 
-#include "grBaseTypes.h"
+#include "grMain.h"
 
 #include <libxml/tree.h>
 #include <libxml/parser.h>

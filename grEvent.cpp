@@ -1,5 +1,5 @@
 #include <vector>
-#include "grBaseTypes.h"
+#include "grMain.h"
 #include "grEvent.h"
 using namespace std;
 using namespace Graphonichk;

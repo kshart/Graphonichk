@@ -1,4 +1,4 @@
-#include "../grBaseTypes.h"
+#include "../grMain.h"
 #include "UIMain.h"
 
 using namespace std;
@@ -191,13 +191,13 @@ void UIUnit::resize(unsigned short w, unsigned short h) {
 ShapeGroupRect* UIUnit::getRect() {
 	ShapeGroupRect *dir = new ShapeGroupRect();
 	FRect *rect = new FRect(this->scaledWidth-2, this->scaledHeight-2, 0xFF00FFFF);
-	rect->drag(this->globalx+1, this->globaly+1);
+	rect->setPosition(this->globalx+1, this->globaly+1);
 	dir->addChild(rect);
 	return dir;
 }
 void UIUnit::getRect(ShapeGroupRect *dir) {
 	FRect *rect = new FRect(this->scaledWidth-2, this->scaledHeight-2, 0xFF686868);
-	rect->drag(this->globalx+1, this->globaly+1);
+	rect->setPosition(this->globalx+1, this->globaly+1);
 	dir->addChild(rect);
 }
 void UIUnit::trace(unsigned int tab) {
@@ -211,25 +211,25 @@ void ScrollBarHmouseDown (const EventMouseShape *e) {
 	UIScrollBarH *sb = (UIScrollBarH*)(e->shape);
 	printf("paintMouseDown\n");
 	short mousex, mousey;
-	mousex = e->localx - sb->bar->width/2;
-	mousey = e->localy - sb->bar->height/2;
+	mousex = e->localx - sb->bar->getWidth()/2;
+	mousey = e->localy - sb->bar->getHeight()/2;
 	if (mousey<0) mousey = 0;
-	if ( mousey>(sb->height - sb->bar->height) ) mousey = sb->height - sb->bar->height;
-	sb->position = (float)mousey/(sb->height - sb->bar->height);
-	sb->bar->drag(0, mousey);
+	if ( mousey>(sb->getHeight() - sb->bar->getHeight()) ) mousey = sb->getHeight() - sb->bar->getHeight();
+	sb->position = (float)mousey/(sb->getHeight() - sb->bar->getHeight());
+	sb->bar->setPosition(0, mousey);
 	sb->scrollStarted = true;
 }
 void ScrollBarHmouseUp (const EventMouse *e) {
 	UIScrollBarH *sb = (UIScrollBarH*)(e->obj);
 	short mousex, mousey;
 	if (sb->scrollStarted) {
-		mousex = e->x - sb->globalx - sb->bar->width/2;
-		mousey = e->y - sb->globaly - sb->bar->height/2;
+		mousex = e->x - sb->getGlobalX() - sb->bar->getWidth()/2;
+		mousey = e->y - sb->getGlobalY() - sb->bar->getHeight()/2;
 		
 		if (mousey<0) mousey = 0;
-		if ( mousey>(sb->height - sb->bar->height) ) mousey = sb->height - sb->bar->height;
-		sb->position = (float)mousey/(sb->height - sb->bar->height);
-		sb->bar->drag(0, mousey);
+		if ( mousey>(sb->getHeight() - sb->bar->getHeight()) ) mousey = sb->getHeight() - sb->bar->getHeight();
+		sb->position = (float)mousey/(sb->getHeight() - sb->bar->getHeight());
+		sb->bar->setPosition(0, mousey);
 		sb->scrollStarted = false;
 	}
 }
@@ -238,12 +238,12 @@ void ScrollBarHmouseMove (const EventMouse *e) {
 	short mousex, mousey;
 	float n;
 	if (sb->scrollStarted) {
-		mousex = e->x - sb->globalx - sb->bar->width/2;
-		mousey = e->y - sb->globaly - sb->bar->height/2;
+		mousex = e->x - sb->getGlobalX() - sb->bar->getWidth()/2;
+		mousey = e->y - sb->getGlobalY() - sb->bar->getHeight()/2;
 		if (mousey<0) mousey = 0;
-		if ( mousey>(sb->height - sb->bar->height) ) mousey = sb->height - sb->bar->height;
-		n = (float)mousey/(sb->height - sb->bar->height);
-		sb->bar->drag(0, mousey);
+		if ( mousey>(sb->getHeight() - sb->bar->getHeight()) ) mousey = sb->getHeight() - sb->bar->getHeight();
+		n = (float)mousey/(sb->getHeight() - sb->bar->getHeight());
+		sb->bar->setPosition(0, mousey);
 		if (sb->position == n) return;
 		sb->position = n;
 		if (sb->chengePosition!=NULL) sb->chengePosition(sb->position, sb->obj);
@@ -254,37 +254,37 @@ void ScrollBarWmouseDown (const EventMouseShape *e) {
 	UIScrollBarH *sb = (UIScrollBarH*)(e->shape);
 	short mousex, mousey;
 	printf("paintMouseDown\n");
-	mousex = e->localx - sb->bar->width/2;
-	mousey = e->localy - sb->bar->height/2;
+	mousex = e->localx - sb->bar->getWidth()/2;
+	mousey = e->localy - sb->bar->getHeight()/2;
 	if (mousey<0) mousey = 0;
-	if ( mousex>(sb->width - sb->bar->width) ) mousex = sb->width - sb->bar->width;
-	sb->position = (float)mousex/(sb->width - sb->bar->width);
-	sb->bar->drag(mousex, 0);
+	if ( mousex>(sb->getWidth() - sb->bar->getWidth()) ) mousex = sb->getWidth() - sb->bar->getWidth();
+	sb->position = (float)mousex/(sb->getWidth() - sb->bar->getWidth());
+	sb->bar->setPosition(mousex, 0);
 	sb->scrollStarted = true;
 }
 void ScrollBarWmouseUp (const EventMouse *e) {
 	UIScrollBarH *sb = (UIScrollBarH*)(e->obj);
 	short mousex, mousey;
 	if (sb->scrollStarted) {
-		mousex = e->x - sb->globalx - sb->bar->width/2;
-		mousey = e->y - sb->globaly - sb->bar->height/2;
+		mousex = e->x - sb->getGlobalX() - sb->bar->getWidth()/2;
+		mousey = e->y - sb->getGlobalY() - sb->bar->getHeight()/2;
 		
 		if (mousex<0) mousex = 0;
-		if ( mousex>(sb->width - sb->bar->width) ) mousex = sb->width - sb->bar->width;
-		sb->position = (float)mousex/(sb->width - sb->bar->width);
-		sb->bar->drag(mousex, 0);
+		if ( mousex>(sb->getWidth() - sb->bar->getWidth()) ) mousex = sb->getWidth() - sb->bar->getWidth();
+		sb->position = (float)mousex/(sb->getWidth() - sb->bar->getWidth());
+		sb->bar->setPosition(mousex, 0);
 		sb->scrollStarted = false;
 	}
 }
 void ScrollBarWmouseMove (const EventMouse *e) {
 	UIScrollBarH *sb = (UIScrollBarH*)(e->obj);
 	if (sb->scrollStarted) {
-		short mousex = e->x - sb->globalx - sb->bar->width/2,
-			mousey = e->y - sb->globaly - sb->bar->height/2;
+		short mousex = e->x - sb->getGlobalX() - sb->bar->getWidth()/2,
+			mousey = e->y - sb->getGlobalY() - sb->bar->getHeight()/2;
 		if (mousex<0) mousex = 0;
-		if ( mousex>(sb->width - sb->bar->width) ) mousex = sb->width - sb->bar->width;
-		sb->position = (float)mousex/(sb->width - sb->bar->width);
-		sb->bar->drag(mousex, 0);
+		if ( mousex>(sb->getWidth() - sb->bar->getWidth()) ) mousex = sb->getWidth() - sb->bar->getWidth();
+		sb->position = (float)mousex/(sb->getWidth() - sb->bar->getWidth());
+		sb->bar->setPosition(mousex, 0);
 		
 	}
 	//sb->scrollStarted = false;
@@ -296,8 +296,7 @@ UIScrollBarH::UIScrollBarH(unsigned short w, unsigned short h) :ShapeGroupRect(U
 	this->addChild(this->pad);
 	this->addChild(this->bar);
 	this->scrollStarted = false;
-	this->width = w;
-	this->height = h;
+	this->setRect(w, h);
 	this->chengePosition = NULL;
 	this->addEventHandler(EventMouseShape::MOUSE_DOWN, ScrollBarHmouseDown);
 	Windows::window->events.mouse.addEventHandler(EventMouse::MOUSE_MOVE, ScrollBarHmouseMove, this);
@@ -312,8 +311,7 @@ UIScrollBarW::UIScrollBarW(unsigned short w, unsigned short h) :ShapeGroupRect(U
 	this->addChild(this->pad);
 	this->addChild(this->bar);
 	this->scrollStarted = false;
-	this->width = w;
-	this->height = h;
+	this->setRect(w, h);
 	
 	this->addEventHandler(EventMouseShape::MOUSE_DOWN, ScrollBarWmouseDown);
 	Windows::window->events.mouse.addEventHandler(EventMouse::MOUSE_MOVE, ScrollBarWmouseMove, this);
@@ -508,10 +506,7 @@ UITable::UITable(unsigned short w, unsigned short h, vector<unsigned short> *col
 	this->cutTheRect = true;
 	this->chengeRect = false;
 	this->rowsHeight = 30;
-	this->offsetPos.x = 0;
-	this->offsetPos.y = 0;
-	this->width = w;
-	this->height = h;
+	this->setRect(w, h);
 	this->viewPosition = 0.0f;
 	this->background = new FRect(w, h, 0xFF333333);
 	if (columnsWidth==NULL) return;
@@ -537,12 +532,12 @@ void UITable::updateRows() {
 	unsigned short startPos, stopPos;
 	int xx=0, i=0, 
 		listHeight = this->allRowsVisibleSize*this->rowsHeight, 
-		listOffsetHeight = listHeight-this->height,
+		listOffsetHeight = listHeight-this->getHeight(),
 		offsetY;
 	if (listOffsetHeight>0) {
 		offsetY = (int)(this->viewPosition*(float)listOffsetHeight);
 		startPos = (unsigned short)floor(offsetY/this->rowsHeight);
-		stopPos = (unsigned short)ceil(  ((float)(offsetY+this->height))/((float)this->rowsHeight) );
+		stopPos = (unsigned short)ceil(  ((float)(offsetY+this->getHeight()))/((float)this->rowsHeight) );
 	}else{
 		offsetY = 0;
 		startPos = 0;
@@ -553,8 +548,8 @@ void UITable::updateRows() {
 	
 	//(unsigned short)
 	while (i<this->columnsWidth.size()) {
-		r1 = new FRect(this->columnsWidth[i], this->height, 0xFF555555);
-		r1->drag(xx, 0);
+		r1 = new FRect(this->columnsWidth[i], this->getHeight(), 0xFF555555);
+		r1->setPosition(xx, 0);
 		xx+=this->columnsWidth[i]+this->columnsWidth[i+1];
 		this->addChild(r1);
 		i+=2;
@@ -562,8 +557,8 @@ void UITable::updateRows() {
 	//int y;
 	for (int i=startPos; i<stopPos; i++) {
 		row = this->rows[i];
-		r1 = new FRect(this->width-4, this->rowsHeight-4, 0xFF222222);
-		r1->drag(2, i*this->rowsHeight-offsetY+2);
+		r1 = new FRect(this->getWidth()-4, this->rowsHeight-4, 0xFF222222);
+		r1->setPosition(2, i*this->rowsHeight-offsetY+2);
 		this->addChild(r1);
 		row->columnsUpdate(0, i*this->rowsHeight-offsetY);
 	}
@@ -579,13 +574,13 @@ unsigned short UITableRow::columnsUpdate(unsigned short x, unsigned short y) {
 	int offsetX = 0, halfRowsHeight = this->table->rowsHeight/2;
 	if ( this->columns.size()  >  this->table->columnsWidth.size() ) {
 		for(int i=0; i<this->table->columnsWidth.size(); i++) {
-			this->columns[i]->drag( offsetX+this->table->columnsWidth[i]/2-this->columns[i]->width/2+x,   halfRowsHeight-( this->columns[i]->height/2 )+y );
+			this->columns[i]->setPosition( offsetX+this->table->columnsWidth[i]/2-this->columns[i]->getWidth()/2+x,   halfRowsHeight-( this->columns[i]->getHeight()/2 )+y );
 			this->table->addChild(this->columns[i]);
 			offsetX+=this->table->columnsWidth[i];
 		}
 	}else{
 		for(int i=0; i<this->columns.size(); i++) {
-			this->columns[i]->drag( offsetX+this->table->columnsWidth[i]/2-this->columns[i]->width/2+x,   halfRowsHeight-( this->columns[i]->height/2 )+y );
+			this->columns[i]->setPosition( offsetX+this->table->columnsWidth[i]/2-this->columns[i]->getWidth()/2+x,   halfRowsHeight-( this->columns[i]->getHeight()/2 )+y );
 			this->table->addChild(this->columns[i]);
 			offsetX+=this->table->columnsWidth[i];
 		}
@@ -598,8 +593,7 @@ unsigned short UITableRow::columnsUpdate(unsigned short x, unsigned short y) {
 UITableDirectory::UITableDirectory(unsigned short w, unsigned short h, vector<unsigned short>* columnsWidth) {
 	this->chengeRect = false;
 	this->rowsHeight = 30;
-	this->width = w;
-	this->height = h;
+	this->setRect(w, h);
 	this->viewPosition = 0.0f;
 	this->background = new FRect(w, h, 0xFF333333);
 	if (columnsWidth==NULL) return;
@@ -621,12 +615,12 @@ void UITableDirectory::setPos(float n) {
 	unsigned short startPos, stopPos;
 	int xx=0, i=0, 
 		listHeight = this->rows.size()*this->rowsHeight, 
-		listOffsetHeight = listHeight-this->height,
+		listOffsetHeight = listHeight-this->getHeight(),
 		offsetY;
 	if (listOffsetHeight>0) {
 		offsetY = (int)(n*(float)listOffsetHeight);
 		startPos = (unsigned short)floor(offsetY/this->rowsHeight);
-		stopPos = (unsigned short)ceil(  ((float)(offsetY+this->height))/((float)this->rowsHeight) );
+		stopPos = (unsigned short)ceil(  ((float)(offsetY+this->getHeight()))/((float)this->rowsHeight) );
 	}else{
 		offsetY = 0;
 		startPos = 0;
@@ -635,8 +629,8 @@ void UITableDirectory::setPos(float n) {
 	if (startPos>this->rows.size()) startPos=0;
 	if (stopPos>this->rows.size()) stopPos=this->rows.size();
 	while (i<this->columnsWidth.size()) {
-		r1 = new FRect(this->columnsWidth[i], this->height, 0xFF555555);
-		r1->drag(xx, 0);
+		r1 = new FRect(this->columnsWidth[i], this->getHeight(), 0xFF555555);
+		r1->setPosition(xx, 0);
 		xx+=this->columnsWidth[i]+this->columnsWidth[i+1];
 		this->addChild(r1);
 		i+=2;

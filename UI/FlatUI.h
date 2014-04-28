@@ -1,7 +1,7 @@
 #ifndef FLATUI_H
 #define	FLATUI_H
 
-#include "../grBaseTypes.h"
+#include "../grMain.h"
 #include "UIMain.h"
 
 

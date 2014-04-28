@@ -1,4 +1,4 @@
-#include "grBaseTypes.h"
+#include "grMain.h"
 #include "grProcessingQueue.h"
 
 using namespace Graphonichk;
@@ -23,22 +23,26 @@ int VBOUpdateTask::processExecute() {
 	return true;
 }
 int Model3DLoadTask::processExecute() {
-	if (GLShader::shader->crc32!=ShaderF3D::CRC32) GLShader::setShader(ShaderF3D::prog);
-	
-	glGenVertexArrays(1, &this->model->vao);
-	if (this->model->vao==0) printf("VAO_NULL");
-	glBindVertexArray(this->model->vao);
-	
-	glGenBuffers(1, &this->model->vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, this->model->vbo);
-	glBufferData(GL_ARRAY_BUFFER, this->model->vertex.size()*3*sizeof(float), (GLvoid*)&this->model->vertex.front(), GL_STATIC_DRAW);
-	glVertexAttribPointer(ShaderF3D::prog->position, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-	glEnableVertexAttribArray(ShaderF3D::prog->position);
-	
-	glGenBuffers(1, &this->model->vboIndex);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->model->vboIndex);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->model->polygon.size()*3*sizeof(uint), (GLvoid*)&this->model->polygon.front(), GL_STATIC_DRAW);
-	return true;
+	if (OpenGL::ver==OpenGL::VER_CORE_100) {
+		
+	}else{
+		SET_SHADER(ShaderF3D);
+
+		glGenVertexArrays(1, &this->model->vao);
+		if (this->model->vao==0) puts("VAO_NULL");
+		glBindVertexArray(this->model->vao);
+
+		glGenBuffers(1, &this->model->vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, this->model->vbo);
+		glBufferData(GL_ARRAY_BUFFER, this->model->vertex.size()*3*sizeof(float), (GLvoid*)&this->model->vertex.front(), GL_STATIC_DRAW);
+		glVertexAttribPointer(ShaderF3D::prog->position, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+		glEnableVertexAttribArray(ShaderF3D::prog->position);
+
+		glGenBuffers(1, &this->model->vboIndex);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->model->vboIndex);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->model->polygon.size()*3*sizeof(uint), (GLvoid*)&this->model->polygon.front(), GL_STATIC_DRAW);
+		return true;
+	}
 }
 
 ProcessingSupSuspend::ProcessingSupSuspend() :_threadHandle(nullptr) {
@@ -50,16 +54,6 @@ void ProcessingSupSuspend::setTime(float time) {
 float ProcessingSupSuspend::getTime() {
 	return this->_time;
 }
-int ProcessingSupSuspend::addTask(SupSuspendTask *task, int type) {
-	CRITICAL_SECTION_INTER(this->_accessPush);
-	if (this->_queueIsUse == 1) {
-		this->_essentialTasks2.push(task);
-	}else{
-		this->_essentialTasks1.push(task);
-	}
-	CRITICAL_SECTION_LEAVE(this->_accessPush);
-	return true;
-};
 int ProcessingSupSuspend::performTasks() {
 	LARGE_INTEGER time1, time2;
 	LARGE_INTEGER frequencyStruct;
@@ -146,4 +140,54 @@ int ProcessingSupSuspend::performTasks() {
 THREAD ProcessingSupSuspend::threadFunction (void* dataArg) {
 	((ThreadData*)dataArg)->task->processExecute(((ThreadData*)dataArg)->sush);
 	return 0;
+}
+
+
+Array<ProcessingThread*> ProcessingThread::threads(3);
+
+void ProcessingThread::init() {
+	for (int i=0; i<ProcessingThread::threads.size; i++) {
+		ProcessingThread::threads[i] = new ProcessingThread();
+	}
+}
+ProcessingThread::ProcessingThread() {
+	this->thread = THREAD_START(ProcessingThread::threadProcess, this);
+}
+ProcessingThread::~ProcessingThread() {
+	THREAD_CLOSE(this->thread);
+}
+int ProcessingThread::performTasks() {
+	CRITICAL_SECTION_INTER(this->_accessPush);
+	this->_queueIsUse = !this->_queueIsUse;
+	CRITICAL_SECTION_LEAVE(this->_accessPush);
+	if (this->_queueIsUse == 1) {
+		//printf("performTasks %i\n", this->essentialTasks1.size());
+		while ( !this->_essentialTasks1.empty() ) {
+			if (  this->_essentialTasks1.front()->processExecute()  ) {
+				delete this->_essentialTasks1.front();
+			}else{
+				this->addTask(this->_essentialTasks1.front());
+			}
+			this->_essentialTasks1.pop();
+		}
+	}else{
+		//printf("performTasks %i\n", this->essentialTasks2.size());
+		while ( !this->_essentialTasks2.empty() ) {
+			if (  this->_essentialTasks2.front()->processExecute()  ) {
+				delete this->_essentialTasks2.front();
+			}else{
+				this->addTask(this->_essentialTasks2.front());
+			}
+			this->_essentialTasks2.pop();
+		}
+	}
+	return true;
+}
+THREAD ProcessingThread::threadProcess(void* sys) {
+	ProcessingThread *thread = (ProcessingThread*)sys;
+	
+	while(true) {
+		thread->performTasks();
+		Sleep(100);
+	}
 }

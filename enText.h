@@ -1,7 +1,7 @@
 #ifndef GRTEXT_H
 #define	GRTEXT_H
 
-#include "grBaseTypes.h"
+#include "grMain.h"
 
 using namespace std;
 namespace Graphonichk {
@@ -124,7 +124,7 @@ namespace Graphonichk {
 		STR_TYPE strType;*/
 		
 		Texture *tex;
-		GLuint vao, vbo;
+		GLuint vbo;
 		
 		POSITION position;
 		unsigned short borderSize;
@@ -168,15 +168,15 @@ namespace Graphonichk {
 		friend GLShaderLoadTask;
 		void init();
 	};
-	class ShaderTextFieldBuffer :public GLShader {
+	class ShaderTextFieldBuffer :public ShaderShRect {
 	public:
-		enum {CRC32=0x51f2123};
+		enum {CRC32=0x0912D2FF};
 		ShaderTextFieldBuffer();
 		//static void init();
 		static void init33();
 		static ShaderTextFieldBuffer* prog;
 		
-		GLint position, textColor, textTexture, texCoord, grShaderData;
+		GLint textColor, textTexture, texCoord, grShaderData;
 		
 		friend GLShaderLoadTask;
 		void init();
@@ -197,21 +197,21 @@ namespace grAlgoritm {
 			this->child[1] = nullptr;
 		}
 		
-		int addNode(Array<Rect> *rects, unsigned short imgID, unsigned short viewWidth, unsigned short viewHeight, CompositionRectNodeResult *result);
-		void trace(unsigned short viewX, unsigned short viewY, unsigned short viewWidth, unsigned short viewHeight, Array<Rect> *rects) {
+		int addNode(Array<Rect> &rects, unsigned short imgID, unsigned short viewWidth, unsigned short viewHeight, CompositionRectNodeResult *result);
+		void trace(unsigned short viewX, unsigned short viewY, unsigned short viewWidth, unsigned short viewHeight, Array<Rect> &rects) {
 			if (this->child[0]==NULL&&this->child[1]==NULL) {
 			}else if (this->child[0]!=NULL&&this->child[1]==NULL) {
-				rects->data[this->imgID].x = viewX;
-				rects->data[this->imgID].y = viewY;
+				rects[this->imgID].x = viewX;
+				rects[this->imgID].y = viewY;
 				this->child[0]->trace(viewX+this->imgWidth, viewY, viewWidth-this->imgWidth, viewHeight, rects);
 			}else if (this->child[0]!=NULL&&this->child[1]!=NULL) {
 				this->child[0]->trace(viewX+this->imgWidth, viewY, viewWidth-this->imgWidth, viewHeight, rects);
 				this->child[1]->trace(viewX, viewY+this->imgHeight, viewWidth, viewHeight-this->imgHeight, rects);
-				if (viewY+rects->data[this->imgID].height>2048) {
+				if (viewY+rects[this->imgID].height>2048) {
 					printf("1232123 %i \n", this->imgID);
 				}else{
-					rects->data[this->imgID].x = viewX;
-					rects->data[this->imgID].y = viewY;
+					rects[this->imgID].x = viewX;
+					rects[this->imgID].y = viewY;
 				}
 			}
 		}
@@ -234,8 +234,8 @@ namespace grAlgoritm {
 	public:
 		CompositionRect(unsigned short w, unsigned short h);
 		
-		int addNode(Array<Rect> *rects, unsigned short imgID);
-		void trace(Array<Rect> *rects);
+		int addNode(Array<Rect> &rects, unsigned short imgID);
+		void trace(Array<Rect> &rects);
 	};
 	
 }

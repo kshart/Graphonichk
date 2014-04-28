@@ -1,8 +1,8 @@
 #ifndef GRWINDOWS_H
 #define	GRWINDOWS_H
 
-#include "grProcessingQueue.h"
-#include "grBaseTypes.h"
+//#include "grProcessingQueue.h"
+#include "grMain.h"
 
 #define WIN_CLASS_NAME "grEWin"
 

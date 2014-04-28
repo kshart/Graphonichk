@@ -1,7 +1,7 @@
 #ifndef GRSHAPE3D_H
 #define	GRSHAPE3D_H
 
-#include "grBaseTypes.h"
+#include "grMain.h"
 
 
 

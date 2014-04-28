@@ -122,9 +122,10 @@ namespace Graphonichk {
 	typedef struct {
 		float x, y;
 	} vec2;
-	typedef struct {
+	class vec3{
+	public:
 		float x, y, z;
-	} vec3;
+	};
 	typedef struct {
 		float x, y, z, w;
 	} vec4;
@@ -139,16 +140,38 @@ namespace Graphonichk {
 		unsigned int x, y, z, w;
 	} uvec4;
 	
-	typedef struct {
+	class svec2 {
+	public:
 		short x, y;
-	} svec2;
+		void operator+=(const svec2& right) {
+			this->x += right.x;
+			this->y += right.y;
+		}
+		void operator*=(const svec2& right) {
+			this->x *= right.x;
+			this->y *= right.y;
+		}
+		void operator-=(const svec2& right) {
+			this->x -= right.x;
+			this->y -= right.y;
+		}
+	};
 	typedef struct {
 		short x, y, z;
 	} svec3;
 	typedef struct {
 		short x, y, z, w;
 	} svec4;
-
+	
+	typedef struct {
+		unsigned short x, y;
+	} usvec2;
+	typedef struct {
+		unsigned short x, y, z;
+	} usvec3;
+	typedef struct {
+		unsigned short x, y, z, w;
+	} usvec4;
 	template<typename Type> class Array {
 	public:
 		Type *data;
@@ -165,6 +188,12 @@ namespace Graphonichk {
 		~Array() {
 			this->size = 0;
 			free(this->data);
+		}
+		Type operator[](size_t i) const {
+			return this->data[i];
+		}
+		Type& operator[](size_t i) {
+			return this->data[i];
 		}
 	};
 	typedef struct __attribute__((packed)) {
@@ -334,7 +363,5 @@ namespace Graphonichk {
 		DEL=0x7F//ignore
 	};
 }
-
-#include "grTypes.h"
 
 #endif	/* GRBASETYPES_H */

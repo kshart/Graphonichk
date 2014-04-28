@@ -1,7 +1,7 @@
 #ifndef GRFILE_H
 #define	GRFILE_H
 
-#include "grBaseTypes.h"
+#include "grMain.h"
 using namespace std;
 
 namespace Graphonichk {

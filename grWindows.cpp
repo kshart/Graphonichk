@@ -32,7 +32,7 @@ Device::~Device() {
 	delete this->_keyboardDI;
 	delete this->_dinput;
 }
-DWORD WINAPI Device::threadUpdateDevices (void* data) {
+THREAD Device::threadUpdateDevices (void* data) {
 	while (true) {
 		Sleep(10);
 	}
@@ -64,7 +64,7 @@ BOOL CALLBACK Device::DIEnumDevicesProc(LPCDIDEVICEINSTANCE inst, LPVOID data) {
 }
 
 
-DWORD WINAPI Windows::threadWindow (void* sys) {
+THREAD Windows::threadWindow (void* sys) {
 	Windows::regFirstWin();
 	Windows *win = Windows::window;
 	printf("windowThread\n");
@@ -92,11 +92,11 @@ DWORD WINAPI Windows::threadWindow (void* sys) {
 	MSG msg;
 	while (IsWindow(win->hWnd)) {
 		while(PeekMessage(&msg, win->hWnd, 0, 0, PM_REMOVE)) DispatchMessage(&msg);
-		Sleep(10);
+		Sleep(4);
 	}
 	return 0;
 }
-DWORD WINAPI Windows::threadRender (void* sys) {
+THREAD Windows::threadRender (void* sys) {
 	if (sys==nullptr) return 0;
 	int format;
 	PIXELFORMATDESCRIPTOR pfd;
@@ -143,7 +143,7 @@ DWORD WINAPI Windows::threadRender (void* sys) {
 	Screen::height = GetDeviceCaps(win->hDC,VERTRES);
 	Screen::dpi = ( Screen::width/(float)GetDeviceCaps(win->hDC,HORZSIZE) )*25.4;
 	printf("<LCD res='%i %i' dpi='%f'/>\n", Screen::width, Screen::height, Screen::dpi );
-	OpenGL::init(OpenGL::VER_CORE_330);
+	OpenGL::init(OpenGL::VER_CORE_100);
 	win->resize(win->width, win->height);
 	ReleaseSemaphore(  *(HANDLE*)sys, 1, NULL);
 	
@@ -408,6 +408,7 @@ Windows::Windows(short x, short y, short width, short height) :
 		renderComplete(false) {
 	if (Windows::window!=nullptr) return;
 	Windows::regFirstWin();
+	ProcessingThread::init();
 	
 	puts("<Windows message='start WIN32'/>");
 	Windows::window = this;
@@ -420,6 +421,7 @@ Windows::Windows(short x, short y, short width, short height) :
 	FileLoad::init();
 	Font::init();
 	Device *device = new Device();
+	this->eachFrame.addTask(&ShapeRectTask::task);
 	puts("<Windows message='end'/>");
 	/*int attributes[] = {
 		WGL_CONTEXT_MAJOR_VERSION_ARB,	3,

@@ -5,8 +5,9 @@
 //#define OPENGL_GET_PROC(p,n) n=(p)wglGetProcAddress(#n);
 //if (n==NULL){printf("Loading extension '%s' fail (%d)\n", #n,GetLastError());}
 
-#include "grBaseTypes.h"
+#include "grMain.h"
 
+#define SET_SHADER(sh) if (GLShader::shader->crc32!=sh::CRC32) GLShader::setShader(sh::prog);
 using namespace std;
 namespace Graphonichk {
 	class GLShader;
@@ -32,16 +33,27 @@ namespace Graphonichk {
 		//bool fragment, vertex;
 		friend GLShaderLoadTask;
 		virtual void init();
+		virtual void mapping();
 	};
-	class ShaderBitmap :public GLShader {
+	class ShaderShRect :public GLShader {
+	protected:
+		ShaderShRect(int crc32);
+	public:
+		enum :GLint{POSITION=0};
+		GLint posRect, grShaderData;
+		
+		friend GLShaderLoadTask;
+		virtual void mapping();
+		virtual void init();
+	};
+	class ShaderBitmap :public ShaderShRect {
 	public:
 		enum {CRC32=0x587213EC};
 		ShaderBitmap();
-		//static void init();
 		static void init33();
 		static ShaderBitmap* prog;
 		
-		GLint position, texture, grShaderData;
+		GLint texture;
 		
 		friend GLShaderLoadTask;
 		void init();

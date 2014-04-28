@@ -31,9 +31,9 @@ void FlatUICheckboxMouseUp (const EventMouse *e) {
 	EventCheckButton *event;
 	if (flsb->press) {
 		flsb->press = false;
-		localx = e->x - flsb->globalx;
-		localy = e->y - flsb->globaly;
-		if (localx>0 && localx<flsb->width && localy>0 && localy<flsb->height) {
+		localx = e->x - flsb->getGlobalX();
+		localy = e->y - flsb->getGlobalY();
+		if (localx>0 && localx<flsb->getWidth() && localy>0 && localy<flsb->getHeight()) {
 			if (flsb->checked) {
 				flsb->checked = false;
 				flsb->status = UICheckbox::UNCHECKED_NORMAL;
@@ -134,9 +134,9 @@ void FlatUIRadioButtonMouseUp (const EventMouse *e) {
 	EventCheckButton *event;
 	if (flsb->press) {
 		flsb->press = false;
-		localx = e->x - flsb->globalx;
-		localy = e->y - flsb->globaly;
-		if (localx>0 && localx<flsb->width && localy>0 && localy<flsb->height) {
+		localx = e->x - flsb->getGlobalX();
+		localy = e->y - flsb->getGlobalY();
+		if (localx>0 && localx<flsb->getWidth() && localy>0 && localy<flsb->getHeight()) {
 			if (flsb->checked) {
 				if (flsb->group==nullptr) {
 					flsb->checked = false;

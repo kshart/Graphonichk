@@ -5,16 +5,16 @@
 #include <setjmp.h>
 #include <zlib.h>
 
-#include "grBaseTypes.h"
+#include "grMain.h"
 
 #define ADD_TEXTURE_TO_UPDATE_BUFFER(tex) \
 	TextureToUpdateTask *task = new TextureToUpdateTask(tex);\
-	Windows::window->eachFrame.addTask(task, 0);\
+	Windows::window->eachFrame.addTask(task);\
 	//Texture::buffer.push_back(tex);
 	//Texture::toUpdate++;
 #define ADD_TEXTURE_TO_DELETE_BUFFER(glid) \
 	TextureToDeleteTask *task = new TextureToDeleteTask(glid);\
-	Windows::window->eachFrame.addTask(task, 0);\
+	Windows::window->eachFrame.addTask(task);\
 	//Texture::buffer.push_back(tex);
 	//Texture::toDelete++;
 using namespace std;
@@ -22,19 +22,25 @@ using namespace Graphonichk;
 
 
 
-Texture::Texture() :_loadedInFile(false) {
-	this->event = Texture::NONE;
-	this->img = NULL;
-	this->width = 0;
-	this->height = 0;
-	this->format = 0;
-	this->type = 0;
-	this->GLID = 0;
+Texture::Texture(unsigned short rectCount, usvec4 *rect) :
+		_loadedInFile(false), event(Texture::NONE),
+		img(nullptr), GLID(0),
+		width(0), height(0),
+		format(0), type(0) {
+	if (rectCount!=0) {
+		this->rects = new Array<usvec4>(rectCount);
+		memcpy(this->rects->data, rect, rectCount*sizeof(usvec4));
+	}else{
+		this->rects = nullptr;
+	}
 }
-Texture* Texture::getTexture(unsigned short w, unsigned short h, GLuint format, GLuint type) {
-	Texture *tex = new Texture();
+Texture* Texture::getTexture(unsigned short w, unsigned short h, GLuint format, GLuint type, unsigned short rectCount, usvec4 *rect) {
+	Texture *tex = new Texture(rectCount, rect);
 	glGenTextures( 1, &tex->GLID );
-	if (tex->GLID==0) return nullptr;
+	if (tex->GLID==0) {
+		delete tex;
+		return nullptr;
+	}
 	tex->width = w;
 	tex->height = h;
 	tex->type = type;
@@ -47,25 +53,36 @@ Texture* Texture::getTexture(unsigned short w, unsigned short h, GLuint format, 
 	glTexImage2D( GL_TEXTURE_2D, 0, format, w, h, 0, format, type, NULL );
 	return tex;
 }
-Texture::Texture(unsigned short w, unsigned short h, GLuint format, GLuint type) :_loadedInFile(false) {
-	this->event = Texture::TO_UPDATE;
-	this->img = NULL;
-	this->width = w;
-	this->height = h;
-	this->format = format;
-	this->type = type;
-	this->GLID = 0;
+Texture::Texture(unsigned short w, unsigned short h, GLuint format, GLuint type, unsigned short rectCount, usvec4 *rect) :
+		_loadedInFile(false), event(Texture::TO_UPDATE),
+		img(nullptr), GLID(0),
+		width(w), height(h),
+		format(format), type(type) {
+	if (rectCount!=0) {
+		this->rects = new Array<usvec4>(rectCount);
+		memcpy(this->rects->data, rect, rectCount*sizeof(usvec4));
+	}else{
+		this->rects = nullptr;
+	}
 	ADD_TEXTURE_TO_UPDATE_BUFFER(this);
 }
-Texture::Texture(string path) :_loadedInFile(true) {
-	this->type = 0;
-	this->width = this->height = 0;
-	this->event = EVENT::TO_UPDATE;
-	this->GLID = 0;
-	this->img = new Image(path);
+Texture::Texture(string path, unsigned short rectCount, usvec4 *rect) :
+		_loadedInFile(true), event(Texture::TO_UPDATE),
+		img(new Image(path)), GLID(0),
+		width(0), height(0),
+		format(0), type(0) {
+	if (rectCount!=0) {
+		this->rects = new Array<usvec4>(rectCount);
+		memcpy(this->rects->data, rect, rectCount*sizeof(usvec4));
+	}else{
+		this->rects = nullptr;
+	}
 	ADD_TEXTURE_TO_UPDATE_BUFFER(this);
 }
-Texture::Texture(Image *img) :_loadedInFile(false) {
+Texture::Texture(Image *img, unsigned short rectCount, usvec4 *rect) :
+		_loadedInFile(false), event(Texture::TO_UPDATE),
+		img(img), GLID(0),
+		width(img->width), height(img->height)  {
 	switch (img->type) {
 		case Image::RGBA_32:
 			this->format = GL_RGBA;
@@ -105,11 +122,12 @@ Texture::Texture(Image *img) :_loadedInFile(false) {
 			fputs("Texture::Texture(Image *img) NOT SUPPORTED TYPE", stderr);
 			break;
 	}
-	this->img = img;
-	this->width = img->width;
-	this->height = img->height;
-	this->event = EVENT::TO_UPDATE;
-	this->GLID = 0;
+	if (rectCount!=0) {
+		this->rects = new Array<usvec4>(rectCount);
+		memcpy(this->rects->data, rect, rectCount*sizeof(usvec4));
+	}else{
+		this->rects = nullptr;
+	}
 	ADD_TEXTURE_TO_UPDATE_BUFFER(this);
 }
 Texture::~Texture() {
@@ -373,36 +391,46 @@ TextureToUpdateTask::TextureToUpdateTask(Texture *t) :_tex(t) {
 	
 }
 int TextureToUpdateTask::processExecute() {
-	if (this->_tex->event!=Texture::TO_UPDATE) {
-		TextureToUpdateTask *task = new TextureToUpdateTask(this->_tex);
-		Windows::window->eachFrame.addTask(task, 0);
-		return false;
-	}
+	puts("TextureToUpdateTask");
+	if (_tex->event!=Texture::TO_UPDATE) return false;
 	if (_tex->img==NULL) {// <editor-fold defaultstate="collapsed" desc="tex->img==NULL">
 		if (_tex->GLID==0) {
 			glGenTextures( 1, &_tex->GLID );
-			if (_tex->GLID==0) {
-				TextureToUpdateTask *task = new TextureToUpdateTask(this->_tex);
-				Windows::window->eachFrame.addTask(task, 0);
-				return false;
-			}
+			printf("%i\n", _tex->GLID);
+			if (_tex->GLID==0) return false;
 			glBindTexture( GL_TEXTURE_2D, _tex->GLID );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, NULL );
+			if (_tex->rects!=nullptr) {
+				glGenTextures( 1, &_tex->rectGLID );
+				if (_tex->rectGLID==0) return false;
+				glBindTexture(GL_TEXTURE_1D, _tex->rectGLID );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects->size, 0, GL_RGBA, GL_UNSIGNED_SHORT, _tex->rects->data);
+			} 
 		}else{
 			glBindTexture( GL_TEXTURE_2D, _tex->GLID );
 			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, NULL );
+			if (_tex->rects!=nullptr) {
+				glGenTextures( 1, &_tex->rectGLID );
+				if (_tex->rectGLID==0) return false;
+				glBindTexture(GL_TEXTURE_1D, _tex->rectGLID );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects->size, 0, GL_RGBA, GL_UNSIGNED_SHORT, _tex->rects->data);
+			} 
 		}
-		this->_tex->event = Texture::LOADED;//</editor-fold>
+		_tex->event = Texture::LOADED;//</editor-fold>
 	}else{// <editor-fold defaultstate="collapsed">
-		if (_tex->img->status!=Image::LOADED) {
-			TextureToUpdateTask *task = new TextureToUpdateTask(this->_tex);
-			Windows::window->eachFrame.addTask(task, 0);
-			return false;
-		}
+		if (_tex->img->status!=Image::LOADED) return false;
 		switch (_tex->img->type) {
 			case Image::RGBA_32:
 				printf("\tImage::RGBA_32\n");
@@ -429,28 +457,44 @@ int TextureToUpdateTask::processExecute() {
 				_tex->type = GL_UNSIGNED_BYTE;
 				break;
 		}
-		printf("\t//////\n");
 		_tex->width = _tex->img->width;
 		_tex->height = _tex->img->height;
 		if (_tex->GLID==0) {
 			glGenTextures( 1, &_tex->GLID );
-			if (_tex->GLID==0) {
-				TextureToUpdateTask *task = new TextureToUpdateTask(this->_tex);
-				Windows::window->eachFrame.addTask(task, 0);
-				return false;
-			}
+			if (_tex->GLID==0) return false;
 			glBindTexture( GL_TEXTURE_2D, _tex->GLID );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, _tex->img->raw );
+			if (_tex->rects!=nullptr) {
+				glGenTextures( 1, &_tex->rectGLID );
+				if (_tex->rectGLID==0) return false;
+				glBindTexture(GL_TEXTURE_1D, _tex->rectGLID );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects->size, 0, GL_RGBA, GL_UNSIGNED_SHORT, _tex->rects->data);
+			} 
 		}else{
 			glBindTexture( GL_TEXTURE_2D, _tex->GLID );
 			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, _tex->img->raw );
+			if (_tex->rects!=nullptr) {
+				glGenTextures( 1, &_tex->rectGLID );
+				if (_tex->rectGLID==0) return false;
+				glBindTexture(GL_TEXTURE_1D, _tex->rectGLID );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects->size, 0, GL_RGBA, GL_UNSIGNED_SHORT, _tex->rects->data);
+			} 
 		}
 		_tex->event = Texture::LOADED;
 	}//</editor-fold>
+	return true;
 }
 TextureToDeleteTask::TextureToDeleteTask(GLuint glid) :_GLID(glid) {
 	

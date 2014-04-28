@@ -1,4 +1,4 @@
-#include "grBaseTypes.h"
+#include "grMain.h"
 #include "grOpenGL.h"
 
 using namespace Graphonichk;
@@ -58,6 +58,7 @@ int OpenGL::init(OPENGL_VER ver) {
 	glBindBuffer(GL_ARRAY_BUFFER, OpenGL::circleBuffer);
 	glBufferData(GL_ARRAY_BUFFER, (8192+100)*sizeof(float), circle, GL_STATIC_DRAW);
 	if ( ver==VER_CORE_100 || ver==VER_CORE_210) {
+		
 	}else if (ver==VER_CORE_330) {
 		glGenBuffers(1, &OpenGL::grShaderData);
 		glBindBuffer(GL_UNIFORM_BUFFER, OpenGL::grShaderData);
@@ -217,30 +218,42 @@ GLShader::GLShader(int c) :shaderProgram(0), vertexShader(0), fragmentShader(0),
 void GLShader::init() {
 	fputs("GLShader::init\n", iovir);
 }
+void GLShader::mapping() {
+	fputs("GLShader::mapping\n", iovir);
+}
 void GLShader::setShader(GLShader* shader) {
 	glUseProgram(shader->shaderProgram);
 	GLShader::shader = shader;
 }
 
+ShaderShRect::ShaderShRect(int crc32) :GLShader(crc32) {
+}
+void ShaderShRect::mapping() {
+	glBindAttribLocation(this->shaderProgram, 0, "position");
+}
+void ShaderShRect::init() {
+	this->posRect = glGetAttribLocation(this->shaderProgram, "position");
+	this->grShaderData = glGetUniformBlockIndex(this->shaderProgram, "grShaderData");
+	glUniformBlockBinding(this->shaderProgram, this->grShaderData, 1);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::grShaderData, 0, 4*4*sizeof(float));
+}
+
 ShaderBitmap* ShaderBitmap::prog = nullptr;
-ShaderBitmap::ShaderBitmap() :GLShader(ShaderBitmap::CRC32) {
+ShaderBitmap::ShaderBitmap() :ShaderShRect(ShaderBitmap::CRC32) {
 	
 }
 void ShaderBitmap::init() {
-	this->position = glGetAttribLocation(this->shaderProgram, "position");
+	this->ShaderShRect::init();
 	this->texture = glGetUniformLocation(this->shaderProgram, "colorTexture");
-	this->grShaderData = glGetUniformBlockIndex(this->shaderProgram, "grShaderData");
-	glUniform1i(this->texture , 0);
-	glUniformBlockBinding(this->shaderProgram, this->grShaderData, 1);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::grShaderData, 0, 4*4*sizeof(float));
+	glUniform1i(this->texture, 0);
 }
 void ShaderBitmap::init33() {
 	ShaderBitmap *sh = new ShaderBitmap();
 	const GLchar *vrsh = 
 		//"#version 330 core\n"
-		"in vec2 position;"
+		"in vec4 position;"
 		"void main () {"
-			"gl_Position = vec4(position, 0.0, 1.0);"
+			"gl_Position = position;"
 		"}",
 		*frsh = 
 		//"#version 330 core\n"
@@ -609,6 +622,7 @@ GLShaderLoadTask::GLShaderLoadTask(GLShader* sh, const GLchar *vs, const GLchar 
 	
 }
 int GLShaderLoadTask::processExecute() {
+	if (OpenGL::ver==OpenGL::VER_CORE_100) return true;
 	GLint fsLength, vsLength, gsLength;
 	fsLength = strlen(this->fs);
 	vsLength = strlen(this->vs);
@@ -656,6 +670,8 @@ int GLShaderLoadTask::processExecute() {
 	glAttachShader(this->shader->shaderProgram, this->shader->vertexShader);
 	glAttachShader(this->shader->shaderProgram, this->shader->fragmentShader);
 	if (this->gs!=nullptr) glAttachShader(this->shader->shaderProgram, this->shader->geometryShader);
+	
+	this->shader->mapping();
 	glLinkProgram(this->shader->shaderProgram);
 	
 	this->shader->init();

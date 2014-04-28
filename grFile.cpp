@@ -1,5 +1,5 @@
 #include <string>
-#include "grBaseTypes.h"
+#include "grMain.h"
 #include "grFile.h"
 
 using namespace std;

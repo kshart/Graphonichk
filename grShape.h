@@ -1,7 +1,7 @@
 #ifndef GRSHAPE_H
 #define	GRSHAPE_H
 
-#include "grBaseTypes.h"
+#include "grMain.h"
 
 
 
@@ -20,6 +20,7 @@ namespace Graphonichk {
 	class ShapeRectGateMatrix3D;
 
 	class Bitmap;
+	class BitmapAtlas;
 	class Buffer;
 	class FPoint;
 	class FLines;
@@ -69,26 +70,44 @@ namespace Graphonichk {
 		virtual int renderGL100();
 		vector<ShapeBasic*> child;
 	};
+	
 	class ShapeRect :public EventDispatcher<EventMouseShape>, public ShapeBasic {
-		short meshVertex[12];
+	private:
+		bool _toUpdate;
+		svec2 offset, global, local;
+		unsigned short width, height;
+		friend class ShapeGroupRect;
 	protected:
 		ShapeRect(int crc32);
 	public:
+		virtual void setPosition(short x, short y);
+		virtual void setOffset(short x, short y);
+		virtual void setBox(short x, short y, short w, short h);
+		virtual void setRect(short w, short h);
+		virtual void setVisible(bool vis);
+		short getGlobalX() const;
+		short getGlobalY() const;
+		svec2 getGlobalPosition() const;
+		short getX() const;
+		short getY() const;
+		svec2 getLocalPosition() const;
+		short getOffsetX() const;
+		short getOffsetY() const;
+		svec2 getOffsetPosition() const;
+		short getWidth() const;
+		short getHeight() const;
+		svec2 getRect() const;
+		svec4 getBox() const;
 		virtual void trace();
-		virtual void drag(short x, short y);
 		virtual void updateGlobalPosition();
-		GLuint meshVAO, meshVBO;
 		ShapeGroupRect* parent;
-		Point offsetPos;
-		short globalx, globaly, x, y;
-		unsigned short width, height;
+		GLuint vao, vboRect;
 		bool visible;
 		string name;
 		
 		bool mouseEventActive;
 		bool mouseEventRollOver;
 		
-		void setVisible(bool vis);
 		virtual int saveAsXML(FILE *str, unsigned short tab=0);
 		virtual int addEventHandler( int type, void(*)(const EventMouseShape*));
 		virtual int callEvent(EventMouseShape *e);
@@ -113,7 +132,7 @@ namespace Graphonichk {
 		virtual unsigned int getChildDepth(ShapeRect *sh);
 		virtual ShapeRect* getChild(string str);
 		
-		virtual void drag(short, short);
+		virtual void setPosition(short x, short y);
 		virtual void updateGlobalPosition();
 		virtual void updateRect();
 		virtual void updateRect(ShapeRect *sh);
@@ -179,7 +198,6 @@ namespace Graphonichk {
 		ShapeGroupMatrix2D group;
 		ViewMatrix view;
 	};
-	
 	class ShapeRectGateMatrix3D :public ShapeRect {
 	public:
 		ShapeRectGateMatrix3D();
@@ -195,7 +213,16 @@ namespace Graphonichk {
 	
 	
 	
-	
+	class ProcessingShapeRect :public ProcessingQueue<ShapeRect> {
+	public:
+		int performTasks();
+	};
+	class ShapeRectTask :public ProcessingShapeRect, public EachFrameTask {
+	private:
+	public:
+		static ShapeRectTask task;
+		int processExecute();
+	};
 	
 	class Bitmap :public ShapeRect {
 	private:
@@ -203,18 +230,35 @@ namespace Graphonichk {
 	public:
 		enum {CRC32=0xEFC15B9A};
 		Bitmap(Texture*);
-		//~Bitmap();
 		void trace();
-		int renderGL100();
 		int renderGL400();
 		int renderGL330();
 		int renderGL210();
+		int renderGL100();
 		int saveAsXML(FILE* str, unsigned short tab);
 		Texture *tex;
+		
+		static void updateBitmaps();
+	};
+	class BitmapAtlas :public ShapeRect {
+	private:
+		static vector<BitmapAtlas*> updateBuffer;
+	public:
+		enum {CRC32=0xEFC15B9A};
+		BitmapAtlas(Texture*);
+		void trace();
+		int renderGL400();
+		int renderGL330();
+		int renderGL210();
+		int renderGL100();
+		Texture *tex;
+		short texRectID;
 		
 		GLuint vao, vbo;
 		static void updateBitmaps();
 	};
+	
+	
 	class FPoint :public ShapeRect {
 	  public:
 		enum {CRC32=0xD88563EF};

@@ -1,4 +1,4 @@
-#include "grBaseTypes.h"
+#include "grMain.h"
 using namespace std;
 using namespace Graphonichk;
 

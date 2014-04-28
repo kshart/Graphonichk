@@ -7,7 +7,7 @@
 
 #ifndef GREVENT_H
 #define	GREVENT_H
-#include "grBaseTypes.h"
+#include "grMain.h"
 using namespace std;
 
 namespace Graphonichk {

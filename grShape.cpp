@@ -1,4 +1,4 @@
-#include "grBaseTypes.h"
+#include "grMain.h"
 #include "grShape.h"
 #include "UI/UIMain.h"
 #include "grProcessingQueue.h"
@@ -68,6 +68,18 @@ ShapeGroupMatrix2D::ShapeGroupMatrix2D() {
 }
 ShapeGroupMatrix2D::ShapeGroupMatrix2D(int crc32) {
 }
+int ShapeGroupMatrix2D::renderGL400() {
+	fputs("ShapeGroupMatrix2D::renderGL400\n", iovir);
+	return false;
+}
+int ShapeGroupMatrix2D::renderGL330() {
+	fputs("ShapeGroupMatrix2D::renderGL330\n", iovir);
+	return false;
+}
+int ShapeGroupMatrix2D::renderGL210() {
+	fputs("ShapeGroupMatrix2D::renderGL210\n", iovir);
+	return false;
+}
 int ShapeGroupMatrix2D::renderGL100() {
 	float mat[16] = {
 		this->matrix.a,	this->matrix.d,	0,	0,
@@ -82,25 +94,13 @@ int ShapeGroupMatrix2D::renderGL100() {
 	glPopMatrix();
 	return true;
 }
-int ShapeGroupMatrix2D::renderGL400() {
-	fputs("ShapeGroupMatrix2D::renderGL400\n", iovir);
-	return false;
-}
-int ShapeGroupMatrix2D::renderGL330() {
-	fputs("ShapeGroupMatrix2D::renderGL330\n", iovir);
-	return false;
-}
-int ShapeGroupMatrix2D::renderGL210() {
-	fputs("ShapeGroupMatrix2D::renderGL210\n", iovir);
-	return false;
-}
 
 ShapeRectGateMatrix2D::ShapeRectGateMatrix2D() :ShapeRect(0) {
 }
 int ShapeRectGateMatrix2D::renderGL100() {
 	glPushMatrix();
 	OpenGL::pushViewport();
-	OpenGL::setViewport(this->globalx, this->globaly, this->width, this->height);
+	OpenGL::setViewport(this->getGlobalX(), this->getGlobalY(), this->getWidth(), this->getHeight());
 	glMultMatrixf(this->view.a);
 	this->group.renderGL100();
 	OpenGL::popViewport();
@@ -122,84 +122,149 @@ int ShapeRectGateMatrix2D::renderGL210() {
 
 
 ShapeRect::ShapeRect(int crc32) :ShapeBasic(crc32) {
-	this->crc32 = crc32;
 	this->mouseEventActive = false;
 	this->mouseEventRollOver = false;
 	this->visible = true;
-	this->parent = NULL;
-	this->globalx = 0;
-	this->x = 0;
-	this->globaly = 0;
-	this->y = 0;
+	this->parent = nullptr;
+	this->local.x = this->local.y = 0;
+	this->global.x = this->global.y = 0;
 	this->width = this->height = 0;
-	this->offsetPos.x = this->offsetPos.y = 0;
-	this->name.clear();
+	this->offset.x = this->offset.y = 0;
+	this->vao = 0;
+	this->vboRect = 0;
+	ShapeRectTask::task.addTask(this);
 }
-void ShapeRect::trace() {
-	printf("ShapeRect a='%i' x=%i, y=%i, gx=%i, gy=%i, w=%i, h=%i\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->width, this->height);
-}
-void ShapeRect::setVisible(bool vis) {
-	this->visible = vis;
-	if (this->parent==NULL) return;
-	this->parent->updateRect();
-}
-void ShapeRect::drag(short x, short y) {
-	VBOUpdateTask update;
-	update.bufferID = this->meshVBO;
-	update.data = this->meshVertex;
-	update.dataSize = 24;
-	short ny, nx;
-	this->x = x;
-	this->y = y;
+void ShapeRect::setPosition(short x, short y) {
+	this->local.x = x;
+	this->local.y = y;
 	if (this->parent!=NULL) {
-		this->globalx = this->parent->globalx+x;
-		this->globaly = this->parent->globaly+y;
+		this->global.x = this->parent->global.x+x;
+		this->global.y = this->parent->global.y+y;
 		this->parent->updateRect();
 	}
-	this->meshVertex[0] = (short)(this->globalx);
-	this->meshVertex[1] = (short)(this->globaly);
-	this->meshVertex[2] = (short)(this->globalx+this->width);
-	this->meshVertex[3] = (short)(this->globaly);
-	this->meshVertex[4] = (short)(this->globalx+this->width);
-	this->meshVertex[5] = (short)(this->globaly+this->height);
-	this->meshVertex[6] = (short)(this->globalx);
-	this->meshVertex[7] = (short)(this->globaly);
-	this->meshVertex[8] = (short)(this->globalx+this->width);
-	this->meshVertex[9] = (short)(this->globaly+this->height);
-	this->meshVertex[10] = (short)(this->globalx);
-	this->meshVertex[11] = (short)(this->globaly+this->height);
-	//Windows::window->VBOupdate.addTask(update, 0);
+	ShapeRectTask::task.addTask(this);
 	#ifdef REDRAWN_BY_THE_ACTION
 	Windows::window->renderComplete = false;
 	#endif
 }
+void ShapeRect::setOffset(short x, short y) {
+	this->offset.x = x;
+	this->offset.y = y;
+	if (this->parent!=nullptr) this->parent->updateRect();
+	ShapeRectTask::task.addTask(this);
+	#ifdef REDRAWN_BY_THE_ACTION
+	Windows::window->renderComplete = false;
+	#endif
+}
+void ShapeRect::setBox(short x, short y, short w, short h) {
+	this->local.x = x;
+	this->local.y = y;
+	this->width = w;
+	this->height = h;
+	if (this->parent!=nullptr) this->parent->updateRect();
+	ShapeRectTask::task.addTask(this);
+	#ifdef REDRAWN_BY_THE_ACTION
+	Windows::window->renderComplete = false;
+	#endif
+}
+void ShapeRect::setRect(short w, short h) {
+	this->width = w;
+	this->height = h;
+	if (this->parent!=nullptr) this->parent->updateRect();
+	ShapeRectTask::task.addTask(this);
+	#ifdef REDRAWN_BY_THE_ACTION
+	Windows::window->renderComplete = false;
+	#endif
+}
+void ShapeRect::setVisible(bool vis) {
+	this->visible = vis;
+	if (this->parent!=nullptr) this->parent->updateRect();
+	
+	#ifdef REDRAWN_BY_THE_ACTION
+	Windows::window->renderComplete = false;
+	#endif
+}
+short ShapeRect::getGlobalX() const {
+	return this->global.x;
+}
+short ShapeRect::getGlobalY() const {
+	return this->global.y;
+}
+svec2 ShapeRect::getGlobalPosition() const {
+	return this->global;
+}
+short ShapeRect::getX() const {
+	return this->local.x;
+}
+short ShapeRect::getY() const {
+	return this->local.y;
+}
+svec2 ShapeRect::getLocalPosition() const {
+	return this->local;
+}
+short ShapeRect::getOffsetX() const {
+	return this->offset.x;
+}
+short ShapeRect::getOffsetY() const {
+	return this->offset.y;
+}
+svec2 ShapeRect::getOffsetPosition() const {
+	return this->offset;
+}
+short ShapeRect::getWidth() const {
+	return (short)this->width;
+}
+short ShapeRect::getHeight() const {
+	return (short)this->height;
+}
+svec2 ShapeRect::getRect() const {
+	svec2 v;
+	v.x = this->width;
+	v.y = this->height;
+	return v;
+}
+svec4 ShapeRect::getBox() const {
+	svec4 v;
+	v.x = this->global.x+this->offset.x;
+	v.y = this->global.y+this->offset.y;
+	v.z = v.x+this->width;
+	v.w = v.y+this->height;
+	return v;
+}
+void ShapeRect::trace() {
+	printf("ShapeRect a='%i' x=%i, y=%i, gx=%i, gy=%i, w=%i, h=%i\n", this->mouseEventActive, this->local.x, this->local.y, this->global.x, this->global.y, this->width, this->height);
+}
 void ShapeRect::updateGlobalPosition() {
 	if (this->parent==NULL) {
-		this->globalx = this->globaly = 0;
+		this->global.x = this->global.y = 0;
 	}else{
-		this->globalx = this->parent->globalx + this->x;
-		this->globaly = this->parent->globaly + this->y;
+		this->global.x = this->parent->global.x + this->local.x;
+		this->global.y = this->parent->global.y + this->local.y;
 	}
+	ShapeRectTask::task.addTask(this);
+	#ifdef REDRAWN_BY_THE_ACTION
+	Windows::window->renderComplete = false;
+	#endif
 }
 int ShapeRect::saveAsXML(FILE* str, unsigned short tab) {
 	for (int i=0; i<tab; i++) fprintf(str, "\t");
 	fprintf(str, "<ShapeRect name='%s' crc32='%i' x='%i' y='%i' width='%i' height='%i' offsetX='%i' offsetY='%i'/>\n",
-			this->name.c_str(), this->crc32, this->x, this->y, this->width, this->height, this->offsetPos.x, this->offsetPos.y);
+			this->name.c_str(), this->crc32, this->local.x, this->local.y, this->width, this->height, this->offset.x, this->offset.y);
 	return true;
 }
 ShapeRect* ShapeRect::globalHitTest(short x, short y) {
-	if ( x>this->globalx+this->offsetPos.x &&
-		 y>this->globaly+this->offsetPos.y &&
-		 x<this->globalx+this->offsetPos.x+this->width &&
-		 y<this->globaly+this->offsetPos.y+this->height) {
+	if ( x>this->global.x+this->offset.x &&
+		 y>this->global.y+this->offset.y &&
+		 x<this->global.x+this->offset.x+this->width &&
+		 y<this->global.y+this->offset.y+this->height) {
 		return this;
 	}
 	return NULL;
 }
 int ShapeRect::callEvent(EventMouseShape* event) {
 	event->shape = this;
-	event->localx = event->globalx-this->globalx;
-	event->localy = event->globaly-this->globaly;
+	event->localx = event->globalx-this->global.x;
+	event->localy = event->globaly-this->global.y;
 	for(int i=0, s=this->eventList.size(); i<s; i++) {
 		if (this->eventList[i].type == event->type) {
 			this->eventList[i].fun(event);
@@ -226,8 +291,8 @@ ShapeGroupRect::ShapeGroupRect() :ShapeRect(ShapeGroupRect::CRC32) {
 	this->parent = NULL;
 	this->cutTheRect = false;
 	this->chengeRect = true;
-	this->offsetPos.x = SHRT_MAX;
-	this->offsetPos.y = SHRT_MAX;
+	this->offset.x = SHRT_MAX;
+	this->offset.y = SHRT_MAX;
 	this->addChildLock = CreateMutex(NULL, FALSE, NULL);
 }
 ShapeGroupRect::ShapeGroupRect(int crc32) :ShapeRect(crc32) {
@@ -239,13 +304,13 @@ ShapeGroupRect::ShapeGroupRect(int crc32) :ShapeRect(crc32) {
 	this->addChildLock = CreateMutex(NULL, FALSE, NULL);
 }
 void ShapeGroupRect::trace() {
-	printf("<ShapeGroupRect mouseActive='%i' pos='%i, %i' gpos='%i, %i' rect='%i, %i, %i, %i'>\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->offsetPos.x, this->offsetPos.y, this->width, this->height);
+	printf("<ShapeGroupRect mouseActive='%i' pos='%i, %i' gpos='%i, %i' rect='%i, %i, %i, %i'>\n", this->mouseEventActive, this->local.x, this->local.y, this->global.x, this->global.y, this->offset.x, this->offset.y, this->width, this->height);
 	for (int i=0; i<this->child.size(); i++) this->child[i]->trace(); 
 	printf("</ShapeGroupRect>\n");
 }
 int ShapeGroupRect::renderGL100() {
 	bool ctr = false;
-	if (this->cutTheRect) {
+	/*if (this->cutTheRect) {
 		ctr = true;
 		OpenGL::pushViewport();
 		OpenGL::setViewport(this->globalx+this->offsetPos.x,
@@ -256,9 +321,9 @@ int ShapeGroupRect::renderGL100() {
 		ViewMatrix vm = ViewMatrixOrtho(this->globalx+this->offsetPos.x, this->globalx+this->offsetPos.x+this->width, 
 				this->globaly+this->offsetPos.y+this->height, this->globaly+this->offsetPos.y, -1, 1);
 		OpenGL::setViewMatrix(vm);
-	}
+	}*/
 	if (this->bufferInit) {
-		Texture *tex = this->bufferTexture;
+		/*Texture *tex = this->bufferTexture;
 		glEnable( GL_TEXTURE_2D );
 		glBindTexture(GL_TEXTURE_2D, tex->GLID);
 		glColor4ub(0xFF,0xFF,0xFF,0xFF);
@@ -268,7 +333,7 @@ int ShapeGroupRect::renderGL100() {
 			glTexCoord2d( 1.0, 1.0 );	glVertex2i(this->globalx+offsetPos.x+tex->width, this->globaly+offsetPos.y+tex->height );
 			glTexCoord2d( 1.0, 0.0 );	glVertex2i(this->globalx+offsetPos.x+tex->width, this->globaly+offsetPos.y );
 		glEnd();// </editor-fold>
-		glDisable( GL_TEXTURE_2D );
+		glDisable( GL_TEXTURE_2D );*/
 	}else if ( this->shapeCache != NULL ) {
 		#ifdef DEBUG
 		printf("ShapeGroupRect shapeCache\n");
@@ -290,14 +355,14 @@ int ShapeGroupRect::renderGL100() {
 	glLineWidth(1);
 	glColor4ub(0xFF,0,0,0xFF);
 	glBegin(GL_LINE_STRIP);// <editor-fold defaultstate="collapsed" desc="GL_LINE_STRIP">
-		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
-		glVertex2s( this->globalx+this->offsetPos.x+this->width, this->globaly+this->offsetPos.y );
-		glVertex2s( this->globalx+this->offsetPos.x+this->width, this->globaly+this->offsetPos.y+this->height );
-		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y+this->height );
-		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
+		glVertex2s( this->global.x+this->offset.x,				this->global.y+this->offset.y );
+		glVertex2s( this->global.x+this->offset.x+this->width,	this->global.y+this->offset.y );
+		glVertex2s( this->global.x+this->offset.x+this->width,	this->global.y+this->offset.y+this->height );
+		glVertex2s( this->global.x+this->offset.x,				this->global.y+this->offset.y+this->height );
+		glVertex2s( this->global.x+this->offset.x,				this->global.y+this->offset.y );
 	glEnd();// </editor-fold>
 	
-	return true;
+	return false;
 }
 int ShapeGroupRect::renderGL400() {
 	printf("ShapeGroupRect p\n");
@@ -350,9 +415,8 @@ int ShapeGroupRect::renderGL210() {
 	#endif
 	return true;
 }
-
 int ShapeGroupRect::bufferGLComptAll() {
-	for(int i=0; i<this->bufChild.size(); i++) {
+	/*for(int i=0; i<this->bufChild.size(); i++) {
 		this->bufChild[i]->bufferGLComptAll();
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, this->bufferFrame);
@@ -360,7 +424,7 @@ int ShapeGroupRect::bufferGLComptAll() {
 	
 	glViewport( 0, 0, this->width, this->height );
 	glLoadIdentity( );
-	gluOrtho2D( this->offsetPos.x+this->globalx, this->offsetPos.x+this->globalx+this->width, this->offsetPos.y+this->globaly, this->offsetPos.y+this->globaly+this->height );
+	gluOrtho2D( this->offset.x+this->globalx, this->offsetPos.x+this->globalx+this->width, this->offsetPos.y+this->globaly, this->offsetPos.y+this->globaly+this->height );
 	
 	glClearColor( 0.1, 0, 0, 0.1 );
 	glClear( GL_COLOR_BUFFER_BIT );
@@ -368,8 +432,8 @@ int ShapeGroupRect::bufferGLComptAll() {
 	this->renderGL100();
 	
 	
-	//glDeleteFramebuffers(1, &root.window->ogl->FBOGL);
-	return true;
+	//glDeleteFramebuffers(1, &root.window->ogl->FBOGL);*/
+	return false;
 }
 int ShapeGroupRect::bufferGL400() {
 	return false;
@@ -397,7 +461,7 @@ bool ShapeGroupRect::bufferMode(bool mode) {
 int ShapeGroupRect::saveAsXML(FILE* str, unsigned short tab) {
 	for (int i=0; i<tab; i++) fprintf(str, "\t");
 	fprintf(str, "<ShapeGroupRect name='%s' crc32='%i' childSize='%i' x='%i' y='%i' width='%i' height='%i' offsetX='%i' offsetY='%i'>\n",
-			this->name.c_str(), this->crc32, this->child.size(), this->x, this->y, this->width, this->height, this->offsetPos.x, this->offsetPos.y);
+			this->name.c_str(), this->crc32, this->child.size(), this->local.x, this->local.y, this->width, this->height, this->offset.x, this->offset.y);
 	for(int i=0; i<this->child.size(); i++) {
 		this->child[i]->saveAsXML(str, tab+1);
 	}
@@ -406,21 +470,20 @@ int ShapeGroupRect::saveAsXML(FILE* str, unsigned short tab) {
 	fprintf(str, "</ShapeGroupRect>\n");
 }
 void ShapeGroupRect::updateGlobalPosition() {
-	if (this->parent==NULL) {
-		this->globalx = this->globaly = 0;
+	if (this->parent==nullptr) {
+		this->global.x = this->global.y = 0;
 	}else{
-		this->globalx = this->parent->globalx + this->x;
-		this->globaly = this->parent->globaly + this->y;
+		this->global.x = this->parent->global.x + this->local.x;
+		this->global.y = this->parent->global.y + this->local.y;
 	}
-	for(int i=0; i<this->child.size(); i++) {
-		this->child[i]->updateGlobalPosition();
+	for(vector<ShapeRect*>::const_iterator it=this->child.begin(), end=this->child.end(); it!=end; ++it) {
+		(*it)->updateGlobalPosition();
 	}
 }
-void ShapeGroupRect::drag(short x, short y) {
-	short nx, ny;
-	this->x = x;
-	this->y = y;
-	if ( this->parent!=NULL || this==Windows::window->root) {
+void ShapeGroupRect::setPosition(short x, short y) {
+	this->local.x = x;
+	this->local.y = y;
+	if ( this->parent!=nullptr || this==Windows::window->root) {
 		this->updateGlobalPosition();
 		if (this->visible) this->parent->updateRect();
 	}
@@ -429,7 +492,8 @@ void ShapeGroupRect::drag(short x, short y) {
 	#endif
 }
 void ShapeGroupRect::updateRect(ShapeRect* sh) {
-	if (!this->chengeRect) return;
+	puts("ShapeGroupRect::updateRect(ShapeRect* sh)");
+	/*if (!this->chengeRect) return;
 	short nx, ny;
 	if (sh->x+sh->offsetPos.x < this->offsetPos.x) {
 		nx = sh->x+sh->offsetPos.x;
@@ -446,41 +510,48 @@ void ShapeGroupRect::updateRect(ShapeRect* sh) {
 	}
 	if (sh->y+sh->offsetPos.y+sh->height-this->offsetPos.y > this->height) {
 		this->height = sh->y+sh->offsetPos.y+sh->height-this->offsetPos.y;
-	}
+	}*/
 }
 void ShapeGroupRect::updateRect() {
+	//puts("ShapeGroupRect::updateRect");
 	if (this->child.empty() || !this->chengeRect) return;
-	short nx, ny;
+	svec2 newOffset, rect, offset, SHpos, SHoffset, SHrect;
 	ShapeRect* sh;
-	int i=0;
-	while (i<this->child.size()) {
-		if (this->child[i]->visible) break;
-	}
+	int i;
+	for(i=0; i<this->child.size(); i++) if (this->child[i]->visible) break;
 	if (i>=this->child.size()) return;
+	
 	sh = this->child[i];
-	this->offsetPos.x = sh->x+sh->offsetPos.x;
-	this->offsetPos.y = sh->y+sh->offsetPos.y;
-	this->width = sh->width;
-	this->height = sh->height;
-	for(i; i<this->child.size(); i++) {
+	SHpos = sh->getLocalPosition();
+	SHoffset = sh->getOffsetPosition();
+	offset.x = SHpos.x+SHoffset.x;
+	offset.y = SHpos.y+SHoffset.y;
+	rect = sh->getRect();
+	for(; i<this->child.size(); i++) {
 		sh = this->child[i];
-		if (sh->x+sh->offsetPos.x < this->offsetPos.x) {
-			nx = sh->x+sh->offsetPos.x;
-			this->width -= nx-this->offsetPos.x;
-			this->offsetPos.x = nx;
+		if (!sh->visible) continue;
+		SHpos = sh->getLocalPosition();
+		SHoffset = sh->getOffsetPosition();
+		SHrect = sh->getRect();
+		if (SHpos.x+SHoffset.x < offset.x) {
+			newOffset.x = SHpos.x+SHoffset.x;
+			rect.x -= newOffset.x-offset.x;
+			offset.x = newOffset.x;
 		}
-		if (sh->y+sh->offsetPos.y < this->offsetPos.y) {
-			ny = sh->y+sh->offsetPos.y;
-			this->height -= ny-this->offsetPos.y;
-			this->offsetPos.y = ny;
+		if (SHpos.y+SHoffset.y < offset.y) {
+			newOffset.y = SHpos.y+SHoffset.y;
+			rect.y -= newOffset.y-offset.y;
+			offset.y = newOffset.y;
 		}
-		if (sh->x+sh->offsetPos.x+sh->width > this->offsetPos.x+this->width) {
-			this->width = sh->x+sh->offsetPos.x+sh->width-this->offsetPos.x;
+		if (SHpos.x+SHoffset.x+SHrect.x > offset.x+rect.x) {
+			rect.x = SHpos.x+SHoffset.x+SHrect.x-offset.x;
 		}
-		if (sh->y+sh->offsetPos.y+sh->height-this->offsetPos.y > this->height) {
-			this->height = sh->y+sh->offsetPos.y+sh->height-this->offsetPos.y;
+		if (SHpos.y+SHoffset.y+SHrect.y-offset.y > rect.y) {
+			rect.y = SHpos.y+SHoffset.y+SHrect.y-offset.y;
 		}
 	}
+	this->setOffset(offset.x, offset.y);
+	this->setRect(rect.x, rect.y);
 }
 vector<ShapeRect*>* ShapeGroupRect::getChildShape() {
 	
@@ -522,7 +593,7 @@ bool ShapeGroupRect::addChild(ShapeRect *sh) {
 		}
 	}
 	if (this->parent!=NULL || this==Windows::window->root) sh->updateGlobalPosition();
-	if (this->offsetPos.x==SHRT_MAX||this->offsetPos.y==SHRT_MAX) {
+	if (this->getOffsetX()==SHRT_MAX||this->getOffsetY()==SHRT_MAX) {
 		if (sh->visible) this->updateRect();
 	}else if (sh->visible) {
 		this->updateRect(sh);
@@ -612,8 +683,8 @@ ShapeRect* ShapeGroupRect::globalHitTest(short x, short y) {
 int ShapeGroupRect::callEvent(EventMouseShape* event) {
 	EventMouseShape* eventRollOver = nullptr;
 	event->shape = this;
-	event->localx = event->globalx - this->globalx;
-	event->localy = event->globaly - this->globaly;
+	event->localx = event->globalx - this->getGlobalX();
+	event->localy = event->globaly - this->getGlobalY();
 	ShapeRect *sh;
 	for(int i=0, s=this->eventList.size(); i<s; i++) {
 		if (this->eventList[i].type == event->type) {
@@ -623,10 +694,10 @@ int ShapeGroupRect::callEvent(EventMouseShape* event) {
 	for(int i=this->child.size()-1; i>=0; i--) {
 		if (this->child[i]->mouseEventActive) {
 			sh = this->child[i];
-			if (event->localx>sh->x+sh->offsetPos.x &&
-				event->localy>sh->y+sh->offsetPos.y &&
-				event->localx<sh->x+sh->offsetPos.x+sh->width &&
-				event->localy<sh->y+sh->offsetPos.y+sh->height) {
+			if (event->localx>sh->getX()+sh->getOffsetX() &&
+				event->localy>sh->getY()+sh->getOffsetY() &&
+				event->localx<sh->getX()+sh->getOffsetX()+sh->getWidth() &&
+				event->localy<sh->getY()+sh->getOffsetY()+sh->getHeight()) {
 				if (!sh->mouseEventRollOver) {
 					sh->mouseEventRollOver = true;
 					eventRollOver = new EventMouseShape( EventMouseShape::MOUSE_ROLL_OVER );
@@ -650,63 +721,100 @@ int ShapeGroupRect::callEvent(EventMouseShape* event) {
 	return true;
 }
 
-Bitmap::Bitmap(Texture *tex) :ShapeRect(Bitmap::CRC32), vao(0) {
-	this->tex = tex;
+
+ShapeRectTask ShapeRectTask::task;
+int ShapeRectTask::processExecute() {
+	this->performTasks();
+	return false;
+}
+int ProcessingShapeRect::performTasks() {
+	CRITICAL_SECTION_INTER(this->_accessPush);
+	this->_queueIsUse = !this->_queueIsUse;
+	CRITICAL_SECTION_LEAVE(this->_accessPush);
+	if (this->_queueIsUse == 1) {
+		while ( !this->_essentialTasks1.empty() ) {
+			ShapeRect *shr = this->_essentialTasks1.front();
+			if (shr->vao==0) {
+				svec4 vertex = shr->getBox();
+				glGenVertexArrays(1, &shr->vao);
+				glBindVertexArray(shr->vao);
+				if (shr->vao==0) {
+					this->addTask(this->_essentialTasks1.front());
+					continue;
+				}
+				glGenBuffers(1, &shr->vboRect);
+				if (shr->vboRect==0) {
+					this->addTask(this->_essentialTasks1.front());
+					continue;
+				}
+				glBindBuffer(GL_ARRAY_BUFFER, shr->vboRect);
+				glBufferData(GL_ARRAY_BUFFER, 4*sizeof(short), &vertex, GL_STATIC_DRAW);
+				glVertexAttribPointer(ShaderShRect::POSITION, 4, GL_SHORT, GL_FALSE, 0, NULL);
+				glEnableVertexAttribArray(ShaderShRect::POSITION);
+			}else{
+				svec4 vertex = shr->getBox();
+				glBindVertexArray(shr->vao);
+				glBindBuffer(GL_ARRAY_BUFFER, shr->vboRect);
+				glBufferSubData(GL_ARRAY_BUFFER, 0, 4*sizeof(short), &vertex);
+			}
+			this->_essentialTasks1.pop();
+		}
+	}else{
+		while ( !this->_essentialTasks2.empty() ) {
+			ShapeRect *shr = this->_essentialTasks2.front();
+			if (shr->vao==0) {
+				svec4 vertex = shr->getBox();
+				glGenVertexArrays(1, &shr->vao);
+				glBindVertexArray(shr->vao);
+				if (shr->vao==0) {
+					this->addTask(this->_essentialTasks2.front());
+					continue;
+				}
+				glGenBuffers(1, &shr->vboRect);
+				if (shr->vboRect==0) {
+					this->addTask(this->_essentialTasks2.front());
+					continue;
+				}
+				glBindBuffer(GL_ARRAY_BUFFER, shr->vboRect);
+				glBufferData(GL_ARRAY_BUFFER, 4*sizeof(short), &vertex, GL_STATIC_DRAW);
+				glVertexAttribPointer(ShaderShRect::POSITION, 4, GL_SHORT, GL_FALSE, 0, NULL);
+				glEnableVertexAttribArray(ShaderShRect::POSITION);
+			}else{
+				svec4 vertex = shr->getBox();
+				glBindVertexArray(shr->vao);
+				glBindBuffer(GL_ARRAY_BUFFER, shr->vboRect);
+				glBufferSubData(GL_ARRAY_BUFFER, 0, 4*sizeof(short), &vertex);
+			}
+			this->_essentialTasks2.pop();
+		}
+	}
+	return true;
+}
+
+Bitmap::Bitmap(Texture *tex) :ShapeRect(Bitmap::CRC32), tex(tex) {
 	if (tex->event == Texture::LOADED) {
-		this->width = tex->width;
-		this->height = tex->height;
+		this->setRect(tex->width, tex->height);
 	}else{
 		Bitmap::updateBuffer.push_back(this);
 	}
 }
 void Bitmap::trace() {
-	printf("<Bitmap a='%i' x='%i' y='%i' gx='%i' gy='%i' w='%i' h='%i' texId='%i'/>\n", this->mouseEventActive, this->x, this->y, this->globalx, this->globaly, this->width, this->height, this->tex);
-}
-int Bitmap::renderGL100() {
-	Texture *tex = this->tex;
-	//printf("tex->GLID = %i", tex->GLID);
-	if (GLShader::shader!=NULL && GLShader::shader->crc32!=1) GLShader::setShader(ShaderBitmap::prog);
-	glBindTexture(GL_TEXTURE_2D, tex->GLID);
-	glColor4ub(0xFF,0xFF,0xFF,0xFF);
-	glEnable( GL_TEXTURE_2D );
-	glBegin( GL_QUADS );// <editor-fold defaultstate="collapsed" desc="GL_QUADS">
-		glTexCoord2d( 0.0, 0.0 );	glVertex2s(this->globalx, this->globaly );
-		glTexCoord2d( 0.0, 1.0 );	glVertex2s(this->globalx, this->globaly+tex->height );
-		glTexCoord2d( 1.0, 1.0 );	glVertex2s(this->globalx+tex->width, this->globaly+tex->height );
-		glTexCoord2d( 1.0, 0.0 );	glVertex2s(this->globalx+tex->width, this->globaly );
-	glEnd();// </editor-fold>
-	glDisable( GL_TEXTURE_2D );
-	return true;
+	printf("<Bitmap a='%i' x='%i' y='%i' gx='%i' gy='%i' w='%i' h='%i' texId='%i'/>\n", 
+			this->mouseEventActive, this->getX(), this->getY(), this->getGlobalX(), this->getGlobalY(), this->getWidth(), this->getHeight(), this->tex);
 }
 int Bitmap::renderGL400() {
 	return false;
 }
 int Bitmap::renderGL330() {
 	if (this->tex == nullptr) return false;
-	if (GLShader::shader->crc32!=ShaderBitmap::CRC32) GLShader::setShader(ShaderBitmap::prog);
-	//if (OpenGL::textureGLID!=this->tex->GLID) {
-		glBindTexture(GL_TEXTURE_2D, this->tex->GLID);
-		//OpenGL::textureGLID = this->tex->GLID;
-	//}
-	if (this->vao==0 && this->tex->event==Texture::LOADED) {
-		short vertex[2] = {
-			this->globalx, this->globaly
-		};
-		glGenVertexArrays(1, &this->vao);
-		glBindVertexArray(this->vao);
-		
-		glGenBuffers(1, &this->vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
-		glBufferData(GL_ARRAY_BUFFER, 4, vertex, GL_STATIC_DRAW);
-		glVertexAttribPointer(ShaderBitmap::prog->position, 2, GL_SHORT, GL_FALSE, 0, NULL);
-		glEnableVertexAttribArray(ShaderBitmap::prog->position);
-	}
+	SET_SHADER(ShaderBitmap);
 	glBindVertexArray(this->vao);
+	glBindTexture(GL_TEXTURE_2D, this->tex->GLID);
 	glDrawArrays(GL_POINTS, 0, 1);
 	return true;
 }
 int Bitmap::renderGL210() {
-	if (this->tex->GLID == 0) return false;
+	/*if (this->tex->GLID == 0) return false;
 	printf("renderGL210 \n");
 	unsigned char faces[4] = {0, 1, 2, 3};
 	short texCoord[8] = { 0, 0, 0, 1, 1, 1, 1, 0};
@@ -727,13 +835,28 @@ int Bitmap::renderGL210() {
 		glDrawElements(GL_QUADS, 4, GL_UNSIGNED_BYTE, faces);
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisable( GL_TEXTURE_2D );*/
+	return false;
+}
+int Bitmap::renderGL100() {
+	svec2 global = this->getGlobalPosition();
+	global += this->getOffsetPosition();
+	glBindTexture(GL_TEXTURE_2D, tex->GLID);
+	glColor4ub(0xFF,0xFF,0xFF,0xFF);
+	glEnable( GL_TEXTURE_2D );
+	glBegin( GL_QUADS );
+		glTexCoord2d( 0.0, 0.0 );	glVertex2s(global.x,			global.y );
+		glTexCoord2d( 0.0, 1.0 );	glVertex2s(global.x,			global.y+tex->height );
+		glTexCoord2d( 1.0, 1.0 );	glVertex2s(global.x+tex->width, global.y+tex->height );
+		glTexCoord2d( 1.0, 0.0 );	glVertex2s(global.x+tex->width, global.y );
+	glEnd();
 	glDisable( GL_TEXTURE_2D );
 	return true;
 }
 int Bitmap::saveAsXML(FILE* str, unsigned short tab) {
 	for (int i=0; i<tab; i++) fprintf(str, "\t");
 	fprintf(str, "<Bitmap name='%s' crc32='%i' x='%i' y='%i' width='%i' height='%i' texture='%i'/>\n",
-			this->name.c_str(), this->crc32, this->x, this->y, this->width, this->height, this->tex);
+			this->name.c_str(), this->crc32, this->getX(), this->getY(), this->getWidth(), this->getHeight(), this->tex);
 }
 void Bitmap::updateBitmaps() {
 	if ( !Bitmap::updateBuffer.empty() ) {
@@ -742,8 +865,7 @@ void Bitmap::updateBitmaps() {
 		for(int i=0; i<Bitmap::updateBuffer.size()-countUpdateBMP; i++) {
 			bmp = Bitmap::updateBuffer[i];
 			if (bmp->tex->GLID!=0 && bmp->tex->event==Texture::LOADED) {
-				bmp->width = bmp->tex->width;
-				bmp->height = bmp->tex->height;
+				bmp->setRect(bmp->tex->width, bmp->tex->height);
 				bmp->tex->trace();
 				countUpdateBMP++;
 				if (countUpdateBMP >= Bitmap::updateBuffer.size()) {
@@ -759,6 +881,7 @@ void Bitmap::updateBitmaps() {
 		}
 	}
 }
+
 Buffer::Buffer() {
 	this->bufferInit = false;
 	this->bufferActivate = false;
@@ -802,7 +925,7 @@ int FPoint::renderGL100() {
 	glPointSize(this->radius);
 	glBegin(GL_POINTS);
 	  glColor3ub(this->color.r, this->color.g, this->color.b );
-	  glVertex2s(this->globalx, this->globaly);
+	  glVertex2s(this->getGlobalX(), this->getGlobalY());
 	glEnd();
 	glPopMatrix();
 	return true;
@@ -820,7 +943,7 @@ int FLines::renderGL100() {
 	glBegin(GL_LINE_STRIP);
 		glColor3ub(this->color.r, this->color.g, this->color.b );
 		for (int i=0; i<this->length; i++) {
-			glVertex2s(this->globalx+this->arr[i*2], this->globaly+this->arr[i*2+1]);
+			glVertex2s(this->getGlobalX()+this->arr[i*2], this->getGlobalY()+this->arr[i*2+1]);
 		}
 		//
 		
@@ -831,12 +954,11 @@ int FLines::renderGL100() {
 }
 
 FRect::FRect(short width, short height, uint32_t backgroundColor) :ShapeRect(FRect::CRC32) {
-	this->width = width;
-	this->height = height;
+	this->setRect(width, height);
 	this->backgroundColor.color = backgroundColor;
 }
 int FRect::renderGL100() {
-	glPushMatrix();
+	/*glPushMatrix();
 	glBegin(GL_QUADS);
 		glColor3ub(this->backgroundColor.r, this->backgroundColor.g, this->backgroundColor.b );
 		glVertex2s(this->globalx, this->globaly);
@@ -844,12 +966,13 @@ int FRect::renderGL100() {
 		glVertex2s(this->globalx+this->width, this->globaly+this->height);
 		glVertex2s(this->globalx, this->globaly+this->height);
 	glEnd();
-	glPopMatrix();
-	return true;
+	glPopMatrix();*/
+	return false;
 }
 int FRect::renderGL330() {
 	//glUseProgram();
-	if (GLShader::shader->crc32!=ShaderFPrimitiv::CRC32) GLShader::setShader(ShaderFPrimitiv::prog);
+	puts("FRect::renderGL330");
+	/*if (GLShader::shader->crc32!=ShaderFPrimitiv::CRC32) GLShader::setShader(ShaderFPrimitiv::prog);
 	if (this->vao==0) {
 		short vertex[4] = {
 			this->globalx, this->globaly, (short)this->width, (short)this->height
@@ -871,7 +994,7 @@ int FRect::renderGL330() {
 			backgroundColor.g/255.0, 
 			backgroundColor.b/255.0, 
 			backgroundColor.a/255.0);
-	glDrawArrays(GL_POINTS, 0, 1);
+	glDrawArrays(GL_POINTS, 0, 1);*/
 	return true;
 }
 
@@ -879,18 +1002,15 @@ Scene3D::Scene3D():ShapeRect(1232123) {
 	//this->viewMatrix = ViewMatrixPerspective2(45.0, 1, 1, 10);
 	this->viewMatrix = ViewMatrixPerspective2(45.0, (float)Windows::window->width/(float)Windows::window->height, 1, 1000);
 	//this->viewPosMatrix;
-	this->x = 0;
-	this->y = 0;
-	this->width = Windows::window->width;
-	this->height = Windows::window->height;
+	this->setBox(0, 0, Windows::window->width, Windows::window->height);
 	this->model = nullptr;
 }
 int Scene3D::renderGL100() {
 	OpenGL::pushViewport();
 	OpenGL::pushViewMatrix();
-	OpenGL::setViewport(this->globalx+this->offsetPos.x, 
-			Windows::window->height-this->globaly+this->offsetPos.y-this->height,
-			this->width, this->height);
+	OpenGL::setViewport(this->getGlobalX()+this->getOffsetX(), 
+			Windows::window->height-this->getGlobalY()+this->getOffsetY()-this->getHeight(),
+			this->getWidth(), this->getHeight());
 	OpenGL::setViewMatrix(this->viewMatrix);
 	
 	//this->root.renderGL100();
@@ -901,20 +1021,20 @@ int Scene3D::renderGL100() {
 	glLineWidth(1);
 	glColor4ub(0xFF,0,0,0xFF);
 	glBegin(GL_LINE_STRIP);// <editor-fold defaultstate="collapsed" desc="GL_LINE_STRIP">
-		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
-		glVertex2s( this->globalx+this->offsetPos.x+this->width, this->globaly+this->offsetPos.y );
-		glVertex2s( this->globalx+this->offsetPos.x+this->width, this->globaly+this->offsetPos.y+this->height );
-		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y+this->height );
-		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
+		glVertex2s( this->getGlobalX()+this->getOffsetX(),					this->getGlobalY()+this->getOffsetY() );
+		glVertex2s( this->getGlobalX()+this->getOffsetX()+this->getWidth(),	this->getGlobalY()+this->getOffsetY() );
+		glVertex2s( this->getGlobalX()+this->getOffsetX()+this->getWidth(),	this->getGlobalY()+this->getOffsetY()+this->getHeight() );
+		glVertex2s( this->getGlobalX()+this->getOffsetX(),					this->getGlobalY()+this->getOffsetY()+this->getHeight() );
+		glVertex2s( this->getGlobalX()+this->getOffsetX(),					this->getGlobalY()+this->getOffsetY() );
 	glEnd();// </editor-fold>
 	return true;
 }
 int Scene3D::renderGL330() {
 	OpenGL::pushViewport();
 	OpenGL::pushViewMatrix();
-	OpenGL::setViewport(this->globalx+this->offsetPos.x, 
-			Windows::window->height-this->globaly+this->offsetPos.y-this->height,
-			this->width, this->height);
+	OpenGL::setViewport(this->getGlobalX()+this->getOffsetX(), 
+			Windows::window->height-this->getGlobalY()+this->getOffsetY()-this->getHeight(),
+			this->getWidth(), this->getHeight());
 	OpenGL::setViewMatrix(this->viewMatrix);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
