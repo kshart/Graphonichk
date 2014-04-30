@@ -559,7 +559,7 @@ int BasicShapeRect::renderGL400() {
 	return false;
 }
 int BasicShapeRect::renderGL330() {
-	ViewMatrix mat = ViewMatrixIdentity();
+	Matrix3D mat;
 	mat.a[0] = this->matrix.a;
 	mat.a[1] = this->matrix.b;
 	mat.a[2] = this->matrix.c;
@@ -659,7 +659,7 @@ int BasicShapeCircle::renderGL400() {
 	return false;
 }
 int BasicShapeCircle::renderGL330() {
-	ViewMatrix mat;
+	Matrix3D mat;
 	mat.a[0] = this->matrix.a;
 	mat.a[1] = this->matrix.b;
 	mat.a[2] = this->matrix.c;
@@ -813,7 +813,7 @@ int BasicShapeLine::renderGL400() {
 	return false;
 }
 int BasicShapeLine::renderGL330() {
-	ViewMatrix mat;
+	Matrix3D mat;
 	mat.a[0] = this->matrix.a;
 	mat.a[1] = this->matrix.b;
 	mat.a[2] = this->matrix.c;

@@ -31,7 +31,7 @@ namespace Graphonichk {
 		int renderGL330();
 		int renderGL210();
 		SVG::Group root;
-		ViewMatrix viewMatrix;
+		Matrix3D viewMatrix;
 	};
 }
 

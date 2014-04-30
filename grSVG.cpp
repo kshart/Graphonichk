@@ -35,7 +35,7 @@ ImageSVG::ImageSVG(const char *filename) :ShapeRect(0) {
 		
 	}
 	this->setRect(size.x, size.y);
-	this->viewMatrix = ViewMatrixOrtho(0, size.x, 0, size.y, -1, 1);
+	this->viewMatrix = Matrix3D::ViewOrtho(0, size.x, 0, size.y, -1, 1);
 	
 	ImageSVG::loadGroup(node, &this->root);
 	/*node = node->xmlChildrenNode;

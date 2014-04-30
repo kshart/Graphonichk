@@ -28,9 +28,9 @@ Device::~Device() {
 	Device::device = nullptr;
 	if (this->_mouseDI!=nullptr) this->_mouseDI->Unacquire();
 	if (this->_keyboardDI!=nullptr) this->_keyboardDI->Unacquire();
-	delete this->_mouseDI;
-	delete this->_keyboardDI;
-	delete this->_dinput;
+	//delete this->_mouseDI;
+	//delete this->_keyboardDI;
+	//delete this->_dinput;
 }
 THREAD Device::threadUpdateDevices (void* data) {
 	while (true) {
@@ -89,6 +89,7 @@ THREAD Windows::threadWindow (void* sys) {
 	ReleaseSemaphore(*(HANDLE*)sys, 1, NULL);
 	CloseHandle(semaphore);
 	
+	Device *device = new Device();
 	MSG msg;
 	while (IsWindow(win->hWnd)) {
 		while(PeekMessage(&msg, win->hWnd, 0, 0, PM_REMOVE)) DispatchMessage(&msg);
@@ -143,7 +144,7 @@ THREAD Windows::threadRender (void* sys) {
 	Screen::height = GetDeviceCaps(win->hDC,VERTRES);
 	Screen::dpi = ( Screen::width/(float)GetDeviceCaps(win->hDC,HORZSIZE) )*25.4;
 	printf("<LCD res='%i %i' dpi='%f'/>\n", Screen::width, Screen::height, Screen::dpi );
-	OpenGL::init(OpenGL::VER_CORE_100);
+	OpenGL::init(OpenGL::VER_CORE_330);
 	win->resize(win->width, win->height);
 	ReleaseSemaphore(  *(HANDLE*)sys, 1, NULL);
 	
@@ -185,7 +186,7 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 	EventMouseShape		*eventMouseShape	= nullptr;
 	EventWindow			*eventWin			= nullptr;
 	
-	ViewMatrix vm;
+	Matrix3D vm;
 	Windows *win = Windows::window;
 	
 	if (win->hWnd == hWnd) {
@@ -349,8 +350,9 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 				GetClientRect(win->hWnd, &rect);
 				win->width  = rect.right-rect.left;
 				win->height = rect.bottom-rect.top;
-				vm = ViewMatrixOrtho(0, win->width, 0, win->height, -1, 1);
+				vm = Matrix3D::ViewOrtho(0, win->width, 0, win->height, -1, 1);
 				OpenGL::viewMatrixBuffer[0] = vm;
+				OpenGL::resizeWindow(win->width, win->height);
 				
 				eventWin = new EventWindow( EventWindow::WIN_SIZE, win );
 				win->callEvent(eventWin);
@@ -413,6 +415,7 @@ Windows::Windows(short x, short y, short width, short height) :
 	puts("<Windows message='start WIN32'/>");
 	Windows::window = this;
 	this->root = new ShapeGroupRect();
+	this->root->chengeRect = false;
 	HANDLE semaphore = CreateSemaphore(NULL, 0, 1, NULL);
 	this->winThread = THREAD_START(Windows::threadWindow, &semaphore);
 	WaitForSingleObject(semaphore, INFINITE);
@@ -420,7 +423,6 @@ Windows::Windows(short x, short y, short width, short height) :
 	
 	FileLoad::init();
 	Font::init();
-	Device *device = new Device();
 	this->eachFrame.addTask(&ShapeRectTask::task);
 	puts("<Windows message='end'/>");
 	/*int attributes[] = {
@@ -485,9 +487,10 @@ void Windows::resize(short width, short height) {
 	GetClientRect(this->hWnd, &rect);
 	this->width  = rect.right-rect.left;
 	this->height = rect.bottom-rect.top;
+
+	OpenGL::viewMatrixBuffer[0] = Matrix3D::ViewOrtho(0, this->width, 0, this->height, -1, 1);
+	OpenGL::resizeWindow(this->width, this->height);
 	
-	ViewMatrix vm = ViewMatrixOrtho(0, this->width, 0, this->height, -1, 1);
-	OpenGL::viewMatrixBuffer[0] = vm;
 	EventWindow *e = new EventWindow( EventWindow::WIN_SIZE, this );
 	this->callEvent(e);
 	delete e;
@@ -508,8 +511,7 @@ void Windows::fullScreen() {
 	SetWindowPos(this->hWnd, HWND_TOPMOST, 0, 0, Screen::width, Screen::height, SWP_SHOWWINDOW);
 	SetCapture(this->hWnd);
 	
-	ViewMatrix vm = ViewMatrixOrtho(0, this->width, 0, this->height, -1, 1);
-	OpenGL::viewMatrixBuffer[0] = vm;
+	OpenGL::viewMatrixBuffer[0] = Matrix3D::ViewOrtho(0, this->width, 0, this->height, -1, 1);
 	EventWindow *e = new EventWindow( EventWindow::WIN_SIZE );
 	e->window = this;
 	this->callEvent(e);
@@ -576,12 +578,13 @@ void Windows::resize(short width, short height) {
 
 Windows *Windows::window = nullptr;
 void Windows::redraw() {
-	OpenGL::setViewport(0, 0, this->width, this->height);
-	glClearColor( 0.9, 0.9, 0.9, 1.0 );
-	glClear( GL_COLOR_BUFFER_BIT );
-	OpenGL::clearViewMatrix();
 	switch (OpenGL::ver) {
 		case OpenGL::VER_CORE_100:// <editor-fold defaultstate="collapsed" desc="GL_COMPTABLE_ALL">
+			OpenGL::setViewport(0, 0, this->width, this->height);
+			glClearColor( 0.9, 0.9, 0.9, 1.0 );
+			glClear( GL_COLOR_BUFFER_BIT );
+			OpenGL::clearViewMatrix();
+			
 			glShadeModel(GL_SMOOTH);
 			glEnable( GL_BLEND );
 			
@@ -608,21 +611,12 @@ void Windows::redraw() {
 			glDisable( GL_ALPHA_TEST );
 			glFlush( );
 			break;// </editor-fold>
-		case OpenGL::VER_CORE_210:// <editor-fold defaultstate="collapsed" desc="VER_CORE_210">
-			glEnable( GL_BLEND );
-			glEnable( GL_ALPHA_TEST );
-			glEnable( GL_POINT_SMOOTH );
-			glEnable( GL_LINE_SMOOTH );
-			//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-			glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-			this->root->renderGL210();
-			glDisable( GL_LINE_SMOOTH );
-			glDisable( GL_POINT_SMOOTH );
-			glDisable( GL_BLEND );
-			glDisable( GL_ALPHA_TEST );
-			glFlush( );
-			break;// </editor-fold>
 		case OpenGL::VER_CORE_330:// <editor-fold defaultstate="collapsed" desc="VER_CORE_330">
+			glBindFramebuffer(GL_FRAMEBUFFER, OpenGL::fbo.mainFBO);
+			OpenGL::setViewport(0, 0, this->width, this->height);
+			glClearColor( 0.9, 0.9, 0.9, 1.0 );
+			glClear( GL_COLOR_BUFFER_BIT );
+			OpenGL::clearViewMatrix();
 			glEnable( GL_BLEND );
 			//glFrontFace(GL_CW);
 			//glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
@@ -636,6 +630,15 @@ void Windows::redraw() {
 			//printf("GLShader::glsl->shaderProgram %i\n", GLShader::glsl->shaderProgram);
 			this->root->renderGL330();
 			glDisable( GL_BLEND );
+			
+			
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			OpenGL::setViewport(0, 0, this->width, this->height);
+			SET_SHADER(ShaderPost);
+			glBindVertexArray(OpenGL::fbo.vao);
+			glBindTexture(GL_TEXTURE_2D, OpenGL::fbo.color);
+			glDrawArrays(GL_POINTS, 0, 1);
+			
 			break;// </editor-fold>
 	}
 	glFlush( );

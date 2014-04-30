@@ -531,10 +531,11 @@ int TextField::renderGL330() {
 				printf("FBO set up error %i.\n", glGetError());
 			}
 			
+			Matrix3D mtr = Matrix3D::ViewOrtho(minX, maxX, maxY, minY, -1, 1);
 			OpenGL::pushViewport();
 			OpenGL::pushViewMatrix();
 			OpenGL::setViewport(0, 0, this->getWidth(), this->getHeight());
-			OpenGL::setViewMatrix(ViewMatrixOrtho(minX, maxX, maxY, minY, -1, 1));
+			OpenGL::setViewMatrix(mtr);
 			
 			
 			glGenVertexArrays(1, &bvao);

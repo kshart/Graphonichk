@@ -15,99 +15,7 @@ using namespace Graphonichk;
 	printf("matrix=\n%f\t%f\t%f\t%f\t\n%f\t%f\t%f\t%f\t\n%f\t%f\t%f\t%f\t\n%f\t%f\t%f\t%f\t\n", this->a[0], this->a[1], this->a[2], this->a[3], this->a[4], this->a[5], 
 			this->a[6], this->a[7], this->a[8], this->a[9], this->a[10], this->a[11], this->a[12], this->a[13], this->a[14], this->a[15]);
 }*/
-ViewMatrix Graphonichk::ViewMatrixIdentity() {
-	ViewMatrix vm;
-	vm.a[0] = 1;
-	vm.a[1] = 0;
-	vm.a[2] = 0;
-	vm.a[3] = 0;
-	
-	vm.a[4] = 0;
-	vm.a[5] = 1;
-	vm.a[6] = 0;
-	vm.a[7] = 0;
-	
-	vm.a[8] = 0;
-	vm.a[9] = 0;
-	vm.a[10] = 1;
-	vm.a[11] = 0;
-	
-	vm.a[12] = 0;
-	vm.a[13] = 0;
-	vm.a[14] = 0;
-	vm.a[15] = 1;
-	return vm;
-}
-ViewMatrix Graphonichk::ViewMatrixOrtho(float l, float r, float t, float b, float f, float n) {
-	ViewMatrix vm;
-	vm.a[0] = 2/(r-l);
-	vm.a[4] = 0;
-	vm.a[8] = 0;
-	vm.a[12] = 0;
-	
-	vm.a[1] = 0;
-	vm.a[5] = 2/(t-b);
-	vm.a[9] = 0;
-	vm.a[13] = 0;
-	
-	vm.a[2] = 0;
-	vm.a[6] = 0;
-	vm.a[10] = -2/(f-n);
-	vm.a[14] = 0;
-	
-	vm.a[3] = -(r+l)/(r-l);
-	vm.a[7] = -(t+b)/(t-b);
-	vm.a[11] = -(f+n)/(f-n);
-	vm.a[15] = 1;
-	return vm;
-}
-ViewMatrix Graphonichk::ViewMatrixPerspective(float l, float r, float t, float b, float f, float n) {
-	ViewMatrix vm;
-	vm.a[0] = 2*n/(r-l);
-	vm.a[4] = 0;
-	vm.a[8] = (r+l)/(r-l);
-	vm.a[12] = 0;
-	
-	vm.a[1] = 0;
-	vm.a[5] = 2*n/(t-b);
-	vm.a[9] = (t+b)/(t-b);
-	vm.a[13] = 0;
-	
-	vm.a[2] = 0;
-	vm.a[6] = 0;
-	vm.a[10] = -(f+n)/(f-n);
-	vm.a[14] = -2*f*n/(f-n);
-	
-	vm.a[3] = 0;
-	vm.a[7] = 0;
-	vm.a[11] = -1;
-	vm.a[15] = 0;
-	return vm;
-}
-ViewMatrix Graphonichk::ViewMatrixPerspective2(float fov, float aspect, float n, float f) {
-	ViewMatrix vm;
-	float mf = 1/tanf(fov/2);
-	vm.a[0] = mf / aspect;
-	vm.a[1] = 0;
-	vm.a[2] = 0;
-	vm.a[3] = 0;
-	
-	vm.a[4] = 0;
-	vm.a[5] = mf;
-	vm.a[6] = 0;
-	vm.a[7] = 0;
-	
-	vm.a[8] = 0;
-	vm.a[9] = 0;
-	vm.a[10] = (f+n)/(n-f);
-	vm.a[11] = (2*f*n)/(n-f);
-	
-	vm.a[12] = 0;
-	vm.a[13] = 0;
-	vm.a[14] = -1;
-	vm.a[15] = 0;
-	return vm;
-}
+
 
 TransformMatrix::TransformMatrix(float ina, float inb, float inc, float ind, float ine, float inf) :a(ina), b(inb), c(inc), d(ind), e(ine), f(inf) {
 }
@@ -201,7 +109,7 @@ void TransformMatrix::skewY(float angle) {
 	float ag = angle*M_PI/180;
 }
 
-TransformMatrix3D::TransformMatrix3D() {
+Matrix3D::Matrix3D() {
 	this->a[0] = 1;
 	this->a[1] = 0;
 	this->a[2] = 0;
@@ -222,14 +130,84 @@ TransformMatrix3D::TransformMatrix3D() {
 	this->a[14] = 0;
 	this->a[15] = 1;
 }
-TransformMatrix3D::TransformMatrix3D(const TransformMatrix3D *m) {
+Matrix3D::Matrix3D(const Matrix3D *m) {
 	memcpy(this->a, m->a, 16*sizeof(float));
 }
-void TransformMatrix3D::trace() {
+Matrix3D Matrix3D::ViewOrtho(float l, float r, float t, float b, float f, float n) {
+	Matrix3D vm;
+	vm.a[0] = 2/(r-l);
+	vm.a[4] = 0;
+	vm.a[8] = 0;
+	vm.a[12] = 0;
+	
+	vm.a[1] = 0;
+	vm.a[5] = 2/(t-b);
+	vm.a[9] = 0;
+	vm.a[13] = 0;
+	
+	vm.a[2] = 0;
+	vm.a[6] = 0;
+	vm.a[10] = -2/(f-n);
+	vm.a[14] = 0;
+	
+	vm.a[3] = -(r+l)/(r-l);
+	vm.a[7] = -(t+b)/(t-b);
+	vm.a[11] = -(f+n)/(f-n);
+	vm.a[15] = 1;
+	return vm;
+}
+Matrix3D Matrix3D::ViewPerspective(float l, float r, float t, float b, float f, float n) {
+	Matrix3D vm;
+	vm.a[0] = 2*n/(r-l);
+	vm.a[4] = 0;
+	vm.a[8] = (r+l)/(r-l);
+	vm.a[12] = 0;
+	
+	vm.a[1] = 0;
+	vm.a[5] = 2*n/(t-b);
+	vm.a[9] = (t+b)/(t-b);
+	vm.a[13] = 0;
+	
+	vm.a[2] = 0;
+	vm.a[6] = 0;
+	vm.a[10] = -(f+n)/(f-n);
+	vm.a[14] = -2*f*n/(f-n);
+	
+	vm.a[3] = 0;
+	vm.a[7] = 0;
+	vm.a[11] = -1;
+	vm.a[15] = 0;
+	return vm;
+}
+Matrix3D Matrix3D::ViewPerspective2(float fov, float aspect, float n, float f) {
+	Matrix3D vm;
+	float mf = 1/tanf(fov/2);
+	vm.a[0] = mf / aspect;
+	vm.a[1] = 0;
+	vm.a[2] = 0;
+	vm.a[3] = 0;
+	
+	vm.a[4] = 0;
+	vm.a[5] = mf;
+	vm.a[6] = 0;
+	vm.a[7] = 0;
+	
+	vm.a[8] = 0;
+	vm.a[9] = 0;
+	vm.a[10] = (f+n)/(n-f);
+	vm.a[11] = (2*f*n)/(n-f);
+	
+	vm.a[12] = 0;
+	vm.a[13] = 0;
+	vm.a[14] = -1;
+	vm.a[15] = 0;
+	return vm;
+}
+void Matrix3D::trace() {
 	printf("matrix=\n%f\t%f\t%f\t%f\t\n%f\t%f\t%f\t%f\t\n%f\t%f\t%f\t%f\t\n%f\t%f\t%f\t%f\t\n", this->a[0], this->a[1], this->a[2], this->a[3], this->a[4], this->a[5], 
 			this->a[6], this->a[7], this->a[8], this->a[9], this->a[10], this->a[11], this->a[12], this->a[13], this->a[14], this->a[15]);
 }
-void TransformMatrix3D::loadIdentity() {
+void Matrix3D::loadIdentity() {
 	this->a[0] = 1;
 	this->a[1] = 0;
 	this->a[2] = 0;
@@ -250,8 +228,8 @@ void TransformMatrix3D::loadIdentity() {
 	this->a[14] = 0;
 	this->a[15] = 1;
 }
-void TransformMatrix3D::multiple(TransformMatrix3D &m2) {
-	TransformMatrix3D m1(this);
+void Matrix3D::multiple(Matrix3D &m2) {
+	Matrix3D m1(this);
 	//i = 4
 	//j = 4
 	//  0  1  2  3
@@ -278,29 +256,29 @@ void TransformMatrix3D::multiple(TransformMatrix3D &m2) {
 	this->a[14] = m1.a[12]*m2.a[2] + m1.a[13]*m2.a[6] + m1.a[14]*m2.a[10] + m1.a[15]*m2.a[14];
 	this->a[15] = m1.a[12]*m2.a[3] + m1.a[13]*m2.a[7] + m1.a[14]*m2.a[11] + m1.a[15]*m2.a[15];
 }
-void TransformMatrix3D::scale(float s) {
+void Matrix3D::scale(float s) {
 	// s 0 0 0
 	// 0 s 0 0
 	// 0 0 s 0
 	// 0 0 0 1
-	TransformMatrix3D mt;
+	Matrix3D mt;
 	mt.a[0] = s;
 	mt.a[5] = s;
 	mt.a[10] = s;
 	this->multiple(mt);
 }
-void TransformMatrix3D::translate(float x, float y, float z) {
+void Matrix3D::translate(float x, float y, float z) {
 	// 1 0 0 tx
 	// 0 1 0 ty
 	// 0 0 1 tz
 	// 0 0 0 1
-	TransformMatrix3D mt;
+	Matrix3D mt;
 	mt.a[3] = x;
 	mt.a[7] = y;
 	mt.a[11] = z;
 	this->multiple(mt);
 }
-void TransformMatrix3D::rotate(float angleX, float angleY, float angleZ) {
+void Matrix3D::rotate(float angleX, float angleY, float angleZ) {
 	/*
 	
 	1 0       0        0
@@ -335,7 +313,7 @@ void TransformMatrix3D::rotate(float angleX, float angleY, float angleZ) {
 	float cax = cos(angleX), sax = sin(angleX), 
 			cay = cos(angleY), say = sin(angleY),
 			caz = cos(angleZ), saz = sin(angleZ);
-	TransformMatrix3D mt;
+	Matrix3D mt;
 	
 	mt.a[0] = cay*caz;
 	mt.a[1] = -cay*saz;

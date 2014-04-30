@@ -16,28 +16,23 @@ namespace Graphonichk {
 		void skewX(float angle);
 		void skewY(float angle);
 	};
-	class TransformMatrix3D {
+	class Matrix3D {
 	public:
 		float a[16];
-		TransformMatrix3D();
-		TransformMatrix3D(const TransformMatrix3D *m);
-		void trace();
+		Matrix3D();
+		Matrix3D(const Matrix3D *m);
+		static Matrix3D ViewOrtho(float r, float l, float t, float b, float f, float n);
+		static Matrix3D ViewPerspective(float r, float l, float t, float b, float f, float n);
+		static Matrix3D ViewPerspective2(float fov, float aspect, float f, float n);
 		void loadIdentity();
-		void multiple(TransformMatrix3D &mt);
+		void trace();
+		
+		void multiple(Matrix3D &mt);
 		void scale(float s);
 		void translate(float x, float y, float z);
 		void rotate(float angleX, float angleY, float angleZ);
+		
 	};
-	typedef struct {
-		float a[16];
-	} ViewMatrix;
-	ViewMatrix ViewMatrixIdentity();
-	ViewMatrix ViewMatrixOrtho(float r, float l, float t, float b, float f, float n);
-	ViewMatrix ViewMatrixPerspective(float r, float l, float t, float b, float f, float n);
-	ViewMatrix ViewMatrixPerspective2(float fov, float aspect, float f, float n);
-	void ViewMatrixRotate(ViewMatrix &vm);
-	void ViewMatrixTranslate(ViewMatrix &vm, float x, float y, float z);
-	
 }
 
 #endif	/* GRMATRIX_H */

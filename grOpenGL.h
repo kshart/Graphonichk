@@ -97,6 +97,19 @@ namespace Graphonichk {
 		friend GLShaderLoadTask;
 		void init();
 	};
+	class ShaderPost :public GLShader {
+	public:
+		enum {CRC32=0x5122123};
+		ShaderPost();
+		//static void init();
+		static void init33();
+		static ShaderPost* prog;
+		
+		GLint texture, grShaderData;
+		
+		friend GLShaderLoadTask;
+		void init();
+	};
 	class OpenGL {
 	  public:
 		enum OPENGL_VER:char{
@@ -107,6 +120,7 @@ namespace Graphonichk {
 		};
 		static OPENGL_VER ver;
 		static void trace();
+		static void resizeWindow(unsigned short w, unsigned short h);
 		
 		typedef struct {
 			short x, y, width, height;
@@ -116,13 +130,16 @@ namespace Graphonichk {
 		static void popViewport();
 		static void setViewport(short, short, short, short);
 
-		static vector<ViewMatrix> viewMatrixBuffer;
+		static vector<Matrix3D> viewMatrixBuffer;
 		static void clearViewMatrix();
 		static void pushViewMatrix();
 		static void popViewMatrix();
-		static void setViewMatrix(ViewMatrix view);
-		static void multViewMatrix(ViewMatrix view);
+		static void setViewMatrix(Matrix3D &view);
+		static void multViewMatrix(Matrix3D &view);
 		static GLuint grShaderData, circleBuffer, textureGLID;
+		static struct _fbo {
+			GLuint mainFBO, color, depth, vao, vbo;
+		} fbo;
 		static int init(OPENGL_VER);
 	};
 	

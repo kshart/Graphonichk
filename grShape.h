@@ -196,7 +196,7 @@ namespace Graphonichk {
 		virtual int renderGL330();
 		virtual int renderGL210();
 		ShapeGroupMatrix2D group;
-		ViewMatrix view;
+		Matrix3D view;
 	};
 	class ShapeRectGateMatrix3D :public ShapeRect {
 	public:
@@ -207,7 +207,7 @@ namespace Graphonichk {
 		virtual int renderGL330();
 		virtual int renderGL210();
 		ShapeGroupBasic group;
-		ViewMatrix view;
+		Matrix3D view;
 	};
 	
 	
@@ -292,9 +292,9 @@ namespace Graphonichk {
 		Scene3D();
 		int renderGL100();
 		int renderGL330();
-		ViewMatrix viewMatrix;
-		TransformMatrix3D viewPosMatrix;
-		TransformMatrix3D transformMatrix;
+		Matrix3D viewMatrix;
+		Matrix3D viewPosMatrix;
+		Matrix3D transformMatrix;
 		Model3D *model;
 	};
 /*CRC32

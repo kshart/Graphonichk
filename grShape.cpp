@@ -121,11 +121,10 @@ int ShapeRectGateMatrix2D::renderGL210() {
 }
 
 
-ShapeRect::ShapeRect(int crc32) :ShapeBasic(crc32) {
+ShapeRect::ShapeRect(int crc32) :ShapeBasic(crc32), parent(nullptr) {
 	this->mouseEventActive = false;
 	this->mouseEventRollOver = false;
 	this->visible = true;
-	this->parent = nullptr;
 	this->local.x = this->local.y = 0;
 	this->global.x = this->global.y = 0;
 	this->width = this->height = 0;
@@ -227,8 +226,8 @@ svec4 ShapeRect::getBox() const {
 	svec4 v;
 	v.x = this->global.x+this->offset.x;
 	v.y = this->global.y+this->offset.y;
-	v.z = v.x+this->width;
-	v.w = v.y+this->height;
+	v.z = this->width;
+	v.w = this->height;
 	return v;
 }
 void ShapeRect::trace() {
@@ -279,7 +278,7 @@ int ShapeRect::addEventHandler( int type, void(*fun)(const EventMouseShape*)) {
 	this->eventList.push_back( el );
 	this->mouseEventActive = true;
 	ShapeRect *sh = this;
-	while (sh->parent != NULL) {
+	while (sh->parent != nullptr) {
 		sh = sh->parent;
 		sh->mouseEventActive = true;
 	}
@@ -1000,7 +999,7 @@ int FRect::renderGL330() {
 
 Scene3D::Scene3D():ShapeRect(1232123) {
 	//this->viewMatrix = ViewMatrixPerspective2(45.0, 1, 1, 10);
-	this->viewMatrix = ViewMatrixPerspective2(45.0, (float)Windows::window->width/(float)Windows::window->height, 1, 1000);
+	this->viewMatrix = Matrix3D::ViewPerspective2(45.0, (float)Windows::window->width/(float)Windows::window->height, 1, 1000);
 	//this->viewPosMatrix;
 	this->setBox(0, 0, Windows::window->width, Windows::window->height);
 	this->model = nullptr;
