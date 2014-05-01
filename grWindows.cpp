@@ -27,7 +27,7 @@ Device::Device() :_dinput(nullptr), _mouseDI(nullptr), _keyboardDI(nullptr) {
 	if ( FAILED(DirectInput8Create(System::hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&this->_dinput, NULL)) ) TerminateProcess(System::hInstance, 1);
 	TerminateProcess(System::hInstance, 1);
 	this->_dinput->EnumDevices(DI8DEVCLASS_ALL, Device::DIEnumDevicesProc, this, DIEDFL_ATTACHEDONLY);
-	this->updateDevicesThread = THREAD_START(Windows::threadRender, nullptr);
+	THREAD_START(this->updateDevicesThread, Windows::threadRender, nullptr);
 }
 Device::~Device() {
 	THREAD_CLOSE(this->updateDevicesThread);
@@ -95,7 +95,7 @@ Windows::Windows(short x, short y, short width, short height) :
 	this->root = new ShapeGroupRect();
 	this->root->chengeRect = false;
 	HANDLE semaphore = CreateSemaphore(NULL, 0, 1, NULL);
-	this->winThread = THREAD_START(Windows::threadWindow, &semaphore);
+	THREAD_START(this->winThread, Windows::threadWindow, &semaphore);
 	WaitForSingleObject(semaphore, INFINITE);
 	CloseHandle(semaphore);
 	
@@ -211,7 +211,7 @@ THREAD Windows::threadWindow (void* sys) {
 	}
 	
 	HANDLE semaphore = CreateSemaphore(NULL, 0, 1, NULL);
-	win->renderThread = THREAD_START(Windows::threadRender, &semaphore);
+	THREAD_START(win->renderThread, Windows::threadRender, &semaphore);
 	SetThreadPriority(win->renderThread, THREAD_PRIORITY_HIGHEST);
 	WaitForSingleObject(semaphore, INFINITE);
 	ShowWindow(win->hWnd, SW_SHOW);

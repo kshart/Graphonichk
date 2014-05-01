@@ -25,7 +25,7 @@ namespace Graphonichk {
 	};
 	class SupSuspendTask {
 	public:
-		virtual int processExecute(HANDLE *sect) {
+		virtual int processExecute(MUTEX *sect) {
 			fputs("SupSuspendTask::processExecute\n", iovir);
 			return false;
 		}
@@ -158,12 +158,12 @@ namespace Graphonichk {
 		}
 	};
 	class ProcessingSupSuspend :public ProcessingQueue<SupSuspendTask> {
-		HANDLE _suspendHandle;
+		MUTEX _suspendHandle;
 		THREAD_H _threadHandle;
 		float _time;
 	public:
 		typedef struct {
-			HANDLE *sush;
+			MUTEX *sush;
 			SupSuspendTask *task;
 		} ThreadData;
 		ProcessingSupSuspend();

@@ -26,11 +26,13 @@
 	#define CRITICAL_SECTION_INIT(cs) InitializeCriticalSection(&cs);
 	#define CRITICAL_SECTION_INTER(cs) EnterCriticalSection(&cs);
 	#define CRITICAL_SECTION_LEAVE(cs) LeaveCriticalSection(&cs);
-
+	
+	#define MUTEX HANDLE
+	
 	#define THREAD_H HANDLE
 	#define THREAD DWORD WINAPI
 	
-	#define THREAD_START(thread, data) CreateThread(NULL, 0, thread, data, 0, 0);
+	#define THREAD_START(handle, thread, data) handle = CreateThread(NULL, 0, thread, data, 0, 0);
 	#define THREAD_SUSPEND(thread) SuspendThread(thread);
 	#define THREAD_CLOSE(thread) CloseHandle(thread);
 #elif defined(X11)
@@ -47,6 +49,13 @@
 	
 	#define THREAD_H pthread_t
 	#define THREAD void*
+	
+	#define THREAD_START(handle, thread, data) pthread_create(&handle, NULL, thread, data)
+	#define THREAD_SUSPEND(thread) SuspendThread(thread);
+	#define THREAD_CLOSE(thread) pthread_cancel(thread);
+	
+	#define MUTEX pthread_mutex_t
+
 #endif
 
 #define FRAME_PER_SECOND 60
