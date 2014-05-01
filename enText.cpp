@@ -744,7 +744,7 @@ void ShaderTextFieldBuffer::init33() {
 			//"vec4 textBGColor = texture(textTexture, vec2(VertexIn.TexCoord.x+0.01, VertexIn.TexCoord.y+0.01));"
 			//"color.a = texc.a+textBGColor.a*(1-texc.a);"
 			//"color.rgb = vec3((texc.rgb*texc.a)+(textBGColor.rgb*textBGColor.a)*(1-texc.a))/color.a;"
-			"color = vec4(1, 0, 0, 1);"//texc;"
+			"color = texc;"
 		"}",
 		*gmsh = 
 		//"#version 330 core\n"

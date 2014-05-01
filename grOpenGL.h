@@ -8,6 +8,7 @@
 #include "grMain.h"
 
 #define SET_SHADER(sh) if (GLShader::shader->crc32!=sh::CRC32) GLShader::setShader(sh::prog);
+#define SET_SHADER_H(sh) if (GLShader::shader!=sh) GLShader::setShader(sh);
 using namespace std;
 namespace Graphonichk {
 	class GLShader;
@@ -110,6 +111,19 @@ namespace Graphonichk {
 		friend GLShaderLoadTask;
 		void init();
 	};
+	class ShaderBW :public GLShader {
+	public:
+		enum {CRC32=0x522123};
+		ShaderBW();
+		//static void init();
+		static void init33();
+		static ShaderBW* prog;
+		
+		GLint texture, grShaderData;
+		
+		friend GLShaderLoadTask;
+		void init();
+	};
 	class OpenGL {
 	  public:
 		enum OPENGL_VER:char{
@@ -120,7 +134,6 @@ namespace Graphonichk {
 		};
 		static OPENGL_VER ver;
 		static void trace();
-		static void resizeWindow(unsigned short w, unsigned short h);
 		
 		typedef struct {
 			short x, y, width, height;
@@ -137,10 +150,6 @@ namespace Graphonichk {
 		static void setViewMatrix(Matrix3D &view);
 		static void multViewMatrix(Matrix3D &view);
 		static GLuint grShaderData, circleBuffer, textureGLID;
-		static struct _fbo {
-			GLuint mainFBO, vao, vbo;
-			Texture *color, *depth;
-		} fbo;
 		static int init(OPENGL_VER);
 	};
 	

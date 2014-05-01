@@ -63,21 +63,30 @@ namespace Graphonichk {
 		ShapeGroupBasic(int crc32);
 	public:
 		ShapeGroupBasic();
-		virtual void trace();
-		virtual int renderGL400();
-		virtual int renderGL330();
-		virtual int renderGL210();
-		virtual int renderGL100();
+		virtual void trace() override;
+		virtual int renderGL400() override;
+		virtual int renderGL330() override;
+		virtual int renderGL210() override;
+		virtual int renderGL100() override;
 		vector<ShapeBasic*> child;
 	};
 	
-	class ShapeRect :public EventDispatcher<EventMouseShape>, public ShapeBasic {
+	class ProcessingShapeRect :public ProcessingQueue<ShapeRect> {
+	public:
+		int performTasks();
+	};
+	class ShapeRectTask :public ProcessingShapeRect, public EachFrameTask {
 	private:
+	public:
+		static ShapeRectTask task;
+		int processExecute();
+	};
+	class ShapeRect :public EventDispatcher<EventMouseShape>, public ShapeBasic {
+	protected:
 		bool _toUpdate;
 		svec2 offset, global, local;
 		unsigned short width, height;
 		friend class ShapeGroupRect;
-	protected:
 		ShapeRect(int crc32);
 	public:
 		virtual void setPosition(short x, short y);
@@ -127,34 +136,27 @@ namespace Graphonichk {
 		virtual void trace();
 		
 		virtual bool addChild(ShapeRect *sh);
-		virtual bool removeChild(ShapeRect *sh);
+		virtual bool removeChild(const ShapeRect *sh) ;
 		virtual bool setChildDepth(ShapeRect *sh, unsigned short depth);
-		virtual unsigned int getChildDepth(ShapeRect *sh);
-		virtual ShapeRect* getChild(string str);
+		virtual unsigned int getChildDepth(ShapeRect *sh) const;
+		virtual ShapeRect* getChild(string str) const;
 		
-		virtual void setPosition(short x, short y);
-		virtual void updateGlobalPosition();
+		virtual void setPosition(short x, short y) override;
+		virtual void updateGlobalPosition() override;
 		virtual void updateRect();
-		virtual void updateRect(ShapeRect *sh);
-		virtual void setBuffer(BUFFER_TYPE, char);
 		
-		virtual int renderGL100();
-		virtual int renderGL400();
-		virtual int renderGL330();
-		virtual int renderGL210();
-		virtual int bufferGLComptAll();
-		virtual int bufferGL400();
-		virtual int bufferGL330();
-		virtual int bufferGL210();
-		virtual bool bufferMode(bool mode);
+		virtual int renderGL100() override;
+		virtual int renderGL400() override;
+		virtual int renderGL330() override;
+		virtual int renderGL210() override;
 		
-		int saveAsXML(FILE *str, unsigned short tab=0);
+		//int saveAsXML(FILE *str, unsigned short tab=0);
 		
 		virtual vector<ShapeRect*>* getChildShape();
 		virtual void getChildShape(vector<ShapeRect*>*);
 		
-		virtual ShapeRect* globalHitTest(short x, short y);
-		virtual int callEvent(EventMouseShape *e);
+		virtual ShapeRect* globalHitTest(short x, short y) override;
+		virtual int callEvent(EventMouseShape *e) override;
 		
 		GLuint totalShapeVertexInit;
 		vector<ShapeRect*> child;
@@ -179,10 +181,10 @@ namespace Graphonichk {
 	public:
 		ShapeGroupMatrix2D();
 		//virtual void trace();
-		virtual int renderGL100();
-		virtual int renderGL400();
-		virtual int renderGL330();
-		virtual int renderGL210();
+		virtual int renderGL100() override;
+		virtual int renderGL400() override;
+		virtual int renderGL330() override;
+		virtual int renderGL210() override;
 		
 		vector<ShapeMatrix2D*> child;
 	};
@@ -191,10 +193,10 @@ namespace Graphonichk {
 	public:
 		ShapeRectGateMatrix2D();
 		//virtual void trace();
-		virtual int renderGL100();
-		virtual int renderGL400();
-		virtual int renderGL330();
-		virtual int renderGL210();
+		virtual int renderGL100() override;
+		virtual int renderGL400() override;
+		virtual int renderGL330() override;
+		virtual int renderGL210() override;
 		ShapeGroupMatrix2D group;
 		Matrix3D view;
 	};
@@ -202,26 +204,59 @@ namespace Graphonichk {
 	public:
 		ShapeRectGateMatrix3D();
 		//virtual void trace();
-		virtual int renderGL100();
-		virtual int renderGL400();
-		virtual int renderGL330();
-		virtual int renderGL210();
+		virtual int renderGL100() override;
+		virtual int renderGL400() override;
+		virtual int renderGL330() override;
+		virtual int renderGL210() override;
 		ShapeGroupBasic group;
 		Matrix3D view;
 	};
 	
 	
-	
-	
-	class ProcessingShapeRect :public ProcessingQueue<ShapeRect> {
-	public:
-		int performTasks();
-	};
-	class ShapeRectTask :public ProcessingShapeRect, public EachFrameTask {
+	class ShapePostEffect :public ShapeBasic {
 	private:
+		//friend class ShapeGroupRect;
 	public:
-		static ShapeRectTask task;
-		int processExecute();
+		enum {CRC32=0xC499C679};
+		ShapePostEffect(GLShader *shader);
+		int renderGL330() override;
+		GLShader *shader;
+	};
+	class ShapeMain :public ShapeGroupRect {
+	private:
+		//friend class ShapeGroupRect;
+	public:
+		enum {CRC32=0xC489C679};
+		ShapeMain();
+		void setRect(short w, short h) override;
+		int renderGL330() override;
+		
+		ShapeGroupBasic postEffects;
+		struct _fbo {
+			GLuint fbo, vao, vbo;
+			Texture *color, *depth;
+		} frameBuffer;
+	};
+	class ShapeMainInitTask :public EachFrameTask {
+	public:
+		ShapeMainInitTask(ShapeMain *sh) :sh(sh) {}
+		int processExecute() {
+			if (this->sh->frameBuffer.color->GLID==0 || this->sh->frameBuffer.depth->GLID==0) return false;
+			svec2 rect = this->sh->getRect();
+			glGenVertexArrays(1, &this->sh->frameBuffer.vao);
+			glBindVertexArray(this->sh->frameBuffer.vao);
+			glGenBuffers(1, &this->sh->frameBuffer.vbo);
+			glBindBuffer(GL_ARRAY_BUFFER, this->sh->frameBuffer.vbo);
+			glBufferData(GL_ARRAY_BUFFER, 2*sizeof(short), &rect, GL_STATIC_DRAW);
+			glVertexAttribPointer(ShaderShRect::POSITION, 2, GL_SHORT, GL_FALSE, 0, NULL);
+			glEnableVertexAttribArray(ShaderShRect::POSITION);
+			glGenFramebuffers(1, &this->sh->frameBuffer.fbo);
+			glBindFramebuffer(GL_FRAMEBUFFER, this->sh->frameBuffer.fbo);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this->sh->frameBuffer.color->GLID, 0);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, this->sh->frameBuffer.depth->GLID, 0);
+			return true;
+		}
+		ShapeMain *sh;
 	};
 	
 	class Bitmap :public ShapeRect {
@@ -230,11 +265,11 @@ namespace Graphonichk {
 	public:
 		enum {CRC32=0xEFC15B9A};
 		Bitmap(Texture*);
-		void trace();
-		int renderGL400();
-		int renderGL330();
-		int renderGL210();
-		int renderGL100();
+		void trace() override;
+		int renderGL400() override;
+		int renderGL330() override;
+		int renderGL210() override;
+		int renderGL100() override;
 		int saveAsXML(FILE* str, unsigned short tab);
 		Texture *tex;
 		
@@ -246,11 +281,11 @@ namespace Graphonichk {
 	public:
 		enum {CRC32=0xEFC15B9A};
 		BitmapAtlas(Texture*);
-		void trace();
-		int renderGL400();
-		int renderGL330();
-		int renderGL210();
-		int renderGL100();
+		void trace() override;
+		int renderGL400() override;
+		int renderGL330() override;
+		int renderGL210() override;
+		int renderGL100() override;
 		Texture *tex;
 		short texRectID;
 		
@@ -258,30 +293,35 @@ namespace Graphonichk {
 		static void updateBitmaps();
 	};
 	
-	
 	class FPoint :public ShapeRect {
 	  public:
 		enum {CRC32=0xD88563EF};
 		FPoint(int, uint32_t);
-		int renderGL100();
+		int renderGL100() override;
 		int radius;
 		argb color;
 	};
 	class FLines :public ShapeRect {
-	  public:
+	public:
+		typedef struct {
+			enum TYPE:char {
+				line, bezier3
+			} type;
+			svec2 p1, p2;
+		} Segment;
 		enum {CRC32=0x20211C5D};
-		FLines(void*, short, short, uint32_t);
-		int renderGL100();
-		short length, lineWidth;
+		FLines(Segment *sgs, short length, short lineWidth, argb color);
+		int renderGL100() override;
+		short lineWidth;
 		argb color;
-		short *arr;
+		Array<Segment> segments;
 	};
 	class FRect :public ShapeRect {
 	  public:
 		enum {CRC32=0x27311957};
 		FRect(short width, short height, uint32_t backgroundColor);
-		int renderGL100();
-		int renderGL330();
+		int renderGL100() override;
+		int renderGL330() override;
 		argb backgroundColor;
 		GLuint vao, vbo;
 	};
@@ -290,8 +330,8 @@ namespace Graphonichk {
 	class Scene3D :public ShapeRect {
 	public:
 		Scene3D();
-		int renderGL100();
-		int renderGL330();
+		int renderGL100() override;
+		int renderGL330() override;
 		Matrix3D viewMatrix;
 		Matrix3D viewPosMatrix;
 		Matrix3D transformMatrix;

@@ -25,7 +25,6 @@ void glslLoaded(const EventFileLoad* e) {
 	}
 	//img->load( (char*)(e->file->data), e->file->size);
 }*/
-struct OpenGL::_fbo OpenGL::fbo;
 GLuint OpenGL::grShaderData = 0;
 GLuint OpenGL::circleBuffer = 0;
 GLuint OpenGL::textureGLID = 0;
@@ -43,8 +42,6 @@ int OpenGL::init(OPENGL_VER ver) {
 	Matrix3D mat;
 	OpenGL::viewportBuffer.push_back(vp);
 	OpenGL::viewMatrixBuffer.push_back(mat);
-	OpenGL::fbo.color = Texture::getTexture(0, 0, GL_RGB, GL_UNSIGNED_BYTE);
-	OpenGL::fbo.depth = Texture::getTexture(0, 0, GL_DEPTH_COMPONENT, GL_FLOAT);
 	
 	float circle[8192+100];
 	circle[0] = 0;
@@ -63,22 +60,6 @@ int OpenGL::init(OPENGL_VER ver) {
 		
 	}else if (ver==VER_CORE_330) {
 		//mainFBO
-		svec2 vertex;
-		vertex.x = 0;
-		vertex.y = 0;
-		glGenVertexArrays(1, &OpenGL::fbo.vao);
-		glBindVertexArray(OpenGL::fbo.vao);
-		glGenBuffers(1, &OpenGL::fbo.vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, OpenGL::fbo.vbo);
-		glBufferData(GL_ARRAY_BUFFER, 2*sizeof(short), &vertex, GL_STATIC_DRAW);
-		glVertexAttribPointer(ShaderShRect::POSITION, 2, GL_SHORT, GL_FALSE, 0, NULL);
-		glEnableVertexAttribArray(ShaderShRect::POSITION);
-		
-		//glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, _tex->width, _tex->height, 0, GL_RGB, GL_BYTE, NULL );
-		glGenFramebuffers(1, &OpenGL::fbo.mainFBO);
-		glBindFramebuffer(GL_FRAMEBUFFER, OpenGL::fbo.mainFBO);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, OpenGL::fbo.color->GLID, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, OpenGL::fbo.depth->GLID, 0);
 			
 		glGenBuffers(1, &OpenGL::grShaderData);
 		glBindBuffer(GL_UNIFORM_BUFFER, OpenGL::grShaderData);
@@ -100,6 +81,7 @@ int OpenGL::init(OPENGL_VER ver) {
 		ShaderTextField::init33();
 		ShaderTextFieldBuffer::init33();
 		ShaderPost::init33();
+		ShaderBW::init33();
 		
 		GLShader::setShader(ShaderBitmap::prog);
 		glActiveTexture(GL_TEXTURE0);
@@ -230,21 +212,6 @@ void OpenGL::trace() {
 	glGetIntegerv(GL_MINOR_VERSION, &minor);
 	printf("<opengl renderer='%s' vendor='%s' version='%s' version_ogl='%i %i'/>\n", glGetString(GL_RENDERER), glGetString(GL_VENDOR), glGetString(GL_VERSION), major, minor);
 }
-void OpenGL::resizeWindow(unsigned short w, unsigned short h) {
-	if (OpenGL::fbo.color->event == Texture::LOADED) {
-		OpenGL::fbo.color->event = Texture::TO_UPDATE;
-		OpenGL::fbo.color->width = w;
-		OpenGL::fbo.color->height = h;
-		ADD_TEXTURE_TO_UPDATE_BUFFER(OpenGL::fbo.color);
-	}
-	if (OpenGL::fbo.depth->event == Texture::LOADED) {
-		OpenGL::fbo.depth->event = Texture::TO_UPDATE;
-		OpenGL::fbo.depth->width = w;
-		OpenGL::fbo.depth->height = h;
-		ADD_TEXTURE_TO_UPDATE_BUFFER(OpenGL::fbo.depth);
-	}
-}
-
 
 
 GLShader *GLShader::shader = nullptr;
@@ -702,6 +669,81 @@ void ShaderPost::init33() {
 	GLShaderLoadTask *task = new GLShaderLoadTask(sh, vrsh, frsh, gmsh);
 	Windows::window->eachFrame.addTask(task, 0);
 }
+
+ShaderBW* ShaderBW::prog = nullptr;
+ShaderBW::ShaderBW() :GLShader(ShaderBW::CRC32) {}
+void ShaderBW::init() {
+	this->texture = glGetUniformLocation(this->shaderProgram, "texture");
+	glUniform1i(this->texture, 0);
+}
+void ShaderBW::init33() {
+	ShaderBW *sh = new ShaderBW();
+	const GLchar *vrsh = 
+		//"#version 330 core\n"
+		"in vec2 position;"
+		"void main () {"
+		"}",
+		*frsh = 
+		//"#version 330 core\n"
+		"#define MODE_BRIGHTNESS 1\n"
+		"#define MODE_GAMMA 2\n"
+		"#define MODE_CONTRAST 3\n"
+		"#define MODE_COLOR_BALANCE 4\n"
+	
+		"uniform sampler2D texture;"
+		"uniform float brightnessPower = 1.0;"
+		"uniform int mode = MODE_BRIGHTNESS;"
+		"in vec2 TexCoord;"
+		"out vec4 color;"
+		"void main () {"
+			"vec4 texColor = texture(texture, TexCoord);"
+			"switch (mode) {"
+				"case MODE_BRIGHTNESS:"
+					"color = texColor*brightnessPower;"
+					"break;"
+				"case MODE_GAMMA:"
+					"color = texColor*brightnessPower;"
+					"break;"
+				"case MODE_CONTRAST:"
+					"color = texColor*brightnessPower;"
+					"break;"
+				"case MODE_COLOR_BALANCE:"
+					"color = texColor*brightnessPower;"
+					"break;"
+			"}"
+		"}",
+		*gmsh = 
+		//"#version 330 core\n"
+		"layout (points) in;"
+		"layout (triangle_strip) out;"
+		"layout (max_vertices = 4) out;"
+		"uniform sampler2D texture;"
+		"out vec2 TexCoord;"
+		"void main () {"
+			"ivec2 winSize = textureSize(texture, 0);"
+			"gl_Position = vec4(-1, -1, 0, 1);"
+			"TexCoord = vec2(0.0, 0.0);"
+			"EmitVertex();"
+			
+			"gl_Position = vec4(-1, 1, 0, 1);"
+			"TexCoord = vec2(0.0, 1.0);"
+			"EmitVertex();"
+			
+			"gl_Position = vec4(1, -1, 0, 1);"
+			"TexCoord = vec2(1.0, 0.0);"
+			"EmitVertex();"
+			
+			"gl_Position = vec4(1, 1, 0, 1);"
+			"TexCoord = vec2(1.0, 1.0);"
+			"EmitVertex();"
+	
+			"EndPrimitive();"
+		"}";
+	ShaderBW::prog = sh;
+	GLShaderLoadTask *task = new GLShaderLoadTask(sh, vrsh, frsh, gmsh);
+	Windows::window->eachFrame.addTask(task, 0);
+}
+
 
 GLShaderLoadTask::GLShaderLoadTask(GLShader* sh, const GLchar *vs, const GLchar *fs, const GLchar *gs) :shader(sh), vs(vs), gs(gs), fs(fs){
 	

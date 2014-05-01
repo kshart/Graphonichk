@@ -307,62 +307,6 @@ void ShapeGroupRect::trace() {
 	for (int i=0; i<this->child.size(); i++) this->child[i]->trace(); 
 	printf("</ShapeGroupRect>\n");
 }
-int ShapeGroupRect::renderGL100() {
-	bool ctr = false;
-	/*if (this->cutTheRect) {
-		ctr = true;
-		OpenGL::pushViewport();
-		OpenGL::setViewport(this->globalx+this->offsetPos.x,
-				Windows::window->height-this->globaly+this->offsetPos.y-this->height,
-				this->width,
-				this->height);
-		OpenGL::pushViewMatrix();
-		ViewMatrix vm = ViewMatrixOrtho(this->globalx+this->offsetPos.x, this->globalx+this->offsetPos.x+this->width, 
-				this->globaly+this->offsetPos.y+this->height, this->globaly+this->offsetPos.y, -1, 1);
-		OpenGL::setViewMatrix(vm);
-	}*/
-	if (this->bufferInit) {
-		/*Texture *tex = this->bufferTexture;
-		glEnable( GL_TEXTURE_2D );
-		glBindTexture(GL_TEXTURE_2D, tex->GLID);
-		glColor4ub(0xFF,0xFF,0xFF,0xFF);
-		glBegin( GL_QUADS );// <editor-fold defaultstate="collapsed" desc="GL_QUADS">
-			glTexCoord2d( 0.0, 0.0 );	glVertex2i(this->globalx+offsetPos.x, this->globaly+offsetPos.y );
-			glTexCoord2d( 0.0, 1.0 );	glVertex2i(this->globalx+offsetPos.x, this->globaly+offsetPos.y+tex->height );
-			glTexCoord2d( 1.0, 1.0 );	glVertex2i(this->globalx+offsetPos.x+tex->width, this->globaly+offsetPos.y+tex->height );
-			glTexCoord2d( 1.0, 0.0 );	glVertex2i(this->globalx+offsetPos.x+tex->width, this->globaly+offsetPos.y );
-		glEnd();// </editor-fold>
-		glDisable( GL_TEXTURE_2D );*/
-	}else if ( this->shapeCache != NULL ) {
-		#ifdef DEBUG
-		printf("ShapeGroupRect shapeCache\n");
-		#endif
-		/*for (int i=0; i<this->shapeCache->size(); i++) {
-			(this->shapeCache->at(i))->renderGL100();
-		}*/
-	}else{
-		WaitForSingleObject(this->addChildLock, INFINITE);
-		for (vector<ShapeRect*>::const_iterator it=this->child.begin(), end=this->child.end(); it!=end; ++it) {
-			if ( (*it)->visible) (*it)->renderGL100();
-		}
-		ReleaseMutex(this->addChildLock);
-	}
-	if (ctr) {
-		OpenGL::popViewport();
-		OpenGL::popViewMatrix();
-	}
-	glLineWidth(1);
-	glColor4ub(0xFF,0,0,0xFF);
-	glBegin(GL_LINE_STRIP);// <editor-fold defaultstate="collapsed" desc="GL_LINE_STRIP">
-		glVertex2s( this->global.x+this->offset.x,				this->global.y+this->offset.y );
-		glVertex2s( this->global.x+this->offset.x+this->width,	this->global.y+this->offset.y );
-		glVertex2s( this->global.x+this->offset.x+this->width,	this->global.y+this->offset.y+this->height );
-		glVertex2s( this->global.x+this->offset.x,				this->global.y+this->offset.y+this->height );
-		glVertex2s( this->global.x+this->offset.x,				this->global.y+this->offset.y );
-	glEnd();// </editor-fold>
-	
-	return false;
-}
 int ShapeGroupRect::renderGL400() {
 	printf("ShapeGroupRect p\n");
 	for (int i=0; i<this->child.size(); i++) {
@@ -372,8 +316,8 @@ int ShapeGroupRect::renderGL400() {
 	return true;
 }
 int ShapeGroupRect::renderGL330() {
-	for (int i=0; i<this->child.size(); i++) {
-		if (this->child[i]->visible) this->child[i]->renderGL330();
+	for (ShapeRect* &sh : this->child) {
+		if (sh->visible) sh->renderGL330();
 	}
 	#ifdef DEBUG
 /*	glLineWidth(1);
@@ -414,50 +358,63 @@ int ShapeGroupRect::renderGL210() {
 	#endif
 	return true;
 }
-int ShapeGroupRect::bufferGLComptAll() {
-	/*for(int i=0; i<this->bufChild.size(); i++) {
-		this->bufChild[i]->bufferGLComptAll();
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, this->bufferFrame);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, this->bufferTexture->GLID, 0);
-	
-	glViewport( 0, 0, this->width, this->height );
-	glLoadIdentity( );
-	gluOrtho2D( this->offset.x+this->globalx, this->offsetPos.x+this->globalx+this->width, this->offsetPos.y+this->globaly, this->offsetPos.y+this->globaly+this->height );
-	
-	glClearColor( 0.1, 0, 0, 0.1 );
-	glClear( GL_COLOR_BUFFER_BIT );
-	
-	this->renderGL100();
-	
-	
-	//glDeleteFramebuffers(1, &root.window->ogl->FBOGL);*/
-	return false;
-}
-int ShapeGroupRect::bufferGL400() {
-	return false;
-}
-int ShapeGroupRect::bufferGL330() {
-	return false;
-}
-int ShapeGroupRect::bufferGL210() {
-	return false;
-}
-bool ShapeGroupRect::bufferMode(bool mode) {
-	/*if (mode && !this->bufferActivate ) {
-		this->bufferTexture = new Texture(this->width, this->height, GL_RGBA, GL_UNSIGNED_BYTE);
-		Windows::window->FBOBuffer.push_back(this);
-		
-		this->bufferActivate = true;
-		this->bufferInit = false;
-	}else if ( !mode && this->bufferActivate ) {
-		this->bufferActivate = false;
-		delete this->bufferTexture;
-		this->bufferTexture = NULL;
+int ShapeGroupRect::renderGL100() {
+	bool ctr = false;
+	/*if (this->cutTheRect) {
+		ctr = true;
+		OpenGL::pushViewport();
+		OpenGL::setViewport(this->globalx+this->offsetPos.x,
+				Windows::window->height-this->globaly+this->offsetPos.y-this->height,
+				this->width,
+				this->height);
+		OpenGL::pushViewMatrix();
+		ViewMatrix vm = ViewMatrixOrtho(this->globalx+this->offsetPos.x, this->globalx+this->offsetPos.x+this->width, 
+				this->globaly+this->offsetPos.y+this->height, this->globaly+this->offsetPos.y, -1, 1);
+		OpenGL::setViewMatrix(vm);
 	}*/
+	if (this->bufferInit) {
+		/*Texture *tex = this->bufferTexture;
+		glEnable( GL_TEXTURE_2D );
+		glBindTexture(GL_TEXTURE_2D, tex->GLID);
+		glColor4ub(0xFF,0xFF,0xFF,0xFF);
+		glBegin( GL_QUADS );// <editor-fold defaultstate="collapsed" desc="GL_QUADS">
+			glTexCoord2d( 0.0, 0.0 );	glVertex2i(this->globalx+offsetPos.x, this->globaly+offsetPos.y );
+			glTexCoord2d( 0.0, 1.0 );	glVertex2i(this->globalx+offsetPos.x, this->globaly+offsetPos.y+tex->height );
+			glTexCoord2d( 1.0, 1.0 );	glVertex2i(this->globalx+offsetPos.x+tex->width, this->globaly+offsetPos.y+tex->height );
+			glTexCoord2d( 1.0, 0.0 );	glVertex2i(this->globalx+offsetPos.x+tex->width, this->globaly+offsetPos.y );
+		glEnd();// </editor-fold>
+		glDisable( GL_TEXTURE_2D );*/
+	}else if ( this->shapeCache != nullptr ) {
+		#ifdef DEBUG
+		printf("ShapeGroupRect shapeCache\n");
+		#endif
+		/*for (int i=0; i<this->shapeCache->size(); i++) {
+			(this->shapeCache->at(i))->renderGL100();
+		}*/
+	}else{
+		//WaitForSingleObject(this->addChildLock, INFINITE);
+		for (ShapeRect* &sh : this->child) {
+			if (sh->visible) sh->renderGL100();
+		}
+		//ReleaseMutex(this->addChildLock);
+	}
+	if (ctr) {
+		//OpenGL::popViewport();
+		//OpenGL::popViewMatrix();
+	}
+	glLineWidth(1);
+	glColor4ub(0xFF,0,0,0xFF);
+	glBegin(GL_LINE_STRIP);// <editor-fold defaultstate="collapsed" desc="GL_LINE_STRIP">
+		glVertex2s( this->global.x+this->offset.x,				this->global.y+this->offset.y );
+		glVertex2s( this->global.x+this->offset.x+this->width,	this->global.y+this->offset.y );
+		glVertex2s( this->global.x+this->offset.x+this->width,	this->global.y+this->offset.y+this->height );
+		glVertex2s( this->global.x+this->offset.x,				this->global.y+this->offset.y+this->height );
+		glVertex2s( this->global.x+this->offset.x,				this->global.y+this->offset.y );
+	glEnd();// </editor-fold>
+	
 	return false;
 }
-int ShapeGroupRect::saveAsXML(FILE* str, unsigned short tab) {
+/*int ShapeGroupRect::saveAsXML(FILE* str, unsigned short tab) {
 	for (int i=0; i<tab; i++) fprintf(str, "\t");
 	fprintf(str, "<ShapeGroupRect name='%s' crc32='%i' childSize='%i' x='%i' y='%i' width='%i' height='%i' offsetX='%i' offsetY='%i'>\n",
 			this->name.c_str(), this->crc32, this->child.size(), this->local.x, this->local.y, this->width, this->height, this->offset.x, this->offset.y);
@@ -467,18 +424,7 @@ int ShapeGroupRect::saveAsXML(FILE* str, unsigned short tab) {
 	
 	for (int i=0; i<tab; i++) fprintf(str, "\t");
 	fprintf(str, "</ShapeGroupRect>\n");
-}
-void ShapeGroupRect::updateGlobalPosition() {
-	if (this->parent==nullptr) {
-		this->global.x = this->global.y = 0;
-	}else{
-		this->global.x = this->parent->global.x + this->local.x;
-		this->global.y = this->parent->global.y + this->local.y;
-	}
-	for(vector<ShapeRect*>::const_iterator it=this->child.begin(), end=this->child.end(); it!=end; ++it) {
-		(*it)->updateGlobalPosition();
-	}
-}
+}*/
 void ShapeGroupRect::setPosition(short x, short y) {
 	this->local.x = x;
 	this->local.y = y;
@@ -490,26 +436,16 @@ void ShapeGroupRect::setPosition(short x, short y) {
 	Windows::window->renderComplete = false;
 	#endif
 }
-void ShapeGroupRect::updateRect(ShapeRect* sh) {
-	puts("ShapeGroupRect::updateRect(ShapeRect* sh)");
-	/*if (!this->chengeRect) return;
-	short nx, ny;
-	if (sh->x+sh->offsetPos.x < this->offsetPos.x) {
-		nx = sh->x+sh->offsetPos.x;
-		this->width -= nx-this->offsetPos.x;
-		this->offsetPos.x = nx;
+void ShapeGroupRect::updateGlobalPosition() {
+	if (this->parent==nullptr) {
+		this->global.x = this->global.y = 0;
+	}else{
+		this->global.x = this->parent->global.x + this->local.x;
+		this->global.y = this->parent->global.y + this->local.y;
 	}
-	if (sh->y+sh->offsetPos.y < this->offsetPos.y) {
-		ny = sh->y+sh->offsetPos.y;
-		this->height -= ny-this->offsetPos.y;
-		this->offsetPos.y = ny;
+	for(vector<ShapeRect*>::const_iterator it=this->child.begin(), end=this->child.end(); it!=end; ++it) {
+		(*it)->updateGlobalPosition();
 	}
-	if (sh->x+sh->offsetPos.x+sh->width > this->offsetPos.x+this->width) {
-		this->width = sh->x+sh->offsetPos.x+sh->width-this->offsetPos.x;
-	}
-	if (sh->y+sh->offsetPos.y+sh->height-this->offsetPos.y > this->height) {
-		this->height = sh->y+sh->offsetPos.y+sh->height-this->offsetPos.y;
-	}*/
 }
 void ShapeGroupRect::updateRect() {
 	//puts("ShapeGroupRect::updateRect");
@@ -566,10 +502,10 @@ vector<ShapeRect*>* ShapeGroupRect::getChildShape() {
 }
 void ShapeGroupRect::getChildShape(vector<ShapeRect*>* arr) {
 	ShapeGroupRect *dir;
-	for (int i = 0; i<this->child.size( ); i++) {
-		dir = dynamic_cast<ShapeGroupRect*>(this->child[i]);
-		if (dir == NULL) {
-			arr->push_back( this->child[i] );
+	for (ShapeRect* &it : this->child) {
+		dir = dynamic_cast<ShapeGroupRect*>(it);
+		if (dir == nullptr) {
+			arr->push_back( it );
 		}else{
 			dir->getChildShape(arr);
 		}
@@ -595,7 +531,7 @@ bool ShapeGroupRect::addChild(ShapeRect *sh) {
 	if (this->getOffsetX()==SHRT_MAX||this->getOffsetY()==SHRT_MAX) {
 		if (sh->visible) this->updateRect();
 	}else if (sh->visible) {
-		this->updateRect(sh);
+		this->updateRect();
 	}
 	this->child.push_back( sh );
 	dir = dynamic_cast<ShapeGroupRect*>(sh);
@@ -622,54 +558,26 @@ bool ShapeGroupRect::addChild(ShapeRect *sh) {
 	ReleaseMutex(this->addChildLock);
 	return true;
 }
-bool ShapeGroupRect::removeChild(ShapeRect* sh) {
+bool ShapeGroupRect::removeChild(const ShapeRect* sh) {
+	for (auto it=this->child.begin(), end=this->child.end(); it!=end; ++it) {
+		if ((*it)==sh){
+			this->child.erase(it);
+			return true;
+		}
+	}
 	return false;
 }
 bool ShapeGroupRect::setChildDepth(ShapeRect* sh, unsigned short depth) {
 	return false;
 }
-unsigned int ShapeGroupRect::getChildDepth(ShapeRect* sh) {
-	for (vector<ShapeRect*>::const_iterator it=this->child.begin(), end=this->child.end(); it!=end; ++it) {
+unsigned int ShapeGroupRect::getChildDepth(ShapeRect* sh) const {
+	for (auto it=this->child.begin(), end=this->child.end(); it!=end; ++it) {
 		if ( (*it)==sh ) return it-this->child.begin();
 	}
 	return INT_MAX;
 }
-ShapeRect* ShapeGroupRect::getChild(string str) {
+ShapeRect* ShapeGroupRect::getChild(string str) const {
 	return nullptr;
-}
-void ShapeGroupRect::setBuffer(ShapeGroupRect::BUFFER_TYPE type, char val) {
-	/*switch (type) {
-		case ShapeGroupRect::TO_TEXTURE :
-			if ( val==Texture::LOC::UNAVAILABLE ) {
-				this->buff->tex->clear();
-			}else{
-				glGenTextures( 1, &this->texGL );
-				if (this->texGL==0) {
-					this->texType = Buffer::ERROR_GEN;
-					printf("Buffer::set NOGEN %i\n");
-					return;
-				}
-				this->texType = Buffer::TO_TEXTURE;
-				this->bufTexWidth = (this->width+3)&~3;
-				this->bufTexHeight = (this->height+3)&~3;
-				glBindTexture( GL_TEXTURE_2D, this->texGL );
-				glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-				glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-				glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-				glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-				glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, this->bufTexWidth, this->bufTexHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL );
-				Windows::FBOBuffer.push_back(this);
-			}
-			return;
-		case ShapeGroupRect::PREDEFINED_LIST_SH :
-			if (val) {
-				this->shapeCache = this->getChildShape();
-			}else if (this->shapeCache != NULL) {
-				delete this->shapeCache;
-				this->shapeCache = NULL;
-			}
-			return;
-	}*/
 }
 ShapeRect* ShapeGroupRect::globalHitTest(short x, short y) {
 	ShapeRect* sh;
@@ -718,6 +626,70 @@ int ShapeGroupRect::callEvent(EventMouseShape* event) {
 		}
 	}
 	return true;
+}
+
+ShapeMain::ShapeMain() :ShapeGroupRect(ShapeMain::CRC32) {
+	this->frameBuffer.color = new Texture(this->width, this->height, GL_RGB, GL_UNSIGNED_BYTE);
+	this->frameBuffer.depth = new Texture(this->width, this->height, GL_DEPTH_COMPONENT, GL_FLOAT);
+	if (OpenGL::ver!=OpenGL::VER_CORE_100) Windows::window->eachFrame.addTask(new ShapeMainInitTask(this));
+}
+void ShapeMain::setRect(short w, short h) {
+	this->ShapeGroupRect::setRect(w, h);
+	this->frameBuffer.color->width = w;
+	this->frameBuffer.color->height = h;
+	this->frameBuffer.depth->width = w;
+	this->frameBuffer.depth->height = h;
+	if (this->frameBuffer.color->event == Texture::LOADED) {
+		this->frameBuffer.color->event = Texture::TO_UPDATE;
+		ADD_TEXTURE_TO_UPDATE_BUFFER(this->frameBuffer.color);
+	}
+	if (this->frameBuffer.depth->event == Texture::LOADED) {
+		this->frameBuffer.depth->event = Texture::TO_UPDATE;
+		ADD_TEXTURE_TO_UPDATE_BUFFER(this->frameBuffer.depth);
+	}
+}
+int ShapeMain::renderGL330() {
+	glBindFramebuffer(GL_FRAMEBUFFER, this->frameBuffer.fbo);
+	OpenGL::setViewport(0, 0, this->width, this->height);
+	glClearColor( 0.5, 0.5, 0.5, 1.0 );
+	glClear( GL_COLOR_BUFFER_BIT );
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	//glFrontFace(GL_CW);
+	//glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+	//glHint(GL_FOG_HINT, GL_NICEST);
+	//glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+	//glPolygonMode(GL_FRONT, GL_LINE);
+	//glPolygonMode(GL_BACK, GL_LINE);
+	//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+	//glUseProgram(GLShader::glsl->shaderProgram);
+	//printf("GLShader::glsl->shaderProgram %i\n", GLShader::glsl->shaderProgram);
+	this->ShapeGroupRect::renderGL330();
+	
+	glDisable( GL_BLEND );
+	
+	
+	OpenGL::setViewport(0, 0, this->width, this->height);
+	glBindVertexArray(this->frameBuffer.vao);
+	glBindTexture(GL_TEXTURE_2D, this->frameBuffer.color->GLID);
+	if (!this->postEffects.child.empty()) {
+		for (auto it=this->postEffects.child.begin(), end=this->postEffects.child.end(); it!=end; ++it) {
+			(*it)->renderGL330();
+		}
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	SET_SHADER(ShaderPost);
+	glDrawArrays(GL_POINTS, 0, 1);	
+	
+	return true;
+}
+
+ShapePostEffect::ShapePostEffect(GLShader *shader) :ShapeBasic(ShapePostEffect::CRC32), shader(shader) {
+	
+}
+int ShapePostEffect::renderGL330() {
+	SET_SHADER_H(this->shader);
+	glDrawArrays(GL_POINTS, 0, 1);	
 }
 
 
@@ -929,26 +901,44 @@ int FPoint::renderGL100() {
 	glPopMatrix();
 	return true;
 }
-FLines::FLines(void *arr, short length, short w, unsigned int color=0) :ShapeRect(FLines::CRC32) {
-	this->arr = (short*)arr;
-	this->length = length;
-	this->lineWidth = w;
-	this->color.color = color;
+FLines::FLines(Segment *sgs, short length, short lineWidth, argb color) :ShapeRect(FLines::CRC32), segments(length) {
+	memcpy(this->segments.data, sgs, length*sizeof(Segment));
+	this->lineWidth = lineWidth;
+	this->color = color;
 }
 int FLines::renderGL100() {
-	glPushMatrix();
 	glLineWidth(this->lineWidth);
 	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 	glBegin(GL_LINE_STRIP);
-		glColor3ub(this->color.r, this->color.g, this->color.b );
-		for (int i=0; i<this->length; i++) {
-			glVertex2s(this->getGlobalX()+this->arr[i*2], this->getGlobalY()+this->arr[i*2+1]);
+	glColor3ub(this->color.r, this->color.g, this->color.b );
+	vec2 prev;
+	vec2 p0, p1, q0, q1;
+	vec2 p0p1Vec, p1p2Vec, vec;
+	float frequency = 0.1;
+	for (int i=0; i<this->segments.size; i++) {
+		if (this->segments[i].type==Segment::TYPE::line) {
+			prev.x = this->segments[i].p1.x;
+			prev.y = this->segments[i].p1.y;
+			glVertex2s(this->segments[i].p1.x, this->segments[i].p1.y);
+		}else{
+			p0.x = this->segments[i].p1.x;
+			p0.y = this->segments[i].p1.y;
+			p1.x = this->segments[i].p2.x;
+			p1.y = this->segments[i].p2.y;
+			p0p1Vec = p0-prev;
+			p1p2Vec = p1-p0;
+			for (float time = 0.0; time<1.0; time+=frequency) {
+				q0 = p0p1Vec*time+prev;
+				q1 = p1p2Vec*time+p0;
+				vec = (q1-q0)*time+q0;
+
+				glVertex2f(vec.x, vec.y);
+				//glVertex2f(100, 200);
+			}
+			prev = p1;
 		}
-		//
-		
-		//glColor3ub(0xFF, 0xFF, 0xFF);
+	}
 	glEnd();
-	glPopMatrix();
 	return true;
 }
 

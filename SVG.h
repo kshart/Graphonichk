@@ -26,7 +26,7 @@ namespace SVG {
 	} Length, Coordinate;
 	typedef struct {
 		unsigned char type, idColorWord;
-		unsigned char r, g, b;
+		unsigned char r, g, b, a;
 	} Color;
 	typedef struct {
 		Coordinate x, y;
@@ -46,7 +46,12 @@ namespace SVG {
 		char *onfocusin, *onfocusout, *onactivate, *onclick, *onmousedown, *onmouseup, *onmouseover, *onmousemove, *onmouseout, *onload;
 	} GraphicalEventAttributes;
 	
-	typedef struct {
+	class FontProperties {
+		struct {
+			enum :char { 
+				inherit=0, ltr, rtl
+			} value;
+		} direction;
 		void* font;
 		void* fontFamily;
 		void* fontSize;
@@ -55,14 +60,66 @@ namespace SVG {
 		void* fontStyle;
 		void* fontVariant;
 		void* fontWeight;
-	} FontProperties;
-	typedef struct {
-		void* direction;
-		void* letterSpacing;
-		void* textDecoration;
-		void* unicodeBidi;
-		void* wordSpacing;
-	} TextProperties;
+	} ;
+	class TextProperties {
+		struct {
+			enum :char { 
+				inherit=0, ltr, rtl
+			} value;
+		} direction;
+		struct {
+			enum :char { 
+				inherit=0, normal, length
+			} value;
+			Length _length;
+		} letterSpacing;
+		struct {
+			enum :char { 
+				inherit=0, none, decoration
+			} value;
+			char underline:1;
+			char overline:1;
+			char lineThrough:1;
+			char blink:1;
+		} textDecoration;
+		struct {
+			enum :char { 
+				inherit=0, normal, embed, bidiOverride
+			} value;
+		} unicodeBidi;
+		struct {
+			enum :char { 
+				inherit=0, normal, length
+			} value;
+			Length _length;
+		} wordSpacing;
+		
+		//NOT CSS
+		struct {
+			enum :char { 
+				inherit=0,
+				auto_,
+				baseline,
+				beforeEdge,
+				textBeforeEdge,
+				middle,
+				central,
+				afterEdge,
+				textAfterEdge,
+				ideographic,
+				alphabetic,
+				hanging,
+				mathematical
+			} value;
+		} alignmentBaseline;//auto_
+		void* baselineShift;
+		void* dominantBaseline;
+		void* glyphOrientationHorizontal;
+		void* glyphOrientationVertical;
+		void* kerning;
+		void* textAnchor;
+		void* writingMode;
+	} ;
 	typedef struct {
 		void* clip;
 		void* color;
@@ -74,9 +131,38 @@ namespace SVG {
 		void* lightingColor;
 		
 		void* cursor;
-		void* display;
-		void* overflow;
-		bool visibility;
+		struct {
+			enum :char { 
+				inherit=0, 
+				inline_, 
+				block, 
+				listItem, 
+				runIn, 
+				compact, 
+				marker, 
+				table, 
+				inlineTable,
+				tableRowGroup,
+				tableHeaderGroup,
+				tableFooterGroup,
+				tableRow,
+				tableColumnGroup,
+				tableColumn,
+				tableCell,
+				tableCaption,
+				none
+			} value;
+		} display;//inline_
+		struct {
+			enum :char { 
+				inherit=0, visible, hidden, scroll, auto_
+			} value;
+		} overflow;
+		struct {
+			enum :char { 
+				inherit=0, visible, hidden, collapse
+			} value;
+		} visibility;//visible
 	} VisualProperties;
 	
 	//class Array<ColorWord>;

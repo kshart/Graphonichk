@@ -97,7 +97,7 @@ namespace Graphonichk {
 		ProcessingEachFrame eachFrame;
 		ProcessingSupSuspend suspendProcess;
 
-		ShapeGroupRect *root;
+		ShapeMain *root;
 		bool visible, renderComplete;
 		short x, y, width, height;
 	};

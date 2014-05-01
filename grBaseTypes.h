@@ -32,7 +32,8 @@
 	#define THREAD_H HANDLE
 	#define THREAD DWORD WINAPI
 	
-	#define THREAD_START(handle, thread, data) handle = CreateThread(NULL, 0, thread, data, 0, 0);
+	#define THREAD_START_H(handle, thread, data) handle = CreateThread(NULL, 0, thread, data, 0, 0);
+	#define THREAD_START(thread, data) CreateThread(NULL, 0, thread, data, 0, 0);
 	#define THREAD_SUSPEND(thread) SuspendThread(thread);
 	#define THREAD_CLOSE(thread) CloseHandle(thread);
 #elif defined(X11)
@@ -128,10 +129,91 @@ namespace Graphonichk {
 		unsigned short width, height;
 	};
 	
-	typedef struct {
+	class vec2 {
+	public:
 		float x, y;
-	} vec2;
-	class vec3{
+		void operator+=(const vec2& right) {
+			this->x += right.x;
+			this->y += right.y;
+		}
+		void operator+=(const float right) {
+			this->x += right;
+			this->y += right;
+		}
+		void operator*=(const vec2& right) {
+			this->x *= right.x;
+			this->y *= right.y;
+		}
+		void operator*=(const float right) {
+			this->x *= right;
+			this->y *= right;
+		}
+		void operator-=(const vec2& right) {
+			this->x -= right.x;
+			this->y -= right.y;
+		}
+		void operator-=(const float right) {
+			this->x -= right;
+			this->y -= right;
+		}
+		void operator/=(const vec2& right) {
+			this->x /= right.x;
+			this->y /= right.y;
+		}
+		void operator/=(const float right) {
+			this->x /= right;
+			this->y /= right;
+		}
+		const friend vec2 operator+(const vec2 &a, const vec2 &b) {
+			vec2 v;
+			v.x = a.x + b.x;
+			v.y = a.y + b.y;
+			return v;
+		}
+		const friend vec2 operator+(const vec2 &a, const float b) {
+			vec2 v;
+			v.x = a.x + b;
+			v.y = a.y + b;
+			return v;
+		}
+		const friend vec2 operator-(const vec2 &a, const vec2 &b) {
+			vec2 v;
+			v.x = a.x - b.x;
+			v.y = a.y - b.y;
+			return v;
+		}
+		const friend vec2 operator-(const vec2 &a, const float b) {
+			vec2 v;
+			v.x = a.x - b;
+			v.y = a.y - b;
+			return v;
+		}
+		const friend vec2 operator*(const vec2 &a, const vec2 &b) {
+			vec2 v;
+			v.x = a.x * b.x;
+			v.y = a.y * b.y;
+			return v;
+		}
+		const friend vec2 operator*(const vec2 &a, const float b) {
+			vec2 v;
+			v.x = a.x * b;
+			v.y = a.y * b;
+			return v;
+		}
+		const friend vec2 operator/(const vec2 &a, const vec2 &b) {
+			vec2 v;
+			v.x = a.x - b.x;
+			v.y = a.y - b.y;
+			return v;
+		}
+		const friend vec2 operator/(const vec2 &a, const float b) {
+			vec2 v;
+			v.x = a.x / b;
+			v.y = a.y / b;
+			return v;
+		}
+	};
+	class vec3 {
 	public:
 		float x, y, z;
 	};
