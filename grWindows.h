@@ -85,7 +85,7 @@ namespace Graphonichk {
 		void resize(short width, short height);
 		void fullScreen();
 		
-		void saveAsXML();
+		//void saveAsXML();
 		
 		void redraw();
 		

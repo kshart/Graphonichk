@@ -43,6 +43,8 @@ int OpenGL::init(OPENGL_VER ver) {
 	Matrix3D mat;
 	OpenGL::viewportBuffer.push_back(vp);
 	OpenGL::viewMatrixBuffer.push_back(mat);
+	OpenGL::fbo.color = Texture::getTexture(0, 0, GL_RGB, GL_UNSIGNED_BYTE);
+	OpenGL::fbo.depth = Texture::getTexture(0, 0, GL_DEPTH_COMPONENT, GL_FLOAT);
 	
 	float circle[8192+100];
 	circle[0] = 0;
@@ -71,24 +73,12 @@ int OpenGL::init(OPENGL_VER ver) {
 		glBufferData(GL_ARRAY_BUFFER, 2*sizeof(short), &vertex, GL_STATIC_DRAW);
 		glVertexAttribPointer(ShaderShRect::POSITION, 2, GL_SHORT, GL_FALSE, 0, NULL);
 		glEnableVertexAttribArray(ShaderShRect::POSITION);
-			
-		glGenTextures( 1, &OpenGL::fbo.color );
-		glBindTexture( GL_TEXTURE_2D, OpenGL::fbo.color );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-		glGenTextures( 1, &OpenGL::fbo.depth );
-		glBindTexture( GL_TEXTURE_2D, OpenGL::fbo.depth );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		
 		//glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, _tex->width, _tex->height, 0, GL_RGB, GL_BYTE, NULL );
 		glGenFramebuffers(1, &OpenGL::fbo.mainFBO);
 		glBindFramebuffer(GL_FRAMEBUFFER, OpenGL::fbo.mainFBO);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, OpenGL::fbo.color, 0);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, OpenGL::fbo.depth, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, OpenGL::fbo.color->GLID, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, OpenGL::fbo.depth->GLID, 0);
 			
 		glGenBuffers(1, &OpenGL::grShaderData);
 		glBindBuffer(GL_UNIFORM_BUFFER, OpenGL::grShaderData);
@@ -241,10 +231,18 @@ void OpenGL::trace() {
 	printf("<opengl renderer='%s' vendor='%s' version='%s' version_ogl='%i %i'/>\n", glGetString(GL_RENDERER), glGetString(GL_VENDOR), glGetString(GL_VERSION), major, minor);
 }
 void OpenGL::resizeWindow(unsigned short w, unsigned short h) {
-	glBindTexture( GL_TEXTURE_2D, OpenGL::fbo.color );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL );
-	glBindTexture( GL_TEXTURE_2D, OpenGL::fbo.depth );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, w, h, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL );
+	if (OpenGL::fbo.color->event == Texture::LOADED) {
+		OpenGL::fbo.color->event = Texture::TO_UPDATE;
+		OpenGL::fbo.color->width = w;
+		OpenGL::fbo.color->height = h;
+		ADD_TEXTURE_TO_UPDATE_BUFFER(OpenGL::fbo.color);
+	}
+	if (OpenGL::fbo.depth->event == Texture::LOADED) {
+		OpenGL::fbo.depth->event = Texture::TO_UPDATE;
+		OpenGL::fbo.depth->width = w;
+		OpenGL::fbo.depth->height = h;
+		ADD_TEXTURE_TO_UPDATE_BUFFER(OpenGL::fbo.depth);
+	}
 }
 
 

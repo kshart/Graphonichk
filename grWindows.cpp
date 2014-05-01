@@ -7,13 +7,19 @@ unsigned short Screen::width = 0;
 unsigned short Screen::height = 0;
 
 Device* Device::device = nullptr;
-
-#if defined(WIN32)
 EventDeviceMouse::EventDeviceMouse(int type) :Event(type) {
 }
 EventDeviceKeyboard::EventDeviceKeyboard(int type) :Event(type) {
 }
+THREAD Device::threadUpdateDevices (void* data) {
+	while (true) {
+		puts("Device::threadUpdateDevices");
+		Sleep(10);
+	}
+	return 0;
+}
 
+#if defined(WIN32)
 Device::Device() :_dinput(nullptr), _mouseDI(nullptr), _keyboardDI(nullptr) {
 	Device::device = this;
 	DirectInput8Create(System::hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&this->_dinput, NULL);
@@ -31,12 +37,6 @@ Device::~Device() {
 	//delete this->_mouseDI;
 	//delete this->_keyboardDI;
 	//delete this->_dinput;
-}
-THREAD Device::threadUpdateDevices (void* data) {
-	while (true) {
-		Sleep(10);
-	}
-	return 0;
 }
 BOOL CALLBACK Device::DIEnumDevicesProc(LPCDIDEVICEINSTANCE inst, LPVOID data) {
 	Device *dvc = (Device*)data;
@@ -63,6 +63,138 @@ BOOL CALLBACK Device::DIEnumDevicesProc(LPCDIDEVICEINSTANCE inst, LPVOID data) {
 	return DIENUM_CONTINUE;
 }
 
+
+void Windows::regFirstWin() {
+	WNDCLASSEX wcx;
+	memset(&wcx, 0, sizeof(WNDCLASSEX));
+	wcx.cbSize        = sizeof(WNDCLASSEX);
+	wcx.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+	wcx.lpfnWndProc   = reinterpret_cast<WNDPROC>(Windows::WndProc);
+	wcx.hInstance     = System::hInstance;
+	wcx.lpszClassName = WIN_CLASS_NAME;
+	wcx.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
+	wcx.hCursor       = LoadCursor(NULL, IDC_ARROW);
+	if (!RegisterClassEx(&wcx)) {
+		printf("RegisterClassEx fail (%d)\n", GetLastError());
+		return;
+	}
+}
+Windows::Windows(short x, short y, short width, short height) :
+		x(x), 
+		y(y), 
+		width(width), 
+		height(height),
+		visible(false), 
+		renderComplete(false) {
+	if (Windows::window!=nullptr) return;
+	Windows::regFirstWin();
+	ProcessingThread::init();
+	
+	puts("<Windows message='start WIN32'/>");
+	Windows::window = this;
+	this->root = new ShapeGroupRect();
+	this->root->chengeRect = false;
+	HANDLE semaphore = CreateSemaphore(NULL, 0, 1, NULL);
+	this->winThread = THREAD_START(Windows::threadWindow, &semaphore);
+	WaitForSingleObject(semaphore, INFINITE);
+	CloseHandle(semaphore);
+	
+	FileLoad::init();
+	Font::init();
+	this->eachFrame.addTask(&ShapeRectTask::task);
+	puts("<Windows message='end'/>");
+	/*int attributes[] = {
+		WGL_CONTEXT_MAJOR_VERSION_ARB,	3,
+		WGL_CONTEXT_MINOR_VERSION_ARB,	3,
+		WGL_CONTEXT_FLAGS_ARB,			WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB, 0};
+	OPENGL_GET_PROC(PFNWGLCREATECONTEXTATTRIBSARBPROC, wglCreateContextAttribsARB);
+	if (!wglCreateContextAttribsARB) {
+		fprintf(stderr, "wglCreateContextAttribsARB fail (%d)\n", GetLastError());
+		return;
+	}
+	Windows::hRC = wglCreateContextAttribsARB(Windows::hDC, 0, attributes);
+	if (!Windows::hRC|| !wglMakeCurrent(Windows::hDC, Windows::hRC)) {// <editor-fold defaultstate="collapsed" desc="***">
+		fprintf(stderr, "Creating render context fail (%d)\n", GetLastError());
+		return;
+	}// </editor-fold>
+	wglDeleteContext(hRCTemp);*/
+}
+void Windows::show() {
+	puts("<Windows message='show'/>");
+	SetWindowPos(this->hWnd, HWND_TOP, this->x, this->y, this->width+this->x, this->height+this->y, SWP_SHOWWINDOW );
+	ShowWindow(this->hWnd, SW_SHOWNORMAL);
+	this->visible = true;
+	ResumeThread(this->renderThread);
+	SetForegroundWindow(this->hWnd);
+	SetFocus(this->hWnd);
+	UpdateWindow(this->hWnd);
+	EventWindow *e = new EventWindow( EventWindow::WIN_SHOW, this );
+	this->callEvent(e);
+	delete e;
+}
+void Windows::hide() {
+	puts("<Windows message='hide'/>");
+	ShowWindow(this->hWnd, SW_MINIMIZE);
+	THREAD_SUSPEND(this->renderThread);
+	this->visible = false;
+	EventWindow *e = new EventWindow( EventWindow::WIN_HIDE, this );
+	this->callEvent(e);
+	delete e;
+}
+void Windows::close() {
+	THREAD_CLOSE(this->renderThread);
+	THREAD_CLOSE(this->winThread);
+	delete Device::device;
+	delete Windows::window->root;
+	wglDeleteContext(this->hRC);
+	PostQuitMessage(0);
+	DestroyWindow(this->hWnd);
+	Windows::window = nullptr;
+	puts("<window close/>");
+	delete this;
+}
+void Windows::resize(short width, short height) {
+	this->width = width;
+	this->height = height;
+	RECT rect;
+	rect.left = this->x;
+	rect.top = this->y;
+	rect.bottom = this->y+this->height;
+	rect.right = this->x+this->width;
+	AdjustWindowRectEx (&rect, WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, FALSE, WS_EX_COMPOSITED|WS_EX_APPWINDOW|WS_EX_TOPMOST);
+	GetClientRect(this->hWnd, &rect);
+	this->width  = rect.right-rect.left;
+	this->height = rect.bottom-rect.top;
+
+	OpenGL::viewMatrixBuffer[0] = Matrix3D::ViewOrtho(0, this->width, 0, this->height, -1, 1);
+	OpenGL::resizeWindow(this->width, this->height);
+	
+	EventWindow *e = new EventWindow( EventWindow::WIN_SIZE, this );
+	this->callEvent(e);
+	delete e;
+}
+void Windows::fullScreen() {
+	this->x = 0;
+	this->y = 0;
+	this->width = Screen::width;
+	this->height = Screen::height;
+	RECT rect;
+	rect.left = 0;
+	rect.top = 0;
+	rect.bottom = this->height;
+	rect.right = this->width;
+	SetWindowLong(this->hWnd, GWL_STYLE, WS_POPUP);
+	SetWindowLong(this->hWnd, GWL_EXSTYLE, WS_EX_TOPMOST);
+	ShowWindow(this->hWnd,SW_SHOWMAXIMIZED);
+	SetWindowPos(this->hWnd, HWND_TOPMOST, 0, 0, Screen::width, Screen::height, SWP_SHOWWINDOW);
+	SetCapture(this->hWnd);
+	
+	OpenGL::viewMatrixBuffer[0] = Matrix3D::ViewOrtho(0, this->width, 0, this->height, -1, 1);
+	EventWindow *e = new EventWindow( EventWindow::WIN_SIZE );
+	e->window = this;
+	this->callEvent(e);
+	delete e;
+}
 
 THREAD Windows::threadWindow (void* sys) {
 	Windows::regFirstWin();
@@ -92,6 +224,7 @@ THREAD Windows::threadWindow (void* sys) {
 	Device *device = new Device();
 	MSG msg;
 	while (IsWindow(win->hWnd)) {
+		//puts("Windows::threadWindow");
 		while(PeekMessage(&msg, win->hWnd, 0, 0, PM_REMOVE)) DispatchMessage(&msg);
 		Sleep(4);
 	}
@@ -153,6 +286,7 @@ THREAD Windows::threadRender (void* sys) {
 	QueryPerformanceFrequency(&frequencyStruct);
 	frequency = (float)frequencyStruct.QuadPart;
 	while (IsWindow(win->hWnd)) {
+		//puts("Windows::threadRender");
 		LARGE_INTEGER time1, time2;
 		float lastTime, fps;
 		QueryPerformanceCounter(&time1);
@@ -186,7 +320,6 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 	EventMouseShape		*eventMouseShape	= nullptr;
 	EventWindow			*eventWin			= nullptr;
 	
-	Matrix3D vm;
 	Windows *win = Windows::window;
 	
 	if (win->hWnd == hWnd) {
@@ -350,8 +483,8 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 				GetClientRect(win->hWnd, &rect);
 				win->width  = rect.right-rect.left;
 				win->height = rect.bottom-rect.top;
-				vm = Matrix3D::ViewOrtho(0, win->width, 0, win->height, -1, 1);
-				OpenGL::viewMatrixBuffer[0] = vm;
+				//Matrix3D vm = 
+				OpenGL::viewMatrixBuffer[0] = Matrix3D::ViewOrtho(0, win->width, 0, win->height, -1, 1);
 				OpenGL::resizeWindow(win->width, win->height);
 				
 				eventWin = new EventWindow( EventWindow::WIN_SIZE, win );
@@ -385,138 +518,6 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 	}
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
-
-void Windows::regFirstWin() {
-	WNDCLASSEX wcx;
-	memset(&wcx, 0, sizeof(WNDCLASSEX));
-	wcx.cbSize        = sizeof(WNDCLASSEX);
-	wcx.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-	wcx.lpfnWndProc   = reinterpret_cast<WNDPROC>(Windows::WndProc);
-	wcx.hInstance     = System::hInstance;
-	wcx.lpszClassName = WIN_CLASS_NAME;
-	wcx.hIcon         = LoadIcon(NULL, IDI_APPLICATION);
-	wcx.hCursor       = LoadCursor(NULL, IDC_ARROW);
-	if (!RegisterClassEx(&wcx)) {
-		printf("RegisterClassEx fail (%d)\n", GetLastError());
-		return;
-	}
-}
-Windows::Windows(short x, short y, short width, short height) :
-		x(x), 
-		y(y), 
-		width(width), 
-		height(height),
-		visible(false), 
-		renderComplete(false) {
-	if (Windows::window!=nullptr) return;
-	Windows::regFirstWin();
-	ProcessingThread::init();
-	
-	puts("<Windows message='start WIN32'/>");
-	Windows::window = this;
-	this->root = new ShapeGroupRect();
-	this->root->chengeRect = false;
-	HANDLE semaphore = CreateSemaphore(NULL, 0, 1, NULL);
-	this->winThread = THREAD_START(Windows::threadWindow, &semaphore);
-	WaitForSingleObject(semaphore, INFINITE);
-	CloseHandle(semaphore);
-	
-	FileLoad::init();
-	Font::init();
-	this->eachFrame.addTask(&ShapeRectTask::task);
-	puts("<Windows message='end'/>");
-	/*int attributes[] = {
-		WGL_CONTEXT_MAJOR_VERSION_ARB,	3,
-		WGL_CONTEXT_MINOR_VERSION_ARB,	3,
-		WGL_CONTEXT_FLAGS_ARB,			WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB, 0};
-	OPENGL_GET_PROC(PFNWGLCREATECONTEXTATTRIBSARBPROC, wglCreateContextAttribsARB);
-	if (!wglCreateContextAttribsARB) {
-		fprintf(stderr, "wglCreateContextAttribsARB fail (%d)\n", GetLastError());
-		return;
-	}
-	Windows::hRC = wglCreateContextAttribsARB(Windows::hDC, 0, attributes);
-	if (!Windows::hRC|| !wglMakeCurrent(Windows::hDC, Windows::hRC)) {// <editor-fold defaultstate="collapsed" desc="***">
-		fprintf(stderr, "Creating render context fail (%d)\n", GetLastError());
-		return;
-	}// </editor-fold>
-	wglDeleteContext(hRCTemp);*/
-}
-void Windows::show() {
-	puts("<Windows message='show'/>");
-	SetWindowPos(this->hWnd, HWND_TOP, this->x, this->y, this->width+this->x, this->height+this->y, SWP_SHOWWINDOW );
-	ShowWindow(this->hWnd, SW_SHOWNORMAL);
-	this->visible = true;
-	ResumeThread(this->renderThread);
-	SetForegroundWindow(this->hWnd);
-	SetFocus(this->hWnd);
-	UpdateWindow(this->hWnd);
-	EventWindow *e = new EventWindow( EventWindow::WIN_SHOW, this );
-	this->callEvent(e);
-	delete e;
-}
-void Windows::hide() {
-	puts("<Windows message='hide'/>");
-	ShowWindow(this->hWnd, SW_MINIMIZE);
-	THREAD_SUSPEND(this->renderThread);
-	this->visible = false;
-	EventWindow *e = new EventWindow( EventWindow::WIN_HIDE, this );
-	this->callEvent(e);
-	delete e;
-}
-void Windows::close() {
-	THREAD_CLOSE(this->renderThread);
-	THREAD_CLOSE(this->winThread);
-	delete Device::device;
-	delete Windows::window->root;
-	wglDeleteContext(this->hRC);
-	PostQuitMessage(0);
-	DestroyWindow(this->hWnd);
-	Windows::window = nullptr;
-	puts("<window close/>");
-	delete this;
-}
-void Windows::resize(short width, short height) {
-	this->width = width;
-	this->height = height;
-	RECT rect;
-	rect.left = this->x;
-	rect.top = this->y;
-	rect.bottom = this->y+this->height;
-	rect.right = this->x+this->width;
-	AdjustWindowRectEx (&rect, WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX, FALSE, WS_EX_COMPOSITED|WS_EX_APPWINDOW|WS_EX_TOPMOST);
-	GetClientRect(this->hWnd, &rect);
-	this->width  = rect.right-rect.left;
-	this->height = rect.bottom-rect.top;
-
-	OpenGL::viewMatrixBuffer[0] = Matrix3D::ViewOrtho(0, this->width, 0, this->height, -1, 1);
-	OpenGL::resizeWindow(this->width, this->height);
-	
-	EventWindow *e = new EventWindow( EventWindow::WIN_SIZE, this );
-	this->callEvent(e);
-	delete e;
-}
-void Windows::fullScreen() {
-	this->x = 0;
-	this->y = 0;
-	this->width = Screen::width;
-	this->height = Screen::height;
-	RECT rect;
-	rect.left = 0;
-	rect.top = 0;
-	rect.bottom = this->height;
-	rect.right = this->width;
-	SetWindowLong(this->hWnd, GWL_STYLE, WS_POPUP);
-	SetWindowLong(this->hWnd, GWL_EXSTYLE, WS_EX_TOPMOST);
-	ShowWindow(this->hWnd,SW_SHOWMAXIMIZED);
-	SetWindowPos(this->hWnd, HWND_TOPMOST, 0, 0, Screen::width, Screen::height, SWP_SHOWWINDOW);
-	SetCapture(this->hWnd);
-	
-	OpenGL::viewMatrixBuffer[0] = Matrix3D::ViewOrtho(0, this->width, 0, this->height, -1, 1);
-	EventWindow *e = new EventWindow( EventWindow::WIN_SIZE );
-	e->window = this;
-	this->callEvent(e);
-	delete e;
-}
 #elif defined(X11)
 Windows::Windows(short x, short y, short width, short height) {
 	printf("Windows start X11\n");
@@ -538,18 +539,6 @@ Windows::Windows(short x, short y, short width, short height) {
 	pthread_mutex_destroy(&mutex);
 	printf("Windows end\n");
 }
-/*void Windows::show() {
-	fprintf(stdout, "Win show\n");
-	XMoveWindow(this->x11display, this->x11window, this->x, this->y);
-	XMapWindow(this->x11display, this->x11window);
-	this->visible = true;
-	pthread_kill(this->renderThread, SIGCONT);
-	XSetInputFocus(this->x11display, this->x11window);
-	UpdateWindow(this->hWnd);
-	EventWindow *e = new EventWindow( EventWindow::WIN_SHOW, this);
-	this->callEvent(e);
-	delete e;
-}*/
 void Windows::close() {
 	pthread_exit(&this->renderThread);
 	pthread_exit(&this->winThread);
@@ -636,7 +625,7 @@ void Windows::redraw() {
 			OpenGL::setViewport(0, 0, this->width, this->height);
 			SET_SHADER(ShaderPost);
 			glBindVertexArray(OpenGL::fbo.vao);
-			glBindTexture(GL_TEXTURE_2D, OpenGL::fbo.color);
+			glBindTexture(GL_TEXTURE_2D, OpenGL::fbo.color->GLID);
 			glDrawArrays(GL_POINTS, 0, 1);
 			
 			break;// </editor-fold>

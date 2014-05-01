@@ -138,6 +138,7 @@ int ProcessingSupSuspend::performTasks() {
 	return true;
 };
 THREAD ProcessingSupSuspend::threadFunction (void* dataArg) {
+	//puts("ProcessingSupSuspend::threadFunction");
 	((ThreadData*)dataArg)->task->processExecute(((ThreadData*)dataArg)->sush);
 	return 0;
 }
@@ -187,6 +188,7 @@ THREAD ProcessingThread::threadProcess(void* sys) {
 	ProcessingThread *thread = (ProcessingThread*)sys;
 	
 	while(true) {
+		//puts("ProcessingThread::threadProcess");
 		thread->performTasks();
 		Sleep(100);
 	}

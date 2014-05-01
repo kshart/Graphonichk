@@ -138,7 +138,8 @@ namespace Graphonichk {
 		static void multViewMatrix(Matrix3D &view);
 		static GLuint grShaderData, circleBuffer, textureGLID;
 		static struct _fbo {
-			GLuint mainFBO, color, depth, vao, vbo;
+			GLuint mainFBO, vao, vbo;
+			Texture *color, *depth;
 		} fbo;
 		static int init(OPENGL_VER);
 	};

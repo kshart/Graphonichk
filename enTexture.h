@@ -2,6 +2,15 @@
 #define	GRTEXTURE_H
 #include "grMain.h"
 
+#define ADD_TEXTURE_TO_UPDATE_BUFFER(tex) \
+	Windows::window->eachFrame.addTask(new TextureToUpdateTask(tex));\
+	//Texture::buffer.push_back(tex);
+	//Texture::toUpdate++;
+#define ADD_TEXTURE_TO_DELETE_BUFFER(glid) \
+	Windows::window->eachFrame.addTask(new TextureToDeleteTask(glid));\
+	//Texture::buffer.push_back(tex);
+	//Texture::toDelete++;
+
 using namespace std;
 namespace Graphonichk {
 	class Image {

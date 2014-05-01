@@ -7,16 +7,6 @@
 
 #include "grMain.h"
 
-#define ADD_TEXTURE_TO_UPDATE_BUFFER(tex) \
-	TextureToUpdateTask *task = new TextureToUpdateTask(tex);\
-	Windows::window->eachFrame.addTask(task);\
-	//Texture::buffer.push_back(tex);
-	//Texture::toUpdate++;
-#define ADD_TEXTURE_TO_DELETE_BUFFER(glid) \
-	TextureToDeleteTask *task = new TextureToDeleteTask(glid);\
-	Windows::window->eachFrame.addTask(task);\
-	//Texture::buffer.push_back(tex);
-	//Texture::toDelete++;
 using namespace std;
 using namespace Graphonichk;
 
@@ -45,6 +35,7 @@ Texture* Texture::getTexture(unsigned short w, unsigned short h, GLuint format, 
 	tex->height = h;
 	tex->type = type;
 	tex->format = format;
+	tex->event = Texture::LOADED;
 	glBindTexture( GL_TEXTURE_2D, tex->GLID );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
@@ -391,12 +382,10 @@ TextureToUpdateTask::TextureToUpdateTask(Texture *t) :_tex(t) {
 	
 }
 int TextureToUpdateTask::processExecute() {
-	puts("TextureToUpdateTask");
 	if (_tex->event!=Texture::TO_UPDATE) return false;
-	if (_tex->img==NULL) {// <editor-fold defaultstate="collapsed" desc="tex->img==NULL">
+	if (_tex->img==nullptr) {// <editor-fold defaultstate="collapsed" desc="tex->img==NULL">
 		if (_tex->GLID==0) {
 			glGenTextures( 1, &_tex->GLID );
-			printf("%i\n", _tex->GLID);
 			if (_tex->GLID==0) return false;
 			glBindTexture( GL_TEXTURE_2D, _tex->GLID );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
@@ -433,7 +422,6 @@ int TextureToUpdateTask::processExecute() {
 		if (_tex->img->status!=Image::LOADED) return false;
 		switch (_tex->img->type) {
 			case Image::RGBA_32:
-				printf("\tImage::RGBA_32\n");
 				_tex->format = GL_RGBA;
 				_tex->type = GL_UNSIGNED_BYTE;
 				break;
@@ -442,17 +430,14 @@ int TextureToUpdateTask::processExecute() {
 				_tex->type = GL_UNSIGNED_BYTE;
 				break;
 			case Image::RGB_24:
-				printf("\tImage::RGB_24\n");
 				_tex->format = GL_RGB;
 				_tex->type = GL_UNSIGNED_BYTE;
 				break;
 			case Image::BGR_24:
-				printf("\tImage::BGR_24\n");
 				_tex->format = GL_BGR;
 				_tex->type = GL_UNSIGNED_BYTE;
 				break;
 			case Image::MONO_8:
-				printf("\tImage::MONO_8\n");
 				_tex->format = GL_ALPHA;
 				_tex->type = GL_UNSIGNED_BYTE;
 				break;
