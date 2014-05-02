@@ -277,7 +277,7 @@ THREAD Windows::threadRender (void* sys) {
 	Screen::height = GetDeviceCaps(win->hDC,VERTRES);
 	Screen::dpi = ( Screen::width/(float)GetDeviceCaps(win->hDC,HORZSIZE) )*25.4;
 	printf("<LCD res='%i %i' dpi='%f'/>\n", Screen::width, Screen::height, Screen::dpi );
-	OpenGL::init(OpenGL::VER_CORE_100);
+	OpenGL::init(OpenGL::VER_CORE_330);
 	win->resize(win->width, win->height);
 	ReleaseSemaphore(  *(HANDLE*)sys, 1, NULL);
 	
@@ -567,69 +567,16 @@ void Windows::resize(short width, short height) {
 
 Windows *Windows::window = nullptr;
 void Windows::redraw() {
-	float frequency = 0.01;
-	vec2 p0, p1, p2, q0, q1;
-	vec2 p0p1Vec, p1p2Vec, vec;
-			
 	OpenGL::clearViewMatrix();
 	switch (OpenGL::ver) {
-		case OpenGL::VER_CORE_100:// <editor-fold defaultstate="collapsed" desc="GL_COMPTABLE_ALL">
-			OpenGL::setViewport(0, 0, this->width, this->height);
-			glClearColor( 0.9, 0.9, 0.9, 1.0 );
-			glClear( GL_COLOR_BUFFER_BIT );
-			OpenGL::clearViewMatrix();
-			
-			//glShadeModel(GL_SMOOTH);
-			glEnable( GL_BLEND );
-			
-			//glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-			//glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
-			//glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-			
-			//glEnable( GL_ALPHA_TEST );
-			//glEnable( GL_POINT_SMOOTH );
-			//glEnable( GL_LINE_SMOOTH );
-			//glEnable( GL_POLYGON_SMOOTH );
-			//GL_BACK
-			//glPolygonMode(GL_FRONT, GL_LINE);
-			//glPolygonMode(GL_BACK, GL_LINE);
-			//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-			glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-			
-			
-			p0.x = 100;
-			p0.y = 100;
-			p1.x = 100;
-			p1.y = 500;
-			p2.x = 500;
-			p2.y = 500;
-			p0p1Vec = p1-p0;
-			p1p2Vec = p2-p1;
-			glBegin(GL_LINE_STRIP);
-			glColor3f(1, 0, 1);
-			for (float time = 0.0; time<1.0; time+=frequency) {
-				q0 = p0p1Vec*time+p0;
-				q1 = p1p2Vec*time+p1;
-				vec = (q1-q0)*time+q0;
-				
-				glVertex2f(vec.x, vec.y);
-				//glVertex2f(100, 200);
-			}
-			glEnd();
-			
+		case OpenGL::VER_CORE_100:
 			this->root->renderGL100();
-			
-			//glDisable( GL_LINE_SMOOTH );
-			//glDisable( GL_POINT_SMOOTH );
-			//glDisable( GL_POLYGON_SMOOTH );
-			glDisable( GL_BLEND );
-			//glDisable( GL_ALPHA_TEST );
-			break;// </editor-fold>
-		case OpenGL::VER_CORE_330:// <editor-fold defaultstate="collapsed" desc="VER_CORE_330">
+			break;
+		case OpenGL::VER_CORE_330:
 			this->root->renderGL330();
-			break;// </editor-fold>
+			break;
 	}
-	glFlush( );
+	//glFlush( );
 	#if defined(WIN32)
 		SwapBuffers(this->hDC);
 	#elif defined(X11)

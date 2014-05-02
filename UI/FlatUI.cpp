@@ -3,24 +3,20 @@ using namespace std;
 using namespace FlatUI;
 using namespace Graphonichk;
 
-Graphonichk::Texture *MainFlatUI::flRB = nullptr;
-Graphonichk::Texture *MainFlatUI::flRBDisable = nullptr;
-Graphonichk::Texture *MainFlatUI::flRBChk = nullptr;
-Graphonichk::Texture *MainFlatUI::flRBRollOver = nullptr;
-Graphonichk::Texture *MainFlatUI::flCB = nullptr;
-Graphonichk::Texture *MainFlatUI::flCBDisable = nullptr;
-Graphonichk::Texture *MainFlatUI::flCBChk = nullptr;
-Graphonichk::Texture *MainFlatUI::flCBRollOver = nullptr;
+Graphonichk::Texture *MainFlatUI::flImage = nullptr;
 
 int MainFlatUI::init() {
-	MainFlatUI::flRB = new Graphonichk::Texture("FlatUIRadioButton.png");
-	MainFlatUI::flRBDisable = new Graphonichk::Texture("FlatUIRadioButtonDisable.png");
-	MainFlatUI::flRBChk = new Graphonichk::Texture("FlatUIRadioButtonCheck.png");
-	MainFlatUI::flRBRollOver = new Graphonichk::Texture("FlatUIRadioButtonRollOver.png");
-	MainFlatUI::flCB = new Graphonichk::Texture("FlatUICheckBox.png");
-	MainFlatUI::flCBDisable = new Graphonichk::Texture("FlatUICheckBoxDisable.png");
-	MainFlatUI::flCBChk = new Graphonichk::Texture("FlatUICheckBoxCheck.png");
-	MainFlatUI::flCBRollOver = new Graphonichk::Texture("FlatUICheckBoxRollOver.png");
+	usvec4 rect[8] = {
+		usvec4(0, 0, 20, 20),
+		usvec4(20, 0, 40, 20),
+		usvec4(40, 0, 60, 20),
+		usvec4(60, 0, 80, 20),
+		usvec4(0, 20, 20, 40),
+		usvec4(20, 20, 40, 40),
+		usvec4(40, 20, 60, 40),
+		usvec4(60, 20, 80, 40),
+	};
+	MainFlatUI::flImage = new Graphonichk::Texture("FlatUI.png", 8, rect);
 	return true;
 }
 
@@ -37,7 +33,7 @@ void FlatUICheckboxMouseUp (const EventMouse *e) {
 			if (flsb->checked) {
 				flsb->checked = false;
 				flsb->status = UICheckbox::UNCHECKED_NORMAL;
-				flsb->tex = MainFlatUI::flCB;
+				flsb->setRectID(MainFlatUI::CHECK_BOX);
 				event = new EventCheckButton( EventCheckButton::CHECK_UPDATE );
 				event->checked = false;
 				event->obj = flsb;
@@ -46,7 +42,7 @@ void FlatUICheckboxMouseUp (const EventMouse *e) {
 			}else{
 				flsb->checked = true;
 				flsb->status = UICheckbox::CHECKED_NORMAL;
-				flsb->tex = MainFlatUI::flCBChk;
+				flsb->setRectID(MainFlatUI::CHECK_BOX_CHECKED);
 				event = new EventCheckButton( EventCheckButton::CHECK_UPDATE );
 				event->checked = true;
 				event->obj = flsb;
@@ -56,10 +52,10 @@ void FlatUICheckboxMouseUp (const EventMouse *e) {
 		}else{
 			if (flsb->checked) {
 				flsb->status = UICheckbox::CHECKED_NORMAL;
-				flsb->tex = MainFlatUI::flCBChk;
+				flsb->setRectID(MainFlatUI::CHECK_BOX_CHECKED);
 			}else{
 				flsb->status = UICheckbox::UNCHECKED_NORMAL;
-				flsb->tex = MainFlatUI::flCB;
+				flsb->setRectID(MainFlatUI::CHECK_BOX);
 			}
 		}
 		#ifdef REDRAWN_BY_THE_ACTION
@@ -67,7 +63,7 @@ void FlatUICheckboxMouseUp (const EventMouse *e) {
 		#endif
 	}
 }
-FlatUICheckbox::FlatUICheckbox() :Bitmap(MainFlatUI::flCB) {
+FlatUICheckbox::FlatUICheckbox() :BitmapAtlas(MainFlatUI::flImage, MainFlatUI::CHECK_BOX) {
 	this->mouseEventActive = true;
 	Windows::window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, FlatUICheckboxMouseUp, this);
 }
@@ -78,10 +74,10 @@ int FlatUICheckbox::callEvent(EventMouseShape* event) {
 				this->press = true;
 				if (this->checked) {
 					this->status = UICheckbox::CHECKED_PRESS;
-					this->tex = MainFlatUI::flCBChk;
+					this->setRectID(MainFlatUI::CHECK_BOX_CHECKED);
 				}else{
 					this->status = UICheckbox::UNCHECKED_PRESS;
-					this->tex = MainFlatUI::flCBRollOver;
+					this->setRectID(MainFlatUI::CHECK_BOX_ROLL_OVER);
 				}
 				#ifdef REDRAWN_BY_THE_ACTION
 					Windows::window->renderComplete = false;
@@ -90,10 +86,10 @@ int FlatUICheckbox::callEvent(EventMouseShape* event) {
 			case EventMouseShape::MOUSE_ROLL_OUT:
 				if (this->checked) {
 					this->status = UICheckbox::CHECKED_NORMAL;
-					this->tex = MainFlatUI::flCBChk;
+					this->setRectID(MainFlatUI::CHECK_BOX_CHECKED);
 				}else{
 					this->status = UICheckbox::UNCHECKED_NORMAL;
-					this->tex = MainFlatUI::flCB;
+					this->setRectID(MainFlatUI::CHECK_BOX);
 				}
 				#ifdef REDRAWN_BY_THE_ACTION
 					Windows::window->renderComplete = false;
@@ -103,18 +99,18 @@ int FlatUICheckbox::callEvent(EventMouseShape* event) {
 				if (this->checked) {
 					if (this->press) {
 						this->status = UICheckbox::CHECKED_PRESS;
-						this->tex = MainFlatUI::flCBChk;
+						this->setRectID(MainFlatUI::CHECK_BOX_CHECKED);
 					}else{
 						this->status = UICheckbox::CHECKED_ROLLOVER;
-						this->tex = MainFlatUI::flCBChk;
+						this->setRectID(MainFlatUI::CHECK_BOX_CHECKED);
 					}
 				}else{
 					if (this->press) {
 						this->status = UICheckbox::UNCHECKED_PRESS;
-						this->tex = MainFlatUI::flCBChk;
+						this->setRectID(MainFlatUI::CHECK_BOX_CHECKED);
 					}else{
 						this->status = UICheckbox::UNCHECKED_ROLLOVER;
-						this->tex = MainFlatUI::flCBRollOver;
+						this->setRectID(MainFlatUI::CHECK_BOX_ROLL_OVER);
 					}
 				}
 				#ifdef REDRAWN_BY_THE_ACTION
@@ -123,7 +119,7 @@ int FlatUICheckbox::callEvent(EventMouseShape* event) {
 				return true;
 		}
 	}else{
-		this->tex = MainFlatUI::flCBDisable;
+		this->setRectID(MainFlatUI::CHECK_BOX_DISABLE);
 	}
 }
 
@@ -141,7 +137,7 @@ void FlatUIRadioButtonMouseUp (const EventMouse *e) {
 				if (flsb->group==nullptr) {
 					flsb->checked = false;
 					flsb->status = UIRadioButton::UNCHECKED_NORMAL;
-					flsb->tex = MainFlatUI::flRB;
+					flsb->setRectID(MainFlatUI::RADIO_BUTTON);
 					event = new EventCheckButton( EventCheckButton::CHECK_UPDATE );
 					event->checked = false;
 					event->obj = flsb;
@@ -152,7 +148,7 @@ void FlatUIRadioButtonMouseUp (const EventMouse *e) {
 				if (flsb->group==nullptr) {
 					flsb->checked = true;
 					flsb->status = UIRadioButton::CHECKED_NORMAL;
-					flsb->tex = MainFlatUI::flRBChk;
+					flsb->setRectID(MainFlatUI::RADIO_BUTTON_CHECKED);
 					event = new EventCheckButton( EventCheckButton::CHECK_UPDATE );
 					event->checked = true;
 					event->obj = flsb;
@@ -165,10 +161,10 @@ void FlatUIRadioButtonMouseUp (const EventMouse *e) {
 		}else{
 			if (flsb->checked) {
 				flsb->status = UIRadioButton::CHECKED_NORMAL;
-				flsb->tex = MainFlatUI::flRBChk;
+				flsb->setRectID(MainFlatUI::RADIO_BUTTON_CHECKED);
 			}else{
 				flsb->status = UIRadioButton::UNCHECKED_NORMAL;
-				flsb->tex = MainFlatUI::flRB;
+				flsb->setRectID(MainFlatUI::RADIO_BUTTON);
 			}
 		}
 		#ifdef REDRAWN_BY_THE_ACTION
@@ -176,7 +172,7 @@ void FlatUIRadioButtonMouseUp (const EventMouse *e) {
 		#endif
 	}
 }
-FlatUIRadioButton::FlatUIRadioButton() :Bitmap(MainFlatUI::flRB) {
+FlatUIRadioButton::FlatUIRadioButton() :BitmapAtlas(MainFlatUI::flImage, MainFlatUI::RADIO_BUTTON) {
 	this->mouseEventActive = true;
 	Windows::window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, FlatUIRadioButtonMouseUp, this);
 }
@@ -187,10 +183,10 @@ int FlatUIRadioButton::callEvent(EventMouseShape* event) {
 				this->press = true;
 				if (this->checked) {
 					this->status = UIRadioButton::CHECKED_PRESS;
-					this->tex = MainFlatUI::flRBChk;
+					this->setRectID(MainFlatUI::RADIO_BUTTON_CHECKED);
 				}else{
 					this->status = UIRadioButton::UNCHECKED_PRESS;
-					this->tex = MainFlatUI::flRBRollOver;
+					this->setRectID(MainFlatUI::RADIO_BUTTON_ROLL_OVER);
 				}
 				#ifdef REDRAWN_BY_THE_ACTION
 					Windows::window->renderComplete = false;
@@ -199,10 +195,10 @@ int FlatUIRadioButton::callEvent(EventMouseShape* event) {
 			case EventMouseShape::MOUSE_ROLL_OUT:
 				if (this->checked) {
 					this->status = UIRadioButton::CHECKED_NORMAL;
-					this->tex = MainFlatUI::flRBChk;
+					this->setRectID(MainFlatUI::RADIO_BUTTON_CHECKED);
 				}else{
 					this->status = UIRadioButton::UNCHECKED_NORMAL;
-					this->tex = MainFlatUI::flRB;
+					this->setRectID(MainFlatUI::RADIO_BUTTON);
 				}
 				#ifdef REDRAWN_BY_THE_ACTION
 					Windows::window->renderComplete = false;
@@ -212,18 +208,18 @@ int FlatUIRadioButton::callEvent(EventMouseShape* event) {
 				if (this->checked) {
 					if (this->press) {
 						this->status = UIRadioButton::CHECKED_PRESS;
-						this->tex = MainFlatUI::flRBChk;
+						this->setRectID(MainFlatUI::RADIO_BUTTON_CHECKED);
 					}else{
 						this->status = UIRadioButton::CHECKED_ROLLOVER;
-						this->tex = MainFlatUI::flRBChk;
+						this->setRectID(MainFlatUI::RADIO_BUTTON_CHECKED);
 					}
 				}else{
 					if (this->press) {
 						this->status = UIRadioButton::UNCHECKED_PRESS;
-						this->tex = MainFlatUI::flRBChk;
+						this->setRectID(MainFlatUI::RADIO_BUTTON_CHECKED);
 					}else{
 						this->status = UIRadioButton::UNCHECKED_ROLLOVER;
-						this->tex = MainFlatUI::flRBRollOver;
+						this->setRectID(MainFlatUI::RADIO_BUTTON_ROLL_OVER);
 					}
 				}
 				#ifdef REDRAWN_BY_THE_ACTION
@@ -232,15 +228,15 @@ int FlatUIRadioButton::callEvent(EventMouseShape* event) {
 				return true;
 		}
 	}else{
-		this->tex = MainFlatUI::flRBDisable;
+		this->texRectID = MainFlatUI::RADIO_BUTTON_DISABLE;
 	}
 }
 void FlatUIRadioButton::changeCheck() {
 	if (this->checked) {
 		this->status = UIRadioButton::CHECKED_NORMAL;
-		this->tex = MainFlatUI::flRBChk;
+		this->setRectID(MainFlatUI::RADIO_BUTTON_CHECKED);
 	}else{
 		this->status = UIRadioButton::UNCHECKED_NORMAL;
-		this->tex = MainFlatUI::flRB;
+		this->setRectID(MainFlatUI::RADIO_BUTTON);
 	}
 }

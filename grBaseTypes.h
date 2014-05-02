@@ -129,140 +129,268 @@ namespace Graphonichk {
 		unsigned short width, height;
 	};
 	
-	class vec2 {
+	template<typename Type> class _vec2 {
 	public:
-		float x, y;
-		void operator+=(const vec2& right) {
+		union {
+			Type x, r, s;
+		};
+		union {
+			Type y, g, t;
+		};
+		_vec2() {};
+		_vec2(Type x, Type y) :x(x), y(y) {};
+		const bool operator==(const _vec2 &arg) {
+			return (this->x==arg.x) && (this->y==arg.y);
+		}
+		void operator+=(const _vec2& right) {
 			this->x += right.x;
 			this->y += right.y;
 		}
-		void operator+=(const float right) {
+		void operator+=(const Type right) {
 			this->x += right;
 			this->y += right;
 		}
-		void operator*=(const vec2& right) {
+		void operator*=(const _vec2& right) {
 			this->x *= right.x;
 			this->y *= right.y;
 		}
-		void operator*=(const float right) {
+		void operator*=(const Type right) {
 			this->x *= right;
 			this->y *= right;
 		}
-		void operator-=(const vec2& right) {
+		void operator-=(const _vec2& right) {
 			this->x -= right.x;
 			this->y -= right.y;
 		}
-		void operator-=(const float right) {
+		void operator-=(const Type right) {
 			this->x -= right;
 			this->y -= right;
 		}
-		void operator/=(const vec2& right) {
+		void operator/=(const _vec2& right) {
 			this->x /= right.x;
 			this->y /= right.y;
 		}
-		void operator/=(const float right) {
+		void operator/=(const Type right) {
 			this->x /= right;
 			this->y /= right;
 		}
-		const friend vec2 operator+(const vec2 &a, const vec2 &b) {
-			vec2 v;
-			v.x = a.x + b.x;
-			v.y = a.y + b.y;
-			return v;
+		const friend _vec2 operator+(const _vec2 &a, const _vec2 &b) {
+			return _vec2(a.x+b.x, a.y+b.y);
 		}
-		const friend vec2 operator+(const vec2 &a, const float b) {
-			vec2 v;
-			v.x = a.x + b;
-			v.y = a.y + b;
-			return v;
+		const friend _vec2 operator+(const _vec2 &a, const Type b) {
+			return _vec2(a.x+b, a.y+b);
 		}
-		const friend vec2 operator-(const vec2 &a, const vec2 &b) {
-			vec2 v;
-			v.x = a.x - b.x;
-			v.y = a.y - b.y;
-			return v;
+		const friend _vec2 operator-(const _vec2 &a, const _vec2 &b) {
+			return _vec2(a.x-b.x, a.y-b.y);
 		}
-		const friend vec2 operator-(const vec2 &a, const float b) {
-			vec2 v;
-			v.x = a.x - b;
-			v.y = a.y - b;
-			return v;
+		const friend _vec2 operator-(const _vec2 &a, const Type b) {
+			return _vec2(a.x-b, a.y-b);
 		}
-		const friend vec2 operator*(const vec2 &a, const vec2 &b) {
-			vec2 v;
-			v.x = a.x * b.x;
-			v.y = a.y * b.y;
-			return v;
+		const friend _vec2 operator*(const _vec2 &a, const _vec2 &b) {
+			return _vec2(a.x*b.x, a.y*b.y);
 		}
-		const friend vec2 operator*(const vec2 &a, const float b) {
-			vec2 v;
-			v.x = a.x * b;
-			v.y = a.y * b;
-			return v;
+		const friend _vec2 operator*(const _vec2 &a, const Type b) {
+			return _vec2(a.x*b, a.y*b);
 		}
-		const friend vec2 operator/(const vec2 &a, const vec2 &b) {
-			vec2 v;
-			v.x = a.x - b.x;
-			v.y = a.y - b.y;
-			return v;
+		const friend _vec2 operator/(const _vec2 &a, const _vec2 &b) {
+			return _vec2(a.x/b.x, a.y/b.y);
 		}
-		const friend vec2 operator/(const vec2 &a, const float b) {
-			vec2 v;
-			v.x = a.x / b;
-			v.y = a.y / b;
-			return v;
+		const friend _vec2 operator/(const _vec2 &a, const Type b) {
+			return _vec2(a.x/b, a.y/b);
 		}
 	};
-	class vec3 {
+	template<typename Type> class _vec3 {
 	public:
-		float x, y, z;
-	};
-	typedef struct {
-		float x, y, z, w;
-	} vec4;
-	
-	typedef struct {
-		unsigned int x, y;
-	} uvec2;
-	typedef struct {
-		unsigned int x, y, z;
-	} uvec3;
-	typedef struct {
-		unsigned int x, y, z, w;
-	} uvec4;
-	
-	class svec2 {
-	public:
-		short x, y;
-		void operator+=(const svec2& right) {
+		union {
+			Type x, r, s;
+		};
+		union {
+			Type y, g, t;
+		};
+		union {
+			Type z, b, p;
+		};
+		_vec3() {};
+		_vec3(Type x, Type y, Type z) :x(x), y(y), z(z) {};
+		const bool operator==(const _vec3 &arg) {
+			return (this->x==arg.x) && (this->y==arg.y) && (this->z==arg.z);
+		}
+		void operator+=(const _vec3& right) {
 			this->x += right.x;
 			this->y += right.y;
+			this->z += right.z;
 		}
-		void operator*=(const svec2& right) {
+		void operator+=(const Type right) {
+			this->x += right;
+			this->y += right;
+			this->z += right;
+		}
+		void operator*=(const _vec3& right) {
 			this->x *= right.x;
 			this->y *= right.y;
+			this->z *= right.z;
 		}
-		void operator-=(const svec2& right) {
+		void operator*=(const Type right) {
+			this->x *= right;
+			this->y *= right;
+			this->z *= right;
+		}
+		void operator-=(const _vec3& right) {
 			this->x -= right.x;
 			this->y -= right.y;
+			this->z -= right.z;
+		}
+		void operator-=(const Type right) {
+			this->x -= right;
+			this->y -= right;
+			this->z -= right;
+		}
+		void operator/=(const _vec3& right) {
+			this->x /= right.x;
+			this->y /= right.y;
+			this->z /= right.z;
+		}
+		void operator/=(const Type right) {
+			this->x /= right;
+			this->y /= right;
+			this->z /= right;
+		}
+		const friend _vec3 operator+(const _vec3 &a, const _vec3 &b) {
+			return _vec3(a.x+b.x, a.y+b.y, a.z+b.z);
+		}
+		const friend _vec3 operator+(const _vec3 &a, const Type b) {
+			return _vec3(a.x+b, a.y+b, a.z+b);
+		}
+		const friend _vec3 operator-(const _vec3 &a, const _vec3 &b) {
+			return _vec3(a.x-b.x, a.y-b.y, a.z-b.z);
+		}
+		const friend _vec3 operator-(const _vec3 &a, const Type b) {
+			return _vec3(a.x-b, a.y-b, a.z-b);
+		}
+		const friend _vec3 operator*(const _vec3 &a, const _vec3 &b) {
+			return _vec3(a.x*b.x, a.y*b.y, a.z*b.z);
+		}
+		const friend _vec3 operator*(const _vec3 &a, const Type b) {
+			return _vec3(a.x*b, a.y*b, a.z*b);
+		}
+		const friend _vec3 operator/(const _vec3 &a, const _vec3 &b) {
+			return _vec3(a.x/b.x, a.y/b.y, a.z/b.z);
+		}
+		const friend _vec3 operator/(const _vec3 &a, const Type b) {
+			return _vec3(a.x/b, a.y/b, a.z/b);
 		}
 	};
-	typedef struct {
-		short x, y, z;
-	} svec3;
-	typedef struct {
-		short x, y, z, w;
-	} svec4;
+	template<typename Type> class _vec4 {
+	public:
+		union {
+			Type x, r, s;
+		};
+		union {
+			Type y, g, t;
+		};
+		union {
+			Type z, b, p;
+		};
+		union {
+			Type w, a, q;
+		};
+		_vec4() {};
+		_vec4(Type x, Type y, Type z, Type w) :x(x), y(y), z(z), w(w) {};
+		const bool operator==(const _vec4 &arg) {
+			return (this->x==arg.x) && (this->y==arg.y) && (this->z==arg.z) && (this->w==arg.w);
+		}
+		void operator+=(const _vec4& right) {
+			this->x += right.x;
+			this->y += right.y;
+			this->z += right.z;
+			this->w += right.w;
+		}
+		void operator+=(const Type right) {
+			this->x += right;
+			this->y += right;
+			this->z += right;
+			this->w += right;
+		}
+		void operator*=(const _vec4& right) {
+			this->x *= right.x;
+			this->y *= right.y;
+			this->z *= right.z;
+			this->w *= right.w;
+		}
+		void operator*=(const Type right) {
+			this->x *= right;
+			this->y *= right;
+			this->z *= right;
+			this->w *= right;
+		}
+		void operator-=(const _vec4& right) {
+			this->x -= right.x;
+			this->y -= right.y;
+			this->z -= right.z;
+			this->w -= right.w;
+		}
+		void operator-=(const Type right) {
+			this->x -= right;
+			this->y -= right;
+			this->z -= right;
+			this->w -= right;
+		}
+		void operator/=(const _vec4& right) {
+			this->x /= right.x;
+			this->y /= right.y;
+			this->z /= right.z;
+			this->w /= right.w;
+		}
+		void operator/=(const Type right) {
+			this->x /= right;
+			this->y /= right;
+			this->z /= right;
+			this->w /= right;
+		}
+		const friend _vec4 operator+(const _vec4 &a, const _vec4 &b) {
+			return _vec4(a.x+b.x, a.y+b.y, a.z+b.z, a.w+b.w);
+		}
+		const friend _vec4 operator+(const _vec4 &a, const Type b) {
+			return _vec4(a.x+b, a.y+b, a.z+b, a.w+b);
+		}
+		const friend _vec4 operator-(const _vec4 &a, const _vec4 &b) {
+			return _vec4(a.x-b.x, a.y-b.y, a.z-b.z, a.w-b.w);
+		}
+		const friend _vec4 operator-(const _vec4 &a, const Type b) {
+			return _vec4(a.x-b, a.y-b, a.z-b, a.w-b);
+		}
+		const friend _vec4 operator*(const _vec4 &a, const _vec4 &b) {
+			return _vec4(a.x*b.x, a.y*b.y, a.z*b.z, a.w*b.w);
+		}
+		const friend _vec4 operator*(const _vec4 &a, const Type b) {
+			return _vec4(a.x*b, a.y*b, a.z*b, a.w*b);
+		}
+		const friend _vec4 operator/(const _vec4 &a, const _vec4 &b) {
+			return _vec4(a.x/b.x, a.y/b.y, a.z/b.z, a.w/b.w);
+		}
+		const friend _vec4 operator/(const _vec4 &a, const Type b) {
+			return _vec4(a.x/b, a.y/b, a.z/b, a.w/b);
+		}
+	};
 	
-	typedef struct {
-		unsigned short x, y;
-	} usvec2;
-	typedef struct {
-		unsigned short x, y, z;
-	} usvec3;
-	typedef struct {
-		unsigned short x, y, z, w;
-	} usvec4;
+	typedef _vec2<float> vec2;
+	typedef _vec2<short> svec2;
+	typedef _vec2<unsigned short> usvec2;
+	typedef _vec2<int> ivec2;
+	typedef _vec2<unsigned int> uivec2;
+	
+	typedef _vec3<float> vec3;
+	typedef _vec3<short> svec3;
+	typedef _vec3<unsigned short> usvec3;
+	typedef _vec3<int> ivec3;
+	typedef _vec3<unsigned int> uivec3;
+	
+	typedef _vec4<float> vec4;
+	typedef _vec4<short> svec4;
+	typedef _vec4<unsigned short> usvec4;
+	typedef _vec4<int> ivec4;
+	typedef _vec4<unsigned int> uivec4;
+	
 	template<typename Type> class Array {
 	public:
 		Type *data;

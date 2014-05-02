@@ -230,6 +230,7 @@ namespace Graphonichk {
 		ShapeMain();
 		void setRect(short w, short h) override;
 		int renderGL330() override;
+		int renderGL100() override;
 		
 		ShapeGroupBasic postEffects;
 		struct _fbo {
@@ -266,31 +267,24 @@ namespace Graphonichk {
 		enum {CRC32=0xEFC15B9A};
 		Bitmap(Texture*);
 		void trace() override;
-		int renderGL400() override;
 		int renderGL330() override;
-		int renderGL210() override;
 		int renderGL100() override;
-		int saveAsXML(FILE* str, unsigned short tab);
 		Texture *tex;
 		
 		static void updateBitmaps();
 	};
 	class BitmapAtlas :public ShapeRect {
-	private:
-		static vector<BitmapAtlas*> updateBuffer;
 	public:
-		enum {CRC32=0xEFC15B9A};
-		BitmapAtlas(Texture*);
+		enum {CRC32=0x7DFA5D4D};
+		BitmapAtlas(Texture*, short id);
+		bool setRectID(short id);
 		void trace() override;
-		int renderGL400() override;
 		int renderGL330() override;
-		int renderGL210() override;
 		int renderGL100() override;
 		Texture *tex;
 		short texRectID;
 		
-		GLuint vao, vbo;
-		static void updateBitmaps();
+		//GLuint vboRectID;
 	};
 	
 	class FPoint :public ShapeRect {

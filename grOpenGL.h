@@ -59,6 +59,18 @@ namespace Graphonichk {
 		friend GLShaderLoadTask;
 		void init();
 	};
+	class ShaderBitmapAtlas :public ShaderShRect {
+	public:
+		enum {CRC32=0x587113EC};
+		ShaderBitmapAtlas();
+		static void init33();
+		static ShaderBitmapAtlas* prog;
+		
+		GLint texture, coordRect, rectID;
+		
+		friend GLShaderLoadTask;
+		void init();
+	};
 	class ShaderSVGmain :public GLShader {
 	public:
 		enum {CRC32=0x51};

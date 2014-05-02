@@ -85,7 +85,7 @@ namespace Graphonichk {
 		
 		EVENT event;
 		Image *img;
-		Array<usvec4> *rects;
+		Array<usvec4> rects;
 		unsigned short width, height;
 		GLuint format, type, GLID, rectGLID;
 		

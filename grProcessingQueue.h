@@ -45,6 +45,7 @@ namespace Graphonichk {
 	};
 	class VBOUpdateTask {
 	public:
+		VBOUpdateTask(GLuint vbo, void* data, size_t size);
 		int processExecute();
 		GLuint bufferID;
 		void* data;

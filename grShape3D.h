@@ -14,7 +14,7 @@ namespace Graphonichk {
 		vector<vec3> vertex;
 		vector<vec2> texCoord;
 		vector<vec3> normal;
-		vector<uvec3> polygon;
+		vector<uivec3> polygon;
 		
 		GLuint vao, vbo, vboIndex;
 	};

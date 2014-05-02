@@ -16,13 +16,9 @@ Texture::Texture(unsigned short rectCount, usvec4 *rect) :
 		_loadedInFile(false), event(Texture::NONE),
 		img(nullptr), GLID(0),
 		width(0), height(0),
-		format(0), type(0) {
-	if (rectCount!=0) {
-		this->rects = new Array<usvec4>(rectCount);
-		memcpy(this->rects->data, rect, rectCount*sizeof(usvec4));
-	}else{
-		this->rects = nullptr;
-	}
+		format(0), type(0), 
+		rects(rectCount) {
+	memcpy(this->rects.data, rect, rectCount*sizeof(usvec4));
 }
 Texture* Texture::getTexture(unsigned short w, unsigned short h, GLuint format, GLuint type, unsigned short rectCount, usvec4 *rect) {
 	Texture *tex = new Texture(rectCount, rect);
@@ -48,32 +44,25 @@ Texture::Texture(unsigned short w, unsigned short h, GLuint format, GLuint type,
 		_loadedInFile(false), event(Texture::TO_UPDATE),
 		img(nullptr), GLID(0),
 		width(w), height(h),
-		format(format), type(type) {
-	if (rectCount!=0) {
-		this->rects = new Array<usvec4>(rectCount);
-		memcpy(this->rects->data, rect, rectCount*sizeof(usvec4));
-	}else{
-		this->rects = nullptr;
-	}
+		format(format), type(type),
+		rects(rectCount) {
+	memcpy(this->rects.data, rect, rectCount*sizeof(usvec4));
 	ADD_TEXTURE_TO_UPDATE_BUFFER(this);
 }
 Texture::Texture(string path, unsigned short rectCount, usvec4 *rect) :
 		_loadedInFile(true), event(Texture::TO_UPDATE),
 		img(new Image(path)), GLID(0),
 		width(0), height(0),
-		format(0), type(0) {
-	if (rectCount!=0) {
-		this->rects = new Array<usvec4>(rectCount);
-		memcpy(this->rects->data, rect, rectCount*sizeof(usvec4));
-	}else{
-		this->rects = nullptr;
-	}
+		format(0), type(0), 
+		rects(rectCount) {
+	memcpy(this->rects.data, rect, rectCount*sizeof(usvec4));
 	ADD_TEXTURE_TO_UPDATE_BUFFER(this);
 }
 Texture::Texture(Image *img, unsigned short rectCount, usvec4 *rect) :
 		_loadedInFile(false), event(Texture::TO_UPDATE),
 		img(img), GLID(0),
-		width(img->width), height(img->height)  {
+		width(img->width), height(img->height), 
+		rects(rectCount) {
 	switch (img->type) {
 		case Image::RGBA_32:
 			this->format = GL_RGBA;
@@ -113,12 +102,7 @@ Texture::Texture(Image *img, unsigned short rectCount, usvec4 *rect) :
 			fputs("Texture::Texture(Image *img) NOT SUPPORTED TYPE", stderr);
 			break;
 	}
-	if (rectCount!=0) {
-		this->rects = new Array<usvec4>(rectCount);
-		memcpy(this->rects->data, rect, rectCount*sizeof(usvec4));
-	}else{
-		this->rects = nullptr;
-	}
+	memcpy(this->rects.data, rect, rectCount*sizeof(usvec4));
 	ADD_TEXTURE_TO_UPDATE_BUFFER(this);
 }
 Texture::~Texture() {
@@ -393,28 +377,46 @@ int TextureToUpdateTask::processExecute() {
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, NULL );
-			if (_tex->rects!=nullptr) {
+			if (_tex->rects.size>0) {
 				glGenTextures( 1, &_tex->rectGLID );
 				if (_tex->rectGLID==0) return false;
+				Array<usvec4> arr(_tex->rects.size);
+				unsigned short mnWidth = 0xFFFF/_tex->width;
+				unsigned short mnHeight = 0xFFFF/_tex->height;
+				for(size_t i=0; i<_tex->rects.size; i++) {
+					arr[i].x = _tex->rects[i].x*mnWidth;
+					arr[i].y = _tex->rects[i].y*mnHeight;
+					arr[i].z = _tex->rects[i].z*mnWidth;
+					arr[i].w = _tex->rects[i].w*mnHeight;
+				}
 				glBindTexture(GL_TEXTURE_1D, _tex->rectGLID );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects->size, 0, GL_RGBA, GL_UNSIGNED_SHORT, _tex->rects->data);
+				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects.size, 0, GL_RGBA, GL_UNSIGNED_SHORT, arr.data);
 			} 
 		}else{
 			glBindTexture( GL_TEXTURE_2D, _tex->GLID );
 			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, NULL );
-			if (_tex->rects!=nullptr) {
+			if (_tex->rects.size>0) {
 				glGenTextures( 1, &_tex->rectGLID );
 				if (_tex->rectGLID==0) return false;
+				Array<usvec4> arr(_tex->rects.size);
+				unsigned short mnWidth = 0xFFFF/_tex->width;
+				unsigned short mnHeight = 0xFFFF/_tex->height;
+				for(size_t i=0; i<_tex->rects.size; i++) {
+					arr[i].x = _tex->rects[i].x*mnWidth;
+					arr[i].y = _tex->rects[i].y*mnHeight;
+					arr[i].z = _tex->rects[i].z*mnWidth;
+					arr[i].w = _tex->rects[i].w*mnHeight;
+				}
 				glBindTexture(GL_TEXTURE_1D, _tex->rectGLID );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects->size, 0, GL_RGBA, GL_UNSIGNED_SHORT, _tex->rects->data);
+				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects.size, 0, GL_RGBA, GL_UNSIGNED_SHORT, arr.data);
 			} 
 		}
 		_tex->event = Texture::LOADED;//</editor-fold>
@@ -453,28 +455,46 @@ int TextureToUpdateTask::processExecute() {
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, _tex->img->raw );
-			if (_tex->rects!=nullptr) {
+			if (_tex->rects.size>0) {
 				glGenTextures( 1, &_tex->rectGLID );
 				if (_tex->rectGLID==0) return false;
+				Array<usvec4> arr(_tex->rects.size);
+				unsigned short mnWidth = 0xFFFF/_tex->width;
+				unsigned short mnHeight = 0xFFFF/_tex->height;
+				for(size_t i=0; i<_tex->rects.size; i++) {
+					arr[i].x = _tex->rects[i].x*mnWidth;
+					arr[i].y = _tex->rects[i].y*mnHeight;
+					arr[i].z = _tex->rects[i].z*mnWidth;
+					arr[i].w = _tex->rects[i].w*mnHeight;
+				}
 				glBindTexture(GL_TEXTURE_1D, _tex->rectGLID );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects->size, 0, GL_RGBA, GL_UNSIGNED_SHORT, _tex->rects->data);
+				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects.size, 0, GL_RGBA, GL_UNSIGNED_SHORT, arr.data);
 			} 
 		}else{
 			glBindTexture( GL_TEXTURE_2D, _tex->GLID );
 			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, _tex->img->raw );
-			if (_tex->rects!=nullptr) {
+			if (_tex->rects.size>0) {
 				glGenTextures( 1, &_tex->rectGLID );
 				if (_tex->rectGLID==0) return false;
+				Array<usvec4> arr(_tex->rects.size);
+				unsigned short mnWidth = 0xFFFF/_tex->width;
+				unsigned short mnHeight = 0xFFFF/_tex->height;
+				for(size_t i=0; i<_tex->rects.size; i++) {
+					arr[i].x = _tex->rects[i].x*mnWidth;
+					arr[i].y = _tex->rects[i].y*mnHeight;
+					arr[i].z = _tex->rects[i].z*mnWidth;
+					arr[i].w = _tex->rects[i].w*mnHeight;
+				}
 				glBindTexture(GL_TEXTURE_1D, _tex->rectGLID );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects->size, 0, GL_RGBA, GL_UNSIGNED_SHORT, _tex->rects->data);
+				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects.size, 0, GL_RGBA, GL_UNSIGNED_SHORT, arr.data);
 			} 
 		}
 		_tex->event = Texture::LOADED;

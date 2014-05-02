@@ -223,12 +223,7 @@ svec2 ShapeRect::getRect() const {
 	return v;
 }
 svec4 ShapeRect::getBox() const {
-	svec4 v;
-	v.x = this->global.x+this->offset.x;
-	v.y = this->global.y+this->offset.y;
-	v.z = this->width;
-	v.w = this->height;
-	return v;
+	return svec4(global.x+offset.x, global.y+offset.y, width, height);
 }
 void ShapeRect::trace() {
 	printf("ShapeRect a='%i' x=%i, y=%i, gx=%i, gy=%i, w=%i, h=%i\n", this->mouseEventActive, this->local.x, this->local.y, this->global.x, this->global.y, this->width, this->height);
@@ -683,6 +678,21 @@ int ShapeMain::renderGL330() {
 	
 	return true;
 }
+int ShapeMain::renderGL100() {
+	OpenGL::setViewport(0, 0, this->width, this->height);
+	OpenGL::clearViewMatrix();
+	
+	glClearColor( 0.9, 0.9, 0.9, 1.0 );
+	glClear( GL_COLOR_BUFFER_BIT );
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	
+	this->ShapeGroupRect::renderGL100();
+	
+	glDisable( GL_BLEND );
+	return true;
+}
+
 
 ShapePostEffect::ShapePostEffect(GLShader *shader) :ShapeBasic(ShapePostEffect::CRC32), shader(shader) {
 	
@@ -773,9 +783,6 @@ void Bitmap::trace() {
 	printf("<Bitmap a='%i' x='%i' y='%i' gx='%i' gy='%i' w='%i' h='%i' texId='%i'/>\n", 
 			this->mouseEventActive, this->getX(), this->getY(), this->getGlobalX(), this->getGlobalY(), this->getWidth(), this->getHeight(), this->tex);
 }
-int Bitmap::renderGL400() {
-	return false;
-}
 int Bitmap::renderGL330() {
 	if (this->tex == nullptr) return false;
 	SET_SHADER(ShaderBitmap);
@@ -783,31 +790,6 @@ int Bitmap::renderGL330() {
 	glBindTexture(GL_TEXTURE_2D, this->tex->GLID);
 	glDrawArrays(GL_POINTS, 0, 1);
 	return true;
-}
-int Bitmap::renderGL210() {
-	/*if (this->tex->GLID == 0) return false;
-	printf("renderGL210 \n");
-	unsigned char faces[4] = {0, 1, 2, 3};
-	short texCoord[8] = { 0, 0, 0, 1, 1, 1, 1, 0};
-	short vexCoord[8] = { 
-		(short)(this->globalx),				(short)(this->globaly),
-		(short)(this->globalx),				(short)(this->globaly+this->height),
-		(short)(this->globalx+this->width),	(short)(this->globaly+this->height),
-		(short)(this->globalx+this->width),	(short)(this->globaly)
-	};
-	Texture *tex = this->tex;
-	
-	glEnable( GL_TEXTURE_2D );
-	glBindTexture(GL_TEXTURE_2D, tex->GLID);
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState (GL_TEXTURE_COORD_ARRAY);
-		glVertexPointer (2, GL_SHORT, 0, vexCoord);
-		glTexCoordPointer(2, GL_SHORT, 0, texCoord);
-		glDrawElements(GL_QUADS, 4, GL_UNSIGNED_BYTE, faces);
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	glDisable( GL_TEXTURE_2D );*/
-	return false;
 }
 int Bitmap::renderGL100() {
 	svec2 global = this->getGlobalPosition();
@@ -823,11 +805,6 @@ int Bitmap::renderGL100() {
 	glEnd();
 	glDisable( GL_TEXTURE_2D );
 	return true;
-}
-int Bitmap::saveAsXML(FILE* str, unsigned short tab) {
-	for (int i=0; i<tab; i++) fprintf(str, "\t");
-	fprintf(str, "<Bitmap name='%s' crc32='%i' x='%i' y='%i' width='%i' height='%i' texture='%i'/>\n",
-			this->name.c_str(), this->crc32, this->getX(), this->getY(), this->getWidth(), this->getHeight(), this->tex);
 }
 void Bitmap::updateBitmaps() {
 	if ( !Bitmap::updateBuffer.empty() ) {
@@ -851,6 +828,52 @@ void Bitmap::updateBitmaps() {
 			Bitmap::updateBuffer.resize( Bitmap::updateBuffer.size()-countUpdateBMP );
 		}
 	}
+}
+
+BitmapAtlas::BitmapAtlas(Texture *tex, short id) :ShapeRect(BitmapAtlas::CRC32), tex(tex) {
+	this->setRectID(id);
+}
+bool BitmapAtlas::setRectID(short id) {
+	if (id >= this->tex->rects.size) return false;
+	
+	usvec4 vc = this->tex->rects[id];
+	this->setRect(vc.z-vc.x, vc.w-vc.y);
+	this->texRectID = id;
+	//if (OpenGL::ver!=OpenGL::VER_CORE_100) Windows::window->eachFrame.addTask(new VBOUpdateTask(this->vboRectID, &this->texRectID, 2));
+	return true;
+}
+void BitmapAtlas::trace() {
+	printf("<BitmapAtlas local='%i %i' global='%i %i' rect='%i %i' GLID='%i' mouseEventActive='%i'/>\n", 
+			this->mouseEventActive, this->local.x, this->local.y, this->global.x, this->global.y, this->width, this->height, this->tex->GLID);
+}
+int BitmapAtlas::renderGL330() {
+	if (this->tex == nullptr) return false;
+	SET_SHADER(ShaderBitmapAtlas);
+	glUniform1i(ShaderBitmapAtlas::prog->rectID, this->texRectID);
+	glBindVertexArray(this->vao);
+	glBindTexture(GL_TEXTURE_2D, this->tex->GLID);
+	glBindTexture(GL_TEXTURE_1D, this->tex->rectGLID);
+	glDrawArrays(GL_POINTS, 0, 1);
+	return true;
+}
+int BitmapAtlas::renderGL100() {
+	svec2 global = this->global + this->offset;
+	vec4 coord(
+		(float)(tex->rects[texRectID].x)/tex->width,
+		(float)(tex->rects[texRectID].y)/tex->height,
+		(float)(tex->rects[texRectID].z)/tex->width,
+		(float)(tex->rects[texRectID].w)/tex->height);
+	glBindTexture(GL_TEXTURE_2D, tex->GLID);
+	glColor4ub(0xFF,0xFF,0xFF,0xFF);
+	glEnable( GL_TEXTURE_2D );
+	glBegin( GL_QUADS );
+		glTexCoord2f( coord.x, coord.y );	glVertex2s(global.x,		global.y );
+		glTexCoord2f( coord.x, coord.w );	glVertex2s(global.x,		global.y+height );
+		glTexCoord2f( coord.z, coord.w );	glVertex2s(global.x+width,	global.y+height );
+		glTexCoord2f( coord.z, coord.y );	glVertex2s(global.x+width,	global.y );
+	glEnd();
+	glDisable( GL_TEXTURE_2D );
+	return true;
 }
 
 Buffer::Buffer() {

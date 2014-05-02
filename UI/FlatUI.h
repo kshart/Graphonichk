@@ -14,17 +14,26 @@ namespace FlatUI {
 	
 	class MainFlatUI {
 	public:
+		enum {
+			CHECK_BOX_CHECKED=0,
+			CHECK_BOX=1,
+			CHECK_BOX_ROLL_OVER=2,
+			CHECK_BOX_DISABLE=3,
+			RADIO_BUTTON_CHECKED=4,
+			RADIO_BUTTON=5,
+			RADIO_BUTTON_ROLL_OVER=6,
+			RADIO_BUTTON_DISABLE=7
+		};
 		static int init();
-		static Graphonichk::Texture *flRB, *flRBDisable, *flRBChk, *flRBRollOver,
-				*flCB, *flCBDisable, *flCBChk, *flCBRollOver;
+		static Graphonichk::Texture *flImage;
 	};
-	class FlatUICheckbox :public Graphonichk::Bitmap, public Graphonichk::UICheckbox {
+	class FlatUICheckbox :public Graphonichk::BitmapAtlas, public Graphonichk::UICheckbox {
 	public:
 		FlatUICheckbox();
 		
 		int callEvent(EventMouseShape* event);
 	};
-	class FlatUIRadioButton :public Graphonichk::UIRadioButton, public Graphonichk::Bitmap  {
+	class FlatUIRadioButton :public Graphonichk::UIRadioButton, public Graphonichk::BitmapAtlas  {
 	public:
 		FlatUIRadioButton();
 		

@@ -82,7 +82,7 @@ Model3D::Model3D(const char* data, const char* objName) {
 	size_t v1;
 	vec2 vc2;
 	vec3 vc3;
-	uvec3 uvc3;
+	uivec3 uvc3;
 	if (objName!=nullptr) {
 
 searchObj:
