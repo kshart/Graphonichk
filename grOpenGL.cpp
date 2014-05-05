@@ -8,23 +8,7 @@ using namespace Graphonichk;
 	struct_glslStr() :vs(0), gs(0), fs(0), sh(0) {};
 };
 typedef struct struct_glslStr glslStr;
-void glslLoaded(const EventFileLoad* e) {
-	glslStr *sh = (glslStr*)(e->obj);
-	size_t nameLength = e->file->path.length();
-	if (e->file->path[nameLength-2]=='v' && e->file->path[nameLength-1]=='s') {
-		sh->vs = (GLchar*)e->file->data;
-	}else if (e->file->path[nameLength-2]=='g' && e->file->path[nameLength-1]=='s') {
-		sh->gs = (GLchar*)e->file->data;
-	}else if (e->file->path[nameLength-2]=='f' && e->file->path[nameLength-1]=='s') {
-		sh->fs = (GLchar*)e->file->data;
-	}
-	if (sh->vs!=nullptr && sh->gs!=nullptr && sh->fs!=nullptr) {
-		GLShaderLoadTask *task = new GLShaderLoadTask(sh->sh, sh->vs, sh->fs, sh->gs);
-		Windows::window->eachFrame.addTask(task, 0);
-		delete sh;
-	}
-	//img->load( (char*)(e->file->data), e->file->size);
-}*/
+*/
 GLuint OpenGL::grShaderData = 0;
 GLuint OpenGL::circleBuffer = 0;
 GLuint OpenGL::textureGLID = 0;
@@ -74,14 +58,26 @@ int OpenGL::init(OPENGL_VER ver) {
 				*gsBitmapChar = new FileLoad("glsl/ShaderBitmap.gs"),
 				*fsBitmapChar = new FileLoad("glsl/ShaderBitmap.fs");
 		vsBitmapChar->addEventHandler(EventFileLoad::FILE_SUCCESS, glslLoaded, ShaderBitmap::prog);*/
-		ShaderBitmap::init33();
-		ShaderBitmapAtlas::init33();
-		ShaderSVGmain::init33();
-		ShaderFPrimitiv::init33();
-		ShaderF3D::init33();
-		ShaderTextField::init33();
-		ShaderTextFieldBuffer::init33();
-		ShaderPost::init33();
+		ShaderBitmap::prog = new ShaderBitmap();
+		ShaderBitmapAtlas::prog = new ShaderBitmapAtlas();
+		ShaderTextField::prog = new ShaderTextField();
+		ShaderTextFieldBuffer::prog = new ShaderTextFieldBuffer();
+		ShaderSVGmain::prog = new ShaderSVGmain();
+		ShaderFPrimitiv::prog = new ShaderFPrimitiv();
+		ShaderPost::prog = new ShaderPost();
+		ShaderF3D::prog = new ShaderF3D();
+		ShaderPartRect::prog = new ShaderPartRect();
+		GLShaderLoad *shLoad;
+		shLoad = new GLShaderLoad(ShaderBitmap::prog, "shader330/vs/Bitmap.vs", "shader330/gs/Bitmap.gs", "shader330/fs/Bitmap.fs");
+		shLoad = new GLShaderLoad(ShaderBitmapAtlas::prog, "shader330/vs/BitmapAtlas.vs", "shader330/gs/BitmapAtlas.gs", "shader330/fs/BitmapAtlas.fs");
+		shLoad = new GLShaderLoad(ShaderTextField::prog, "shader330/vs/TextField.vs", "shader330/gs/TextField.gs", "shader330/fs/TextField.fs");
+		shLoad = new GLShaderLoad(ShaderTextFieldBuffer::prog, "shader330/vs/TextFieldBuffer.vs", "shader330/gs/TextFieldBuffer.gs", "shader330/fs/TextFieldBuffer.fs");
+		shLoad = new GLShaderLoad(ShaderSVGmain::prog, "shader330/vs/SVGmain.vs", "", "shader330/fs/SVGmain.fs");
+		shLoad = new GLShaderLoad(ShaderFPrimitiv::prog, "shader330/vs/FPrimitiv.vs", "shader330/gs/FPrimitiv.gs", "shader330/fs/FPrimitiv.fs");
+		shLoad = new GLShaderLoad(ShaderPost::prog, "shader330/vs/Post.vs", "shader330/gs/Post.gs", "shader330/fs/Post.fs");
+		shLoad = new GLShaderLoad(ShaderF3D::prog, "shader330/vs/F3D.vs", "", "shader330/fs/F3D.fs");
+		shLoad = new GLShaderLoad(ShaderPartRect::prog, "shader330/vs/PartRect.vs", "shader330/gs/PartRect.gs", "shader330/fs/PartRect.fs");
+		
 		ShaderBW::init33();
 		
 		GLShader::setShader(ShaderBitmap::prog);
@@ -250,106 +246,6 @@ void ShaderBitmap::init() {
 	this->texture = glGetUniformLocation(this->shaderProgram, "colorTexture");
 	glUniform1i(this->texture, 0);
 }
-void ShaderBitmap::init33() {
-	ShaderBitmap *sh = new ShaderBitmap();
-	const GLchar *vrsh = 
-		//"#version 330 core\n"
-		"in vec4 position;"
-		"void main () {"
-			"gl_Position = position;"
-		"}",
-		*frsh = 
-		//"#version 330 core\n"
-		"uniform sampler2D colorTexture;"
-		"in vec2 TexCoord;"
-		"out vec4 color;"
-		"void main () {"
-			"color = texture(colorTexture, TexCoord);"
-		"}",
-		*gmsh = 
-		//"#version 330 core\n"
-		"layout (points) in;"
-		"layout (triangle_strip) out;"
-		"layout (max_vertices = 4) out;"
-		"layout(shared) uniform grShaderData {"
-			"mat4 viewMatrixValue;"
-		"};"
-		"uniform sampler2D colorTexture;"
-		"out vec2 TexCoord;"
-		"void main () {"
-			"vec4 Pos = gl_in[0].gl_Position;"
-			"gl_Position = vec4(Pos.x, Pos.y, 0.0, 1.0)*viewMatrixValue;"
-			"TexCoord = vec2(0.0, 0.0);"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(Pos.x, Pos.y+Pos.w, 0.0, 1.0)*viewMatrixValue;"
-			"TexCoord = vec2(0.0, 1.0);"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(Pos.x+Pos.z, Pos.y, 0.0, 1.0)*viewMatrixValue;"
-			"TexCoord = vec2(1.0, 0.0);"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(Pos.x+Pos.z, Pos.y+Pos.w, 0.0, 1.0)*viewMatrixValue;"
-			"TexCoord = vec2(1.0, 1.0);"
-			//"gl_PointSize = 10.0;"
-			"EmitVertex();"
-			"EndPrimitive();"
-		"}";
-	/*size_t frshLength = strlen(frsh), vrshLength = strlen(vrsh), gmshLength = strlen(gmsh);
-	GLint success;
-	shi->shaderProgram = glCreateProgram();
-	shi->vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	shi->fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	shi->geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
-	
-	glShaderSource(shi->vertexShader, 1, &vrsh, (const GLint*)&vrshLength);
-	glCompileShader(shi->vertexShader);
-	glGetShaderiv(shi->vertexShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		GLchar InfoLog[1024];
-		glGetShaderInfoLog(shi->vertexShader, sizeof(InfoLog), NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\n", shi->vertexShader, InfoLog);
-	}
-
-	glShaderSource(shi->fragmentShader, 1, &frsh, (const GLint*)&frshLength);
-	glCompileShader(shi->fragmentShader);
-	glGetShaderiv(shi->fragmentShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		GLchar InfoLog[1024];
-		glGetShaderInfoLog(shi->fragmentShader, sizeof(InfoLog), NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\n", shi->fragmentShader, InfoLog);
-	}
-	
-	glShaderSource(shi->geometryShader, 1, &gmsh, (const GLint*)&gmshLength);
-	glCompileShader(shi->geometryShader);
-	glGetShaderiv(shi->geometryShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		GLchar InfoLog[1024];
-		glGetShaderInfoLog(shi->geometryShader, sizeof(InfoLog), NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\n", shi->geometryShader, InfoLog);
-	}
-	
-	glAttachShader(shi->shaderProgram, shi->vertexShader);
-	glAttachShader(shi->shaderProgram, shi->fragmentShader);
-	glAttachShader(shi->shaderProgram, shi->geometryShader);
-	glLinkProgram(shi->shaderProgram);
-	
-	shi->position = glGetAttribLocation(shi->shaderProgram, "position");
-	shi->texCoord = glGetAttribLocation(shi->shaderProgram, "texCoord");
-	shi->texture = glGetUniformLocation(shi->shaderProgram, "colorTexture");//glGetUniformLocation
-	shi->viewMatrix = glGetUniformBlockIndex(shi->shaderProgram, "viewMatrix");//
-	glUniform1i(shi->texture , 0);
-	//glUniformBlockBinding(p, blockIndex, bindingPoint);
-	glUniformBlockBinding(shi->shaderProgram, shi->viewMatrix, 1);// glBindBufferBase
-	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::viewMatrix, 0, 4*4*sizeof(float));// glBindBufferBase
-	
-	printf("glGetAttribLocation %i %i %i %i\n", shi->position, shi->texCoord, shi->texture, shi->viewMatrix );
-	*/
-	ShaderBitmap::prog = sh;
-	GLShaderLoadTask *task = new GLShaderLoadTask(sh, vrsh, frsh, gmsh);
-	Windows::window->eachFrame.addTask(task, 0);
-}
 
 ShaderBitmapAtlas* ShaderBitmapAtlas::prog = nullptr;
 ShaderBitmapAtlas::ShaderBitmapAtlas() :ShaderShRect(ShaderBitmapAtlas::CRC32) {
@@ -364,109 +260,19 @@ void ShaderBitmapAtlas::init() {
 	glUniform1i(this->coordRect, 0);
 	glUniform1i(this->rectID, 0);
 }
-void ShaderBitmapAtlas::init33() {
-	ShaderBitmapAtlas *sh = new ShaderBitmapAtlas();
-	const GLchar *vrsh = 
-		//"#version 330 core\n"
-		"in vec4 position;"
-		"void main () {"
-			"gl_Position = position;"
-		"}",
-		*frsh = 
-		//"#version 330 core\n"
-		"uniform sampler2D colorTexture;"
-		"in vec2 TexCoord;"
-		"out vec4 color;"
-		"void main () {"
-			"color = texture(colorTexture, TexCoord);"
-		"}",
-		*gmsh = 
-		//"#version 330 core\n"
-		"layout (points) in;"
-		"layout (triangle_strip) out;"
-		"layout (max_vertices = 4) out;"
-		"layout(shared) uniform grShaderData {"
-			"mat4 viewMatrixValue;"
-		"};"
-		"uniform sampler2D colorTexture;"
-		"uniform sampler1D coordRect;"
-		"uniform int rectID;"
-		"out vec2 TexCoord;"
-		"void main () {"
-			"ivec2 texSize = textureSize(colorTexture, 0);"
-			"vec4 coord = texelFetch(coordRect, rectID, 0);"
-			"vec4 Pos = gl_in[0].gl_Position;"
-			
-			"gl_Position = vec4(Pos.x, Pos.y, 0.0, 1.0)*viewMatrixValue;"
-			"TexCoord = vec2(coord.x, coord.y);"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(Pos.x, Pos.y+Pos.w, 0.0, 1.0)*viewMatrixValue;"
-			"TexCoord = vec2(coord.x, coord.w);"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(Pos.x+Pos.z, Pos.y, 0.0, 1.0)*viewMatrixValue;"
-			"TexCoord = vec2(coord.z, coord.y);"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(Pos.x+Pos.z, Pos.y+Pos.w, 0.0, 1.0)*viewMatrixValue;"
-			"TexCoord = vec2(coord.z, coord.w);"
-			//"gl_PointSize = 10.0;"
-			"EmitVertex();"
-			"EndPrimitive();"
-		"}";
-	/*size_t frshLength = strlen(frsh), vrshLength = strlen(vrsh), gmshLength = strlen(gmsh);
-	GLint success;
-	shi->shaderProgram = glCreateProgram();
-	shi->vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	shi->fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	shi->geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
-	
-	glShaderSource(shi->vertexShader, 1, &vrsh, (const GLint*)&vrshLength);
-	glCompileShader(shi->vertexShader);
-	glGetShaderiv(shi->vertexShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		GLchar InfoLog[1024];
-		glGetShaderInfoLog(shi->vertexShader, sizeof(InfoLog), NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\n", shi->vertexShader, InfoLog);
-	}
 
-	glShaderSource(shi->fragmentShader, 1, &frsh, (const GLint*)&frshLength);
-	glCompileShader(shi->fragmentShader);
-	glGetShaderiv(shi->fragmentShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		GLchar InfoLog[1024];
-		glGetShaderInfoLog(shi->fragmentShader, sizeof(InfoLog), NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\n", shi->fragmentShader, InfoLog);
-	}
+ShaderPartRect* ShaderPartRect::prog = nullptr;
+ShaderPartRect::ShaderPartRect() :ShaderShRect(ShaderPartRect::CRC32) {
 	
-	glShaderSource(shi->geometryShader, 1, &gmsh, (const GLint*)&gmshLength);
-	glCompileShader(shi->geometryShader);
-	glGetShaderiv(shi->geometryShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		GLchar InfoLog[1024];
-		glGetShaderInfoLog(shi->geometryShader, sizeof(InfoLog), NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\n", shi->geometryShader, InfoLog);
-	}
-	
-	glAttachShader(shi->shaderProgram, shi->vertexShader);
-	glAttachShader(shi->shaderProgram, shi->fragmentShader);
-	glAttachShader(shi->shaderProgram, shi->geometryShader);
-	glLinkProgram(shi->shaderProgram);
-	
-	shi->position = glGetAttribLocation(shi->shaderProgram, "position");
-	shi->texCoord = glGetAttribLocation(shi->shaderProgram, "texCoord");
-	shi->texture = glGetUniformLocation(shi->shaderProgram, "colorTexture");//glGetUniformLocation
-	shi->viewMatrix = glGetUniformBlockIndex(shi->shaderProgram, "viewMatrix");//
-	glUniform1i(shi->texture , 0);
-	//glUniformBlockBinding(p, blockIndex, bindingPoint);
-	glUniformBlockBinding(shi->shaderProgram, shi->viewMatrix, 1);// glBindBufferBase
-	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::viewMatrix, 0, 4*4*sizeof(float));// glBindBufferBase
-	
-	printf("glGetAttribLocation %i %i %i %i\n", shi->position, shi->texCoord, shi->texture, shi->viewMatrix );
-	*/
-	ShaderBitmapAtlas::prog = sh;
-	Windows::window->eachFrame.addTask(new GLShaderLoadTask(sh, vrsh, frsh, gmsh));
+}
+void ShaderPartRect::init() {
+	this->ShaderShRect::init();
+	this->texture = glGetUniformLocation(this->shaderProgram, "colorTexture");
+	this->coordRect = glGetUniformLocation(this->shaderProgram, "coordRect");
+	this->rectID = glGetUniformLocation(this->shaderProgram, "rectID");
+	this->offset = glGetUniformLocation(this->shaderProgram, "offset");
+	glUniform1i(this->texture, 0);
+	glUniform1i(this->coordRect, 0);
 }
 
 ShaderSVGmain* ShaderSVGmain::prog = nullptr;
@@ -483,90 +289,6 @@ void ShaderSVGmain::init() {
 	glUniformBlockBinding(this->shaderProgram, this->grShaderData, 1);
 	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::grShaderData, 0, 4*4*sizeof(float));
 }
-void ShaderSVGmain::init33() {
-	ShaderSVGmain *sh = new ShaderSVGmain();
-	const GLchar *vrsh = 
-		//"#version 330 core\n"
-		"layout(shared) uniform grShaderData {"
-			"mat4 viewMatrixValue;"
-		"};"
-		"uniform int typeShape;"
-		"uniform mat3x2 transformMatrix;"
-		
-		"uniform vec4 fillColor;"
-		"uniform vec4 circleTransform;"
-		//x = x position
-		//y = y position
-		//z = x scale
-		//w = y scale
-		"in vec2 position;"
-		"out vec2 fragTexCoord;"
-		"void main () {"
-			"switch (typeShape) {"
-				"case 0xD4B76579:"
-					"gl_Position = vec4(position.x*circleTransform.z+circleTransform.x, position.y*circleTransform.w+circleTransform.y, 0.0, 1.0)*viewMatrixValue;"
-					""
-					"break;"
-				"case 0xB7D63381:"
-				"default:"
-					"gl_Position = vec4(position, 0.0, 1.0)*viewMatrixValue;"
-			"}"
-		"}",
-		*frsh = 
-		//"#version 330 core\n"
-		"uniform vec4 fillColor;"
-		"out vec4 color;"
-		"void main () {"
-			"color = fillColor;"
-		"}";
-	/*size_t frshLength = strlen(frsh), vrshLength = strlen(vrsh);
-	GLint success;
-	shi->shaderProgram = glCreateProgram();
-	shi->vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	shi->fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	
-	// one of: GL_POINTS, GL_LINES, GL_LINES_ADJACENCY_EXT, GL_TRIANGLES, GL_TRIANGLES_ADJACENCY_EXT
-	glProgramParameteri(shi->shaderProgram, GL_GEOMETRY_INPUT_TYPE, GL_TRIANGLES);
-	// one of: GL_POINTS, GL_LINE_STRIP, GL_TRIANGLE_STRIP
-	glProgramParameteri(shi->shaderProgram, GL_GEOMETRY_OUTPUT_TYPE, GL_TRIANGLE_STRIP);
-	
-	glShaderSource(shi->vertexShader, 1, &vrsh, (const GLint*)&vrshLength);
-	glCompileShader(shi->vertexShader);
-	glGetShaderiv(shi->vertexShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		GLchar InfoLog[1024];
-		glGetShaderInfoLog(shi->vertexShader, sizeof(InfoLog), NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\n", shi->vertexShader, InfoLog);
-	}
-
-	glShaderSource(shi->fragmentShader, 1, &frsh, (const GLint*)&frshLength);
-	glCompileShader(shi->fragmentShader);
-	glGetShaderiv(shi->fragmentShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		GLchar InfoLog[1024];
-		glGetShaderInfoLog(shi->fragmentShader, sizeof(InfoLog), NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\n", shi->fragmentShader, InfoLog);
-	}
-
-	glAttachShader(shi->shaderProgram, shi->vertexShader);
-	glAttachShader(shi->shaderProgram, shi->fragmentShader);
-	glLinkProgram(shi->shaderProgram);
-	
-	shi->position = glGetAttribLocation(shi->shaderProgram, "position");
-	shi->viewMatrix = glGetUniformBlockIndex(shi->shaderProgram, "viewMatrix");//glGetUniformLocation
-	shi->fillColor = glGetUniformLocation(shi->shaderProgram, "fillColor");
-	shi->typeShape = glGetUniformLocation(shi->shaderProgram, "typeShape");
-	shi->circleTransform = glGetUniformLocation(shi->shaderProgram, "circleTransform");
-	shi->transformMatrix = glGetUniformLocation(shi->shaderProgram, "transformMatrix");
-	//glUniformBlockBinding(p, blockIndex, bindingPoint);
-	glUniformBlockBinding(shi->shaderProgram, shi->viewMatrix, 1);// glBindBufferBase
-	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::viewMatrix, 0, 4*4*sizeof(float));// glBindBufferBase
-	
-	printf("glGetAttribLocation %i %i\n", shi->position, shi->viewMatrix );*/
-	ShaderSVGmain::prog = sh;
-	GLShaderLoadTask *task = new GLShaderLoadTask(sh, vrsh, frsh);
-	Windows::window->eachFrame.addTask(task, 0);
-}
 
 ShaderFPrimitiv* ShaderFPrimitiv::prog = nullptr;
 ShaderFPrimitiv::ShaderFPrimitiv() :GLShader(ShaderFPrimitiv::CRC32) {
@@ -579,93 +301,9 @@ void ShaderFPrimitiv::init() {
 	glUniformBlockBinding(this->shaderProgram, this->grShaderData, 1);
 	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::grShaderData, 0, 4*4*sizeof(float));
 }
-void ShaderFPrimitiv::init33() {
-	ShaderFPrimitiv *sh = new ShaderFPrimitiv();
-	const GLchar *vrsh = 
-		"in vec4 position;"
-		"void main () {"
-			"gl_Position = position;"
-		"}",
-		*frsh = 
-		"uniform vec4 fillColor;"
-		"out vec4 color;"
-		"void main () {"
-			"color = fillColor;"
-		"}",
-		*gmsh = 
-		"layout (points) in;"
-		"layout (triangle_strip) out;"
-		"layout (max_vertices = 4) out;"
-		"layout(shared) uniform grShaderData {"
-			"mat4 viewMatrixValue;"
-		"};"
-		"void main () {"
-			"vec4 Pos = gl_in[0].gl_Position.xyzw;"
-			"gl_Position = vec4(Pos.x, Pos.y, 0.0, 1.0)*viewMatrixValue;"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(Pos.x, Pos.y+Pos.w, 0.0, 1.0)*viewMatrixValue;"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(Pos.x+Pos.z, Pos.y, 0.0, 1.0)*viewMatrixValue;"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(Pos.x+Pos.z, Pos.y+Pos.w, 0.0, 1.0)*viewMatrixValue;"
-			"EmitVertex();"
-			"EndPrimitive();"
-		"}";
-	/*size_t frshLength = strlen(frsh), vrshLength = strlen(vrsh), gmshLength = strlen(gmsh);
-	GLint success;
-	shi->shaderProgram = glCreateProgram();
-	shi->vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	shi->fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	shi->geometryShader = glCreateShader(GL_GEOMETRY_SHADER);
-	
-	glShaderSource(shi->vertexShader, 1, &vrsh, (const GLint*)&vrshLength);
-	glCompileShader(shi->vertexShader);
-	glGetShaderiv(shi->vertexShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		GLchar InfoLog[1024];
-		glGetShaderInfoLog(shi->vertexShader, sizeof(InfoLog), NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\n", shi->vertexShader, InfoLog);
-	}
-
-	glShaderSource(shi->fragmentShader, 1, &frsh, (const GLint*)&frshLength);
-	glCompileShader(shi->fragmentShader);
-	glGetShaderiv(shi->fragmentShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		GLchar InfoLog[1024];
-		glGetShaderInfoLog(shi->fragmentShader, sizeof(InfoLog), NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\n", shi->fragmentShader, InfoLog);
-	}
-	
-	glShaderSource(shi->geometryShader, 1, &gmsh, (const GLint*)&gmshLength);
-	glCompileShader(shi->geometryShader);
-	glGetShaderiv(shi->geometryShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		GLchar InfoLog[1024];
-		glGetShaderInfoLog(shi->geometryShader, sizeof(InfoLog), NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\n", shi->geometryShader, InfoLog);
-	}
-	
-	glAttachShader(shi->shaderProgram, shi->vertexShader);
-	glAttachShader(shi->shaderProgram, shi->fragmentShader);
-	glAttachShader(shi->shaderProgram, shi->geometryShader);
-	glLinkProgram(shi->shaderProgram);
-	
-	shi->position = glGetAttribLocation(shi->shaderProgram, "position");
-	shi->fillColor = glGetUniformLocation(shi->shaderProgram, "fillColor");
-	shi->viewMatrix = glGetUniformBlockIndex(shi->shaderProgram, "viewMatrix");
-	glUniformBlockBinding(shi->shaderProgram, shi->viewMatrix, 1);// glBindBufferBase
-	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::viewMatrix, 0, 4*4*sizeof(float));// glBindBufferBase
-	*/
-	ShaderFPrimitiv::prog = sh;
-	GLShaderLoadTask *task = new GLShaderLoadTask(sh, vrsh, frsh, gmsh);
-	Windows::window->eachFrame.addTask(task, 0);
-}
 
 ShaderF3D* ShaderF3D::prog = nullptr;
-ShaderF3D::ShaderF3D() :GLShader(ShaderF3D::CRC32) {
+ShaderF3D::ShaderF3D() :GLShader(ShaderF3D::CRC32), position(-1), fillColor(-1), transformMatrix(-1), grShaderData(-1) {
 	
 }
 void ShaderF3D::init() {
@@ -675,65 +313,7 @@ void ShaderF3D::init() {
 	this->grShaderData = glGetUniformBlockIndex(this->shaderProgram, "grShaderData");
 	glUniformBlockBinding(this->shaderProgram, this->grShaderData, 1);
 	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::grShaderData, 0, 4*4*sizeof(float));
-}
-void ShaderF3D::init33() {
-	ShaderF3D *sh = new ShaderF3D();
-	const GLchar *vrsh = 
-		"layout(shared) uniform grShaderData {"
-			"mat4 viewMatrixValue;"
-		"};"
-		"uniform mat4 transformMatrix;"
-		"in vec3 position;"
-		"out vec3 w_position;"
-		"out vec3 c_normal;"
-		"out vec3 c_eye;"
-		"out vec3 c_light;"
-		"void main () {"
-			//"cameraPos = vec3(0, 0, 0);"
-			"w_position = (vec4(position, 1)*transformMatrix).xyz;"
-			"gl_Position = vec4(w_position, 1)*viewMatrixValue;"
-			"c_eye = 0 - (vec4(position, 1)*viewMatrixValue*transformMatrix).xyz;"
-			"c_light = normalize((vec4(0, 0, 0, 1)*viewMatrixValue).xyz+c_eye);"
-			"c_normal = normalize((vec4(position.xyz, 0)*transformMatrix*viewMatrixValue).xyz);"
-		"}",
-		*frsh = 
-		"uniform vec4 fillColor;"
-		"out vec4 color;"
-		"in vec3 w_position;"
-		"in vec3 c_normal;"
-		"in vec3 c_eye;"
-		"in vec3 c_light;"
-		"void main () {"
-			"float cosTheta = clamp( dot( c_normal,c_light ), 0, 1 );"
-			"color = vec4( fillColor.xyz*max(cosTheta, 0.3), fillColor.w);"
-		"}",
-		*gmsh = 
-		"layout (triangles) in;"
-		"layout (triangle_strip) out;"
-		"layout (max_vertices = 3) out;"
-		"layout(shared) uniform viewMatrix {"
-			"mat4 viewMatrixValue;"
-		"};"
-		"void main () {"
-			"vec3 Pos = gl_in[0].gl_Position.xyz;"
-			"gl_Position = vec4(gl_in[0].gl_Position.xy, gl_in[0].gl_Position.z-4, 1.0)*viewMatrixValue;"
-			"gl_Normal = 1.0;"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(gl_in[1].gl_Position.xy, gl_in[1].gl_Position.z-4, 1.0)*viewMatrixValue;"
-			"gl_Normal = 1.0;"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(gl_in[2].gl_Position.xy, gl_in[2].gl_Position.z-4, 1.0)*viewMatrixValue;"
-			"gl_Normal = 1.0;"
-			"EmitVertex();"
-	
-			"EndPrimitive();"
-		"}";
-	gmsh = nullptr;
-	ShaderF3D::prog = sh;
-	GLShaderLoadTask *task = new GLShaderLoadTask(sh, vrsh, frsh);
-	Windows::window->eachFrame.addTask(task, 0);
+	printf("ShaderF3D::init() %i %i %i %i %i %i %i\n", this->vertexShader, this->fragmentShader, this->geometryShader, this->position, this->fillColor, this->transformMatrix, this->grShaderData);
 }
 
 ShaderPost* ShaderPost::prog = nullptr;
@@ -741,52 +321,6 @@ ShaderPost::ShaderPost() :GLShader(ShaderPost::CRC32) {}
 void ShaderPost::init() {
 	this->texture = glGetUniformLocation(this->shaderProgram, "texture");
 	glUniform1i(this->texture, 0);
-}
-void ShaderPost::init33() {
-	ShaderPost *sh = new ShaderPost();
-	const GLchar *vrsh = 
-		//"#version 330 core\n"
-		"in vec2 position;"
-		"void main () {"
-		"}",
-		*frsh = 
-		//"#version 330 core\n"
-		"uniform sampler2D texture;"
-		"in vec2 TexCoord;"
-		"out vec4 color;"
-		"void main () {"
-			"color = texture(texture, TexCoord);"
-		"}",
-		*gmsh = 
-		//"#version 330 core\n"
-		"layout (points) in;"
-		"layout (triangle_strip) out;"
-		"layout (max_vertices = 4) out;"
-		"uniform sampler2D texture;"
-		"out vec2 TexCoord;"
-		"void main () {"
-			"ivec2 winSize = textureSize(texture, 0);"
-			"gl_Position = vec4(-1, -1, 0, 1);"
-			"TexCoord = vec2(0.0, 0.0);"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(-1, 1, 0, 1);"
-			"TexCoord = vec2(0.0, 1.0);"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(1, -1, 0, 1);"
-			"TexCoord = vec2(1.0, 0.0);"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(1, 1, 0, 1);"
-			"TexCoord = vec2(1.0, 1.0);"
-			"EmitVertex();"
-	
-			"EndPrimitive();"
-		"}";
-	ShaderPost::prog = sh;
-	GLShaderLoadTask *task = new GLShaderLoadTask(sh, vrsh, frsh, gmsh);
-	Windows::window->eachFrame.addTask(task, 0);
 }
 
 ShaderBW* ShaderBW::prog = nullptr;
@@ -864,7 +398,10 @@ void ShaderBW::init33() {
 }
 
 
-GLShaderLoadTask::GLShaderLoadTask(GLShader* sh, const GLchar *vs, const GLchar *fs, const GLchar *gs) :shader(sh), vs(vs), gs(gs), fs(fs){
+GLShaderLoadTask::GLShaderLoadTask(GLShader* sh, const GLchar *vs, const GLchar *fs, const GLchar *gs, size_t vsLength, size_t fsLength, size_t gsLength ) :
+	shader(sh), 
+	vs(vs), gs(gs), fs(fs),
+	vsLength(vsLength), fsLength(fsLength), gsLength(gsLength) {
 	
 }
 int GLShaderLoadTask::processExecute() {
@@ -873,10 +410,9 @@ int GLShaderLoadTask::processExecute() {
 		puts("GLShaderLoadTask::processExecute()");
 		return false;
 	}
-	GLint fsLength, vsLength, gsLength;
-	fsLength = strlen(this->fs);
-	vsLength = strlen(this->vs);
-	if (this->gs!=nullptr) gsLength = strlen(this->gs);
+	if (this->fsLength==0) this->fsLength = strlen(this->fs);
+	if (this->vsLength==0) this->vsLength = strlen(this->vs);
+	if (this->gs!=nullptr && this->gsLength==0) this->gsLength = strlen(this->gs);
 	GLint success;
 	this->shader->shaderProgram = glCreateProgram();
 	this->shader->vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -890,7 +426,7 @@ int GLShaderLoadTask::processExecute() {
 	if (!success) {
 		GLchar InfoLog[1024];
 		glGetShaderInfoLog(this->shader->vertexShader, sizeof(InfoLog), NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\n", this->shader->vertexShader, InfoLog);
+		fprintf(stderr, "Error compiling shader type %d: '%s'\"%s\"\n", this->shader->vertexShader, InfoLog, this->vs);
 		return false;
 	}
 
@@ -901,7 +437,7 @@ int GLShaderLoadTask::processExecute() {
 	if (!success) {
 		GLchar InfoLog[1024];
 		glGetShaderInfoLog(this->shader->fragmentShader, sizeof(InfoLog), NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\n", this->shader->fragmentShader, InfoLog);
+		fprintf(stderr, "Error compiling shader type %d: '%s'\n\"%s\"", this->shader->fragmentShader, InfoLog, this->fs);
 		return false;
 	}
 	
@@ -913,7 +449,7 @@ int GLShaderLoadTask::processExecute() {
 		if (!success) {
 			GLchar InfoLog[1024];
 			glGetShaderInfoLog(this->shader->geometryShader, sizeof(InfoLog), NULL, InfoLog);
-			fprintf(stderr, "Error compiling shader type %d: '%s'\n", this->shader->geometryShader, InfoLog);
+			fprintf(stderr, "Error compiling shader type %d: '%s'\n\"%s\"", this->shader->geometryShader, InfoLog, this->gs);
 			return false;
 		}
 	}
@@ -925,5 +461,54 @@ int GLShaderLoadTask::processExecute() {
 	glLinkProgram(this->shader->shaderProgram);
 	
 	this->shader->init();
+	printf("<shader event='loaded' id='%i'/>\n", this->shader->shaderProgram);
 	return true;
+}
+
+GLShaderLoad::GLShaderLoad(GLShader* sh, const string vs, const string gs, const string fs) :shader(sh) {
+	this->vsLoad = !vs.empty();
+	this->gsLoad = !gs.empty();
+	this->fsLoad = !fs.empty();
+	printf("loading %i %i %i\n", this->vsLoad, this->gsLoad, this->fsLoad);
+	FileLoad *file;
+	if (vsLoad) {
+		file = new FileLoad(vs);
+		file->addEventHandler(FileLoad::SUCCESS, loading, this);
+	}
+	if (gsLoad) {
+		file = new FileLoad(gs);
+		file->addEventHandler(FileLoad::SUCCESS, loading, this);
+	}
+	if (fsLoad) {
+		file = new FileLoad(fs);
+		file->addEventHandler(FileLoad::SUCCESS, loading, this);
+	}
+}
+void GLShaderLoad::loading(const EventFileLoad* e) {
+	GLShaderLoad *sh = (GLShaderLoad*)(e->obj);
+	
+	size_t nameLength = e->file->path.length();
+	
+	if (sh->vs==nullptr && e->file->path[nameLength-2]=='v' && e->file->path[nameLength-1]=='s') {
+		sh->vs = (GLchar*)e->file->data;
+		sh->vsLength = e->file->size;
+	}else if (sh->gs==nullptr && e->file->path[nameLength-2]=='g' && e->file->path[nameLength-1]=='s') {
+		sh->gs = (GLchar*)e->file->data;
+		sh->gsLength = e->file->size;
+	}else if (sh->fs==nullptr && e->file->path[nameLength-2]=='f' && e->file->path[nameLength-1]=='s') {
+		sh->fs = (GLchar*)e->file->data;
+		sh->fsLength = e->file->size;
+	}
+	if (sh->gsLoad) {
+		if (sh->vs!=nullptr && sh->gs!=nullptr && sh->fs!=nullptr) {
+			Windows::window->eachFrame.addTask( new GLShaderLoadTask(sh->shader, sh->vs, sh->fs, sh->gs, sh->vsLength, sh->fsLength, sh->gsLength) );
+			delete sh;
+		}
+	}else{
+		if (sh->vs!=nullptr && sh->fs!=nullptr) {
+			Windows::window->eachFrame.addTask( new GLShaderLoadTask(sh->shader, sh->vs, sh->fs, nullptr, sh->vsLength, sh->fsLength, 0) );
+			delete sh;
+		}
+	}
+	
 }

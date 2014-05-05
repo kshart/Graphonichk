@@ -103,11 +103,8 @@ searchObj:
 			while (data[i]!=0 && data[i]!='\n') ++i;
 			if (data[i]==0) goto endStr;
 			++i;
-			printf("'%c'", data[i]);
-			puts("OK");
 			goto searchObj;
 		}
-		puts("OK");
 searchChank:
 		while (data[i]!=0 && data[i]!='\n') ++i;
 		if (data[i]==0) goto endStr;

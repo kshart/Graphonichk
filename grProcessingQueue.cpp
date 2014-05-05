@@ -24,14 +24,14 @@ int VBOUpdateTask::processExecute() {
 }
 int Model3DLoadTask::processExecute() {
 	if (OpenGL::ver==OpenGL::VER_CORE_100) {
-		
-	}else{
+		return true;
+	}else if (ShaderF3D::prog->shaderProgram!=0) {
 		SET_SHADER(ShaderF3D);
 
 		glGenVertexArrays(1, &this->model->vao);
 		if (this->model->vao==0) puts("VAO_NULL");
 		glBindVertexArray(this->model->vao);
-
+		printf("ShaderF3D::prog %i\n", ShaderF3D::prog->position);
 		glGenBuffers(1, &this->model->vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, this->model->vbo);
 		glBufferData(GL_ARRAY_BUFFER, this->model->vertex.size()*3*sizeof(float), (GLvoid*)&this->model->vertex.front(), GL_STATIC_DRAW);
@@ -43,6 +43,7 @@ int Model3DLoadTask::processExecute() {
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->model->polygon.size()*3*sizeof(uint), (GLvoid*)&this->model->polygon.front(), GL_STATIC_DRAW);
 		return true;
 	}
+	return false;
 }
 
 ProcessingSupSuspend::ProcessingSupSuspend() :_threadHandle(nullptr) {

@@ -21,13 +21,13 @@ namespace Graphonichk {
 	};
 	class FileLoad:public EventDispatcher<EventFileLoad> {
 	private:
+		static THREAD loaderThread(void*);
 		#ifdef WIN32
 		HANDLE fileHandle;
 		OVERLAPPED  ovl;
-		static DWORD WINAPI loaderThread(void*);
 		#endif
 	public:
-		FileLoad(string path);
+		FileLoad(const string path);
 		~FileLoad();
 		enum STATUS:char {
 			SUCCESS,

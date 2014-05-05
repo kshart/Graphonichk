@@ -438,8 +438,8 @@ void ShapeGroupRect::updateGlobalPosition() {
 		this->global.x = this->parent->global.x + this->local.x;
 		this->global.y = this->parent->global.y + this->local.y;
 	}
-	for(vector<ShapeRect*>::const_iterator it=this->child.begin(), end=this->child.end(); it!=end; ++it) {
-		(*it)->updateGlobalPosition();
+	for(ShapeRect* &sh : this->child) {
+		sh->updateGlobalPosition();
 	}
 }
 void ShapeGroupRect::updateRect() {
@@ -486,11 +486,11 @@ void ShapeGroupRect::updateRect() {
 vector<ShapeRect*>* ShapeGroupRect::getChildShape() {
 	
 	vector<ShapeRect*>* arr = new vector<ShapeRect*>;
-	for (int i = 0; i<this->child.size( ); i++) {
-		if (dynamic_cast<ShapeGroupRect*>(this->child[i]) != NULL) {
-			((ShapeGroupRect*)(this->child[i]))->getChildShape(arr);
+	for (ShapeRect* &sh : this->child) {
+		if (dynamic_cast<ShapeGroupRect*>(sh) != nullptr) {
+			((ShapeGroupRect*)sh)->getChildShape(arr);
 		}else{
-			arr->push_back( this->child[i] );
+			arr->push_back(sh);
 		}
 	}
 	return arr;
@@ -646,7 +646,7 @@ void ShapeMain::setRect(short w, short h) {
 int ShapeMain::renderGL330() {
 	glBindFramebuffer(GL_FRAMEBUFFER, this->frameBuffer.fbo);
 	OpenGL::setViewport(0, 0, this->width, this->height);
-	glClearColor( 0.5, 0.5, 0.5, 1.0 );
+	glClearColor( 0.9, 0.9, 0.9, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT );
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
@@ -1010,12 +1010,9 @@ int FRect::renderGL330() {
 	return true;
 }
 
-Scene3D::Scene3D():ShapeRect(1232123) {
-	//this->viewMatrix = ViewMatrixPerspective2(45.0, 1, 1, 10);
+Scene3D::Scene3D():ShapeRect(1232123), model(nullptr) {
 	this->viewMatrix = Matrix3D::ViewPerspective2(45.0, (float)Windows::window->width/(float)Windows::window->height, 1, 1000);
-	//this->viewPosMatrix;
 	this->setBox(0, 0, Windows::window->width, Windows::window->height);
-	this->model = nullptr;
 }
 int Scene3D::renderGL100() {
 	OpenGL::pushViewport();
@@ -1052,12 +1049,11 @@ int Scene3D::renderGL330() {
 	glEnable(GL_CULL_FACE);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	
-	if (GLShader::shader->crc32!=ShaderF3D::CRC32) GLShader::setShader(ShaderF3D::prog);
-	if (this->model!=nullptr) {
-		glUniform4f(ShaderF3D::prog->fillColor, 0, 1, 0, 1);
+	if (this->model!=nullptr && ShaderF3D::prog->shaderProgram!=0) {
+		SET_SHADER(ShaderF3D);
+		glUniform4f(ShaderF3D::prog->fillColor, 0, 0.4, 0, 1);
 		glUniformMatrix4fv(ShaderF3D::prog->transformMatrix, 1, GL_FALSE, this->viewPosMatrix.a);
-		//glDrawArrays(GL_TRIANGLES, 0, 36);
-		glBindVertexArray(this->model->vao);//this->model->polygon.size()*3
+		glBindVertexArray(this->model->vao);
 		glDrawElements(GL_TRIANGLES, this->model->polygon.size()*3, GL_UNSIGNED_INT, NULL);
 	}
 	/*

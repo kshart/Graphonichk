@@ -277,7 +277,7 @@ THREAD Windows::threadRender (void* sys) {
 	Screen::height = GetDeviceCaps(win->hDC,VERTRES);
 	Screen::dpi = ( Screen::width/(float)GetDeviceCaps(win->hDC,HORZSIZE) )*25.4;
 	printf("<LCD res='%i %i' dpi='%f'/>\n", Screen::width, Screen::height, Screen::dpi );
-	OpenGL::init(OpenGL::VER_CORE_330);
+	OpenGL::init(OGL_VER);
 	win->resize(win->width, win->height);
 	ReleaseSemaphore(  *(HANDLE*)sys, 1, NULL);
 	

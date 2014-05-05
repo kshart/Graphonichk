@@ -54,6 +54,7 @@ namespace Graphonichk {
 	class Model3D;
 	class Model3DLoadTask :public EachFrameTask {
 	public:
+		Model3DLoadTask(Model3D *model) :model(model) {};
 		int processExecute();
 		Model3D *model;
 	};

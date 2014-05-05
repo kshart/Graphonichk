@@ -20,4 +20,6 @@
 #include "grBaseTypes.h"
 #include "grTypes.h"
 
+#define OGL_VER OpenGL::VER_CORE_330
+
 #endif	/* GRMAIN_H */

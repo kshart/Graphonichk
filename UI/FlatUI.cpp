@@ -6,21 +6,107 @@ using namespace Graphonichk;
 Graphonichk::Texture *MainFlatUI::flImage = nullptr;
 
 int MainFlatUI::init() {
-	usvec4 rect[8] = {
+	usvec4 rect[13] = {
 		usvec4(0, 0, 20, 20),
-		usvec4(20, 0, 40, 20),
-		usvec4(40, 0, 60, 20),
-		usvec4(60, 0, 80, 20),
-		usvec4(0, 20, 20, 40),
-		usvec4(20, 20, 40, 40),
-		usvec4(40, 20, 60, 40),
-		usvec4(60, 20, 80, 40),
+		usvec4(22, 0, 42, 20),
+		usvec4(44, 0, 64, 20),
+		usvec4(66, 0, 86, 20),
+		usvec4(88, 0, 108, 20),
+		usvec4(0, 22, 20, 42),
+		usvec4(22, 22, 42, 42),
+		usvec4(44, 22, 64, 42),
+		usvec4(66, 22, 86, 42),
+		usvec4(88, 22, 108, 42),
+		usvec4(110, 0, 120, 10),
+		usvec4(110, 12, 120, 22),
+		usvec4(110, 24, 120, 34),
 	};
-	MainFlatUI::flImage = new Graphonichk::Texture("FlatUI.png", 8, rect);
+	MainFlatUI::flImage = new Graphonichk::Texture("FlatUI.png", 13, rect);
 	return true;
 }
 
-
+void FlatUIButtonMouseUp (const EventMouse *e) {
+	FlatUIButton *flsb = (FlatUIButton*)(e->obj);
+	short localx, localy;
+	EventCheckButton *event;
+	if (flsb->press) {
+		flsb->press = false;
+		localx = e->x - flsb->getGlobalX();
+		localy = e->y - flsb->getGlobalY();
+		if (localx>0 && localx<flsb->getWidth() && localy>0 && localy<flsb->getHeight()) {
+			flsb->status = UIButton::ROLLOVER;
+			flsb->texRectID = MainFlatUI::BUTTON_BOX_ROLL_OVER;
+			//flsb->setRectID(MainFlatUI::BUTTON_BOX_ROLL_OVER);
+			//event = new EventCheckButton( EventCheckButton::CHECK_UPDATE );
+			//event->checked = true;
+			//event->obj = flsb;
+			//flsb->UICheckbox::callEvent(event);
+			//delete event;
+		}else{
+			flsb->status = UIButton::NORMAL;
+			flsb->texRectID = MainFlatUI::BUTTON_BOX;
+			//flsb->setRectID(MainFlatUI::BUTTON_BOX);
+		}
+		#ifdef REDRAWN_BY_THE_ACTION
+		Windows::window->renderComplete = false;
+		#endif
+	}
+}
+FlatUIButton::FlatUIButton(unsigned short w, unsigned short h) :BitmapAtlas(MainFlatUI::flImage, MainFlatUI::BUTTON_BOX) {
+	this->setRect(w, h);
+	this->mouseEventActive = true;
+	Windows::window->events.mouse.addEventHandler(EventMouse::MOUSE_UP, FlatUIButtonMouseUp, this);
+}
+int FlatUIButton::callEvent(EventMouseShape* event) {
+	if (true) {
+		switch (event->type) {
+			case EventMouseShape::MOUSE_DOWN:
+				this->press = true;
+				this->status = FlatUIButton::PRESS;
+				this->texRectID = MainFlatUI::BUTTON_BOX_PRESSED;
+				//this->setRectID(MainFlatUI::BUTTON_BOX_PRESSED);
+				#ifdef REDRAWN_BY_THE_ACTION
+				Windows::window->renderComplete = false;
+				#endif
+				return true;
+			case EventMouseShape::MOUSE_ROLL_OUT:
+				this->status = FlatUIButton::NORMAL;
+				this->texRectID = MainFlatUI::BUTTON_BOX;
+				//this->setRectID(MainFlatUI::BUTTON_BOX);
+				#ifdef REDRAWN_BY_THE_ACTION
+				Windows::window->renderComplete = false;
+				#endif
+				return true;
+			case EventMouseShape::MOUSE_ROLL_OVER:
+				if (this->press) {
+					this->status = FlatUIButton::PRESS;
+					this->texRectID = MainFlatUI::BUTTON_BOX_PRESSED;
+					//this->setRectID(MainFlatUI::BUTTON_BOX_PRESSED);
+				}else{
+					this->status = FlatUIButton::ROLLOVER;
+					this->texRectID = MainFlatUI::BUTTON_BOX_ROLL_OVER;
+					//this->setRectID(MainFlatUI::BUTTON_BOX_ROLL_OVER);
+				}
+				#ifdef REDRAWN_BY_THE_ACTION
+				Windows::window->renderComplete = false;
+				#endif
+				return true;
+		}
+	}else{
+		//this->setRectID(MainFlatUI::CHECK_BOX_DISABLE);
+	}
+}
+int FlatUIButton::renderGL330() {
+	if (this->tex == nullptr) return false;
+	SET_SHADER(ShaderPartRect);
+	glUniform1i(ShaderPartRect::prog->rectID, this->texRectID);
+	glUniform2i(ShaderPartRect::prog->offset, 4, 4);
+	glBindVertexArray(this->vao);
+	glBindTexture(GL_TEXTURE_2D, this->tex->GLID);
+	glBindTexture(GL_TEXTURE_1D, this->tex->rectGLID);
+	glDrawArrays(GL_POINTS, 0, 1);
+	return true;
+}
 void FlatUICheckboxMouseUp (const EventMouse *e) {
 	FlatUICheckbox *flsb = (FlatUICheckbox*)(e->obj);
 	short localx, localy;

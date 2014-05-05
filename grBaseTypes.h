@@ -2,19 +2,6 @@
 #ifndef GRBASETYPES_H
 #define	GRBASETYPES_H
 
-#include <stack>
-#include <queue>
-#include <vector>
-#include <string.h>
-#include <string>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <GL/glew.h>
-
-#include <ft2build.h>
-#include FT_FREETYPE_H
-#include FT_GLYPH_H
 #if defined(WIN32)
 	#include <dinput.h>
 	#include <windows.h>
@@ -62,10 +49,10 @@
 #define FRAME_PER_SECOND 60
 #define TIME_IN_FRAME_MS (float)1/FRAME_PER_SECOND
 #define M_PI 3.14159265358979323846
+
 using namespace std;
 extern FILE *iovir;
 extern FILE *ioshp;
-//111
 
 // <editor-fold defaultstate="collapsed" desc="#define IMG_TYPE">
 #define GR_IMG_BMP "bmp"//0x4D42
@@ -101,28 +88,13 @@ namespace Graphonichk {
 	class GLShader;
 	class Image;
 	class Texture;
-	//<Shape>
-	//class Buffer;
-	//</Shape>
-	//Shape
-	//Event
 	class EventKeyboard;
 	class EventMouse;
 	class EventWindow;
-	//Event
-	//
-	//Font
 	class TextField;
 	class Font;
 	class TextFormat;
-	//Font
-	class Rect;
-	class Point;
-	class Point {
-	  public:
-		short x, y;
-		
-	};
+	
 	class Rect {
 	  public:
 		short x, y;

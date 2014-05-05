@@ -574,7 +574,8 @@ int BasicShapeRect::renderGL330() {
 	OpenGL::pushViewMatrix();
 	OpenGL::multViewMatrix(mat);
 	SET_SHADER(ShaderSVGmain);
-	if (this->vao==0) {
+	
+	if (this->vao==0 && ShaderSVGmain::prog->shaderProgram!=0) {
 		float vertex[8] = {
 			DataTypes::getPixels(this->x),										DataTypes::getPixels(this->y),
 			DataTypes::getPixels(this->x)+DataTypes::getPixels(this->width),	DataTypes::getPixels(this->y),
@@ -587,6 +588,7 @@ int BasicShapeRect::renderGL330() {
 		glGenBuffers(1, &this->vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
 		glBufferData(GL_ARRAY_BUFFER, 8*sizeof(float), vertex, GL_STATIC_DRAW);
+		printf("this->vbo %i\n", this->vbo);
 		glVertexAttribPointer(ShaderSVGmain::prog->position, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 		glEnableVertexAttribArray(ShaderSVGmain::prog->position);
 	}
@@ -674,7 +676,7 @@ int BasicShapeCircle::renderGL330() {
 	OpenGL::pushViewMatrix();
 	OpenGL::multViewMatrix(mat);
 	SET_SHADER(ShaderSVGmain);
-	if (this->vao==0) {
+	if (this->vao==0 && ShaderSVGmain::prog->shaderProgram!=0) {
 		glGenVertexArrays(1, &this->vao);
 		glBindVertexArray(this->vao);
 		
@@ -828,7 +830,7 @@ int BasicShapeLine::renderGL330() {
 	OpenGL::pushViewMatrix();
 	OpenGL::multViewMatrix(mat);
 	SET_SHADER(ShaderSVGmain);
-	if (this->vao==0) {
+	if (this->vao==0 && ShaderSVGmain::prog->shaderProgram!=0) {
 		float vertex[4] = {
 			DataTypes::getPixels(this->x1),	DataTypes::getPixels(this->y1),
 			DataTypes::getPixels(this->x2),	DataTypes::getPixels(this->y2),

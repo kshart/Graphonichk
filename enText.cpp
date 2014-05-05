@@ -566,7 +566,6 @@ int TextField::renderGL330() {
 	SET_SHADER(ShaderTextFieldBuffer);
 	glBindTexture(GL_TEXTURE_2D, this->tex->GLID);
 	if (this->vbo==0) {
-		puts("this->vbo");
 		struct {
 			unsigned char r, g, b, a;
 		} color;
@@ -610,7 +609,6 @@ int TextField::renderGL330() {
 		glBufferData(GL_ARRAY_BUFFER, 4, &color, GL_STATIC_DRAW);
 		glVertexAttribPointer(ShaderTextFieldBuffer::prog->textColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, 4, 0);
 		glEnableVertexAttribArray(ShaderTextFieldBuffer::prog->textColor);
-		printf("this->vbo %i %i\n", this->tex, this->vao);
 	}
 	glBindVertexArray(this->vao);
 	glDrawArrays(GL_POINTS, 0, 1);
@@ -635,58 +633,6 @@ void ShaderTextField::init() {
 	glUniformBlockBinding(this->shaderProgram, this->grShaderData, 1);
 	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::grShaderData, 0, 4*4*sizeof(float));
 }
-void ShaderTextField::init33() {
-	ShaderTextField *sh = new ShaderTextField();
-	const GLchar *vrsh = 
-		"in vec3 position;"
-		"void main () {"
-			"gl_Position = vec4(position, 1);"
-		"}",
-		*frsh = 
-		"uniform sampler2D texture;"
-		"in vec2 coord;"
-		"out vec4 color;"
-		"void main () {"
-			"color = texture(texture, coord);"
-		"}",
-		*gmsh = 
-		"layout (points) in;"
-		"layout (triangle_strip) out;"
-		"layout (max_vertices = 4) out;"
-		"layout(shared) uniform grShaderData {"
-			"mat4 viewMatrixValue;"
-		"};"
-		"uniform sampler1D coordTex;"
-		"uniform sampler2D texture;"
-		"out vec2 coord;"
-		"void main () {"
-			"int index = int(gl_in[0].gl_Position.z);"
-			"ivec2 sizeTex = textureSize(texture, 0);"
-			"vec4 rectTex = texelFetch(coordTex, index, 0);"
-			"vec4 rect = vec4(gl_in[0].gl_Position.x, gl_in[0].gl_Position.y, gl_in[0].gl_Position.x+sizeTex.x*rectTex.z, gl_in[0].gl_Position.y+sizeTex.y*rectTex.w);"
-	
-			"gl_Position = vec4(rect.x, rect.y, 0.0, 1.0)*viewMatrixValue;"
-			"coord = vec2(float(rectTex.x), float(rectTex.y));"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(rect.x, rect.w, 0.0, 1.0)*viewMatrixValue;"
-			"coord = vec2(float(rectTex.x), float(rectTex.y+rectTex.w));"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(rect.z, rect.y, 0.0, 1.0)*viewMatrixValue;"
-			"coord = vec2(float(rectTex.x+rectTex.z), float(rectTex.y));"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(rect.z, rect.w, 0.0, 1.0)*viewMatrixValue;"
-			"coord = vec2(float(rectTex.x+rectTex.z), float(rectTex.y+rectTex.w));"
-			//"gl_PointSize = 10.0;"
-			"EmitVertex();"
-			"EndPrimitive();"
-		"}";
-	ShaderTextField::prog = sh;
-	GLShaderLoadTask *task = new GLShaderLoadTask(sh, vrsh, frsh, gmsh);
-	Windows::window->eachFrame.addTask(task, 0);
-};
 
 ShaderTextFieldBuffer* ShaderTextFieldBuffer::prog = nullptr;
 ShaderTextFieldBuffer::ShaderTextFieldBuffer() :ShaderShRect(ShaderTextFieldBuffer::CRC32) {
@@ -698,99 +644,4 @@ void ShaderTextFieldBuffer::init() {
 	this->textColor = glGetAttribLocation(this->shaderProgram, "textColor");
 	this->textTexture = glGetUniformLocation(this->shaderProgram, "textTexture");
 	glUniform1i(this->textTexture, 0);
-}
-void ShaderTextFieldBuffer::init33() {
-	ShaderTextFieldBuffer *sh = new ShaderTextFieldBuffer();
-	const GLchar *vrsh = 
-		"in vec4 position;"
-		"in vec4 textColor;"
-		"out VertexData {"
-		"	vec4 position;"
-		"	vec4 textColor;"
-		"} VertexOut;"
-		"void main () {"
-			"VertexOut.position = position;"
-			"VertexOut.textColor = textColor;"
-		"}",
-		*frsh = 
-		//"#version 330 core\n"
-		"uniform sampler2D textTexture;"
-		"in VertexData {"
-		"	vec2 TexCoord;"
-		"	vec4 textColor;"
-		"} VertexIn;"
-		"out vec4 color;"
-		"void main () {"
-			//"vec4 textBGColor = "
-			/*"vec4 textBGColor = vec4(0.0);"
-			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, -0.028))*0.0044299121055113265;"
-			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, -0.024))*0.00895781211794;"
-			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, -0.020))*0.0215963866053;"
-			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, -0.016))*0.0443683338718;"
-			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, -0.012))*0.0776744219933;"
-			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, -0.008))*0.115876621105;"
-			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, -0.004))*0.147308056121;"
-			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01    )*0.159576912161;"
-			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, 0.004))*0.147308056121;"
-			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, 0.008))*0.115876621105;"
-			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, 0.012))*0.0776744219933;"
-			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, 0.016))*0.0443683338718;"
-			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, 0.020))*0.0215963866053;"
-			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, 0.024))*0.00895781211794;"
-			"textBGColor += texture2D(textTexture,VertexIn.TexCoord + 0.01 + vec2(0.0, 0.028))*0.0044299121055113265;"
-			"textBGColor *= 0.5;"*/
-			"float tex = texture(textTexture, VertexIn.TexCoord).a;"
-			"vec4 texc = vec4(VertexIn.textColor.rgb, VertexIn.textColor.a*tex );"
-			//"vec4 textBGColor = texture(textTexture, vec2(VertexIn.TexCoord.x+0.01, VertexIn.TexCoord.y+0.01));"
-			//"color.a = texc.a+textBGColor.a*(1-texc.a);"
-			//"color.rgb = vec3((texc.rgb*texc.a)+(textBGColor.rgb*textBGColor.a)*(1-texc.a))/color.a;"
-			"color = texc;"
-		"}",
-		*gmsh = 
-		//"#version 330 core\n"
-		"layout (points) in;"
-		"layout (triangle_strip) out;"
-		"layout (max_vertices = 4) out;"
-		"layout(shared) uniform grShaderData {"
-			"mat4 viewMatrixValue;"
-			"vec2 pixelSize;"
-		"};"
-		"in VertexData {"
-			"vec4 position;"
-			"vec4 textColor;"
-		"} VertexIn[];"
-		"out VertexData {"
-			"vec2 TexCoord;"
-			"vec4 textColor;"
-		"} VertexOut;"
-		"uniform sampler2D textTexture;"
-		"void main () {"
-			"ivec2 texSize = textureSize(textTexture, 0);"
-			"vec2 Pos = VertexIn[0].position;"
-			"gl_Position = vec4(Pos.x, Pos.y, 0.0, 1.0)*viewMatrixValue;"
-			"gl_PointSize = 0.01;"
-			"VertexOut.TexCoord = vec2(0.0, 0.0);"
-			"VertexOut.textColor = VertexIn[0].textColor;"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(Pos.x, Pos.y+texSize.y, 0.0, 1.0)*viewMatrixValue;"
-			"VertexOut.TexCoord = vec2(0.0, 1.0);"
-			"VertexOut.textColor = VertexIn[0].textColor;"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(Pos.x+texSize.x, Pos.y, 0.0, 1.0)*viewMatrixValue;"
-			"VertexOut.TexCoord = vec2(1.0, 0.0);"
-			"VertexOut.textColor = VertexIn[0].textColor;"
-			"EmitVertex();"
-			
-			"gl_Position = vec4(Pos.x+texSize.x, Pos.y+texSize.y, 0.0, 1.0)*viewMatrixValue;"
-			"VertexOut.TexCoord = vec2(1.0, 1.0);"
-			"VertexOut.textColor = VertexIn[0].textColor;"
-			"EmitVertex();"
-	
-			"EndPrimitive();"
-		"}";
-	ShaderTextFieldBuffer::prog = sh;
-	GLShaderLoadTask *task = new GLShaderLoadTask(sh, vrsh, frsh, gmsh);
-	Windows::window->eachFrame.addTask(task, 0);
 }

@@ -159,8 +159,6 @@ namespace Graphonichk {
 	public:
 		enum {CRC32=0x51923};
 		ShaderTextField();
-		//static void init();
-		static void init33();
 		static ShaderTextField* prog;
 		
 		GLint position, texture, coordTex, grShaderData;
@@ -172,8 +170,6 @@ namespace Graphonichk {
 	public:
 		enum {CRC32=0x0912D2FF};
 		ShaderTextFieldBuffer();
-		//static void init();
-		static void init33();
 		static ShaderTextFieldBuffer* prog;
 		
 		GLint textColor, textTexture, texCoord, grShaderData;

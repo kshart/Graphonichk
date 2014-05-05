@@ -15,7 +15,7 @@ namespace Graphonichk {
 	class ShapeGroupMatrix2D;
 	class ShapeGroupBasic;
 	
-	class ShapeRectGateBasic;
+	//class ShapeRectGateBasic;
 	class ShapeRectGateMatrix2D;
 	class ShapeRectGateMatrix3D;
 

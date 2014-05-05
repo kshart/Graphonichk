@@ -97,7 +97,7 @@ void FileLoad::init () {
 	WaitForSingleObject(mutex, INFINITE);
 	CloseHandle(mutex);
 }
-FileLoad::FileLoad(string path) {
+FileLoad::FileLoad(const string path) {
 	this->progres = 0.0;
 	this->fileHandle = CreateFile(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
 	if (this->fileHandle == INVALID_HANDLE_VALUE) {
