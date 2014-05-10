@@ -107,6 +107,55 @@ int FlatUIButton::renderGL330() {
 	glDrawArrays(GL_POINTS, 0, 1);
 	return true;
 }
+int FlatUIButton::renderGL100() {
+	if (this->tex == nullptr) return false;
+	vec2 offset(4, 4);
+	vec2 TexSize( (float)tex->width, (float)tex->height );
+	svec2 global = this->global + this->offset;
+	svec2 p1(global.x, global.y);
+	svec2 p4(global.x+this->width, global.y+this->height);
+	svec2 p2(global.x+offset.x, global.y+offset.y);
+	svec2 p3(p4.x-offset.x, p4.y-offset.y);
+	vec2 c1( (float)(tex->rects[texRectID].x)/tex->width, (float)(tex->rects[texRectID].y)/tex->height );
+	vec2 c4( (float)(tex->rects[texRectID].z)/tex->width, (float)(tex->rects[texRectID].w)/tex->height );
+	vec2 c2( c1+offset/TexSize );
+	vec2 c3( c4-offset/TexSize );
+	glBindTexture(GL_TEXTURE_2D, tex->GLID);
+	glColor4ub(0xFF,0xFF,0xFF,0xFF);
+	glEnable( GL_TEXTURE_2D );
+	glBegin( GL_TRIANGLE_STRIP );
+		glTexCoord2f( c1.x, c1.y );	glVertex2s( p1.x, p1.y );
+		glTexCoord2f( c1.x, c2.y );	glVertex2s( p1.x, p2.y );
+		glTexCoord2f( c2.x, c1.y );	glVertex2s( p2.x, p1.y );
+		glTexCoord2f( c2.x, c2.y );	glVertex2s( p2.x, p2.y );
+		glTexCoord2f( c3.x, c1.y );	glVertex2s( p3.x, p1.y );
+		glTexCoord2f( c3.x, c2.y );	glVertex2s( p3.x, p2.y );
+		glTexCoord2f( c4.x, c1.y );	glVertex2s( p4.x, p1.y );
+		glTexCoord2f( c4.x, c2.y );	glVertex2s( p4.x, p2.y );
+	glEnd();
+	glBegin( GL_TRIANGLE_STRIP );
+		glTexCoord2f( c1.x, c2.y );	glVertex2s( p1.x, p2.y );
+		glTexCoord2f( c1.x, c3.y );	glVertex2s( p1.x, p3.y );
+		glTexCoord2f( c2.x, c2.y );	glVertex2s( p2.x, p2.y );
+		glTexCoord2f( c2.x, c3.y );	glVertex2s( p2.x, p3.y );
+		glTexCoord2f( c3.x, c2.y );	glVertex2s( p3.x, p2.y );
+		glTexCoord2f( c3.x, c3.y );	glVertex2s( p3.x, p3.y );
+		glTexCoord2f( c4.x, c2.y );	glVertex2s( p4.x, p2.y );
+		glTexCoord2f( c4.x, c3.y );	glVertex2s( p4.x, p3.y );
+	glEnd();
+	glBegin( GL_TRIANGLE_STRIP );
+		glTexCoord2f( c1.x, c3.y );	glVertex2s( p1.x, p3.y );
+		glTexCoord2f( c1.x, c4.y );	glVertex2s( p1.x, p4.y );
+		glTexCoord2f( c2.x, c3.y );	glVertex2s( p2.x, p3.y );
+		glTexCoord2f( c2.x, c4.y );	glVertex2s( p2.x, p4.y );
+		glTexCoord2f( c3.x, c3.y );	glVertex2s( p3.x, p3.y );
+		glTexCoord2f( c3.x, c4.y );	glVertex2s( p3.x, p4.y );
+		glTexCoord2f( c4.x, c3.y );	glVertex2s( p4.x, p3.y );
+		glTexCoord2f( c4.x, c4.y );	glVertex2s( p4.x, p4.y );
+	glEnd();
+	glDisable( GL_TEXTURE_2D );
+	return true;
+}
 void FlatUICheckboxMouseUp (const EventMouse *e) {
 	FlatUICheckbox *flsb = (FlatUICheckbox*)(e->obj);
 	short localx, localy;
@@ -166,8 +215,8 @@ int FlatUICheckbox::callEvent(EventMouseShape* event) {
 					this->setRectID(MainFlatUI::CHECK_BOX_ROLL_OVER);
 				}
 				#ifdef REDRAWN_BY_THE_ACTION
-					Windows::window->renderComplete = false;
-					#endif
+				Windows::window->renderComplete = false;
+				#endif
 				return true;
 			case EventMouseShape::MOUSE_ROLL_OUT:
 				if (this->checked) {
@@ -178,8 +227,8 @@ int FlatUICheckbox::callEvent(EventMouseShape* event) {
 					this->setRectID(MainFlatUI::CHECK_BOX);
 				}
 				#ifdef REDRAWN_BY_THE_ACTION
-					Windows::window->renderComplete = false;
-					#endif
+				Windows::window->renderComplete = false;
+				#endif
 				return true;
 			case EventMouseShape::MOUSE_ROLL_OVER:
 				if (this->checked) {
@@ -200,8 +249,8 @@ int FlatUICheckbox::callEvent(EventMouseShape* event) {
 					}
 				}
 				#ifdef REDRAWN_BY_THE_ACTION
-					Windows::window->renderComplete = false;
-					#endif
+				Windows::window->renderComplete = false;
+				#endif
 				return true;
 		}
 	}else{

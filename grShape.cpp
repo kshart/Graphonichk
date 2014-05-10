@@ -47,37 +47,13 @@ void ShapeGroupBasic::trace() {
 	printf("<ShapeGroupBasic empty/>\n");
 	fputs("ShapeGroupBasic::trace\n", iovir);
 }
-int ShapeGroupBasic::renderGL400() {
-	fputs("ShapeGroupBasic::renderGL400\n", iovir);
-	return false;
-}
-int ShapeGroupBasic::renderGL330() {
-	fputs("ShapeGroupBasic::renderGL330\n", iovir);
-	return false;
-}
-int ShapeGroupBasic::renderGL210() {
-	fputs("ShapeGroupBasic::renderGL210\n", iovir);
-	return false;
-}
-int ShapeGroupBasic::renderGL100() {
-	fputs("ShapeGroupBasic::renderGL100\n", iovir);
-	return false;
-}
 
 ShapeGroupMatrix2D::ShapeGroupMatrix2D() {
 }
 ShapeGroupMatrix2D::ShapeGroupMatrix2D(int crc32) {
 }
-int ShapeGroupMatrix2D::renderGL400() {
-	fputs("ShapeGroupMatrix2D::renderGL400\n", iovir);
-	return false;
-}
 int ShapeGroupMatrix2D::renderGL330() {
 	fputs("ShapeGroupMatrix2D::renderGL330\n", iovir);
-	return false;
-}
-int ShapeGroupMatrix2D::renderGL210() {
-	fputs("ShapeGroupMatrix2D::renderGL210\n", iovir);
 	return false;
 }
 int ShapeGroupMatrix2D::renderGL100() {
@@ -107,16 +83,8 @@ int ShapeRectGateMatrix2D::renderGL100() {
 	glPopMatrix();
 	return true;
 }
-int ShapeRectGateMatrix2D::renderGL400() {
-	fputs("ShapeRectGateMatrix2D::renderGL400\n", iovir);
-	return false;
-}
 int ShapeRectGateMatrix2D::renderGL330() {
 	fputs("ShapeRectGateMatrix2D::renderGL330\n", iovir);
-	return false;
-}
-int ShapeRectGateMatrix2D::renderGL210() {
-	fputs("ShapeRectGateMatrix2D::renderGL210\n", iovir);
 	return false;
 }
 
@@ -302,14 +270,6 @@ void ShapeGroupRect::trace() {
 	for (int i=0; i<this->child.size(); i++) this->child[i]->trace(); 
 	printf("</ShapeGroupRect>\n");
 }
-int ShapeGroupRect::renderGL400() {
-	printf("ShapeGroupRect p\n");
-	for (int i=0; i<this->child.size(); i++) {
-		this->child[i]->trace();
-		if (this->child[i]->visible)this->child[i]->renderGL400();
-	}
-	return true;
-}
 int ShapeGroupRect::renderGL330() {
 	for (ShapeRect* &sh : this->child) {
 		if (sh->visible) sh->renderGL330();
@@ -327,32 +287,6 @@ int ShapeGroupRect::renderGL330() {
 	#endif
 	return true;
 }
-int ShapeGroupRect::renderGL210() {
-	if ( this->shapeCache != NULL ) {
-		#ifdef DEBUG
-		printf("ShapeGroupRect shapeCache\n");
-		#endif
-		for (int i=0; i<this->shapeCache->size(); i++) {
-			(this->shapeCache->at(i))->renderGL210();
-		}
-	}else{
-		for (int i=0; i<this->child.size(); i++) {
-			this->child[i]->renderGL210();
-		}
-	}
-	#ifdef DEBUG
-	glLineWidth(1);
-	glColor4ub(0xFF,0,0,0xFF);
-	glBegin(GL_LINE_STRIP);// <editor-fold defaultstate="collapsed" desc="GL_LINE_STRIP">
-		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
-		glVertex2s( this->globalx+this->offsetPos.x+this->width, this->globaly+this->offsetPos.y );
-		glVertex2s( this->globalx+this->offsetPos.x+this->width, this->globaly+this->offsetPos.y+this->height );
-		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y+this->height );
-		glVertex2s( this->globalx+this->offsetPos.x, this->globaly+this->offsetPos.y );
-	glEnd();// </editor-fold>
-	#endif
-	return true;
-}
 int ShapeGroupRect::renderGL100() {
 	bool ctr = false;
 	/*if (this->cutTheRect) {
@@ -367,19 +301,7 @@ int ShapeGroupRect::renderGL100() {
 				this->globaly+this->offsetPos.y+this->height, this->globaly+this->offsetPos.y, -1, 1);
 		OpenGL::setViewMatrix(vm);
 	}*/
-	if (this->bufferInit) {
-		/*Texture *tex = this->bufferTexture;
-		glEnable( GL_TEXTURE_2D );
-		glBindTexture(GL_TEXTURE_2D, tex->GLID);
-		glColor4ub(0xFF,0xFF,0xFF,0xFF);
-		glBegin( GL_QUADS );// <editor-fold defaultstate="collapsed" desc="GL_QUADS">
-			glTexCoord2d( 0.0, 0.0 );	glVertex2i(this->globalx+offsetPos.x, this->globaly+offsetPos.y );
-			glTexCoord2d( 0.0, 1.0 );	glVertex2i(this->globalx+offsetPos.x, this->globaly+offsetPos.y+tex->height );
-			glTexCoord2d( 1.0, 1.0 );	glVertex2i(this->globalx+offsetPos.x+tex->width, this->globaly+offsetPos.y+tex->height );
-			glTexCoord2d( 1.0, 0.0 );	glVertex2i(this->globalx+offsetPos.x+tex->width, this->globaly+offsetPos.y );
-		glEnd();// </editor-fold>
-		glDisable( GL_TEXTURE_2D );*/
-	}else if ( this->shapeCache != nullptr ) {
+	if ( this->shapeCache != nullptr ) {
 		#ifdef DEBUG
 		printf("ShapeGroupRect shapeCache\n");
 		#endif
@@ -646,7 +568,7 @@ void ShapeMain::setRect(short w, short h) {
 int ShapeMain::renderGL330() {
 	glBindFramebuffer(GL_FRAMEBUFFER, this->frameBuffer.fbo);
 	OpenGL::setViewport(0, 0, this->width, this->height);
-	glClearColor( 0.9, 0.9, 0.9, 1.0 );
+	glClearColor( ShapeMain::BACK_COLOR_R, ShapeMain::BACK_COLOR_G, ShapeMain::BACK_COLOR_B, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT );
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
@@ -682,7 +604,7 @@ int ShapeMain::renderGL100() {
 	OpenGL::setViewport(0, 0, this->width, this->height);
 	OpenGL::clearViewMatrix();
 	
-	glClearColor( 0.9, 0.9, 0.9, 1.0 );
+	glClearColor( ShapeMain::BACK_COLOR_R, ShapeMain::BACK_COLOR_G, ShapeMain::BACK_COLOR_B, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT );
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
@@ -792,12 +714,11 @@ int Bitmap::renderGL330() {
 	return true;
 }
 int Bitmap::renderGL100() {
-	svec2 global = this->getGlobalPosition();
-	global += this->getOffsetPosition();
-	glBindTexture(GL_TEXTURE_2D, tex->GLID);
+	svec2 global = this->global+this->offset;
 	glColor4ub(0xFF,0xFF,0xFF,0xFF);
+	glBindTexture(GL_TEXTURE_2D, tex->GLID);
 	glEnable( GL_TEXTURE_2D );
-	glBegin( GL_QUADS );
+	glBegin( GL_TRIANGLE_STRIP );
 		glTexCoord2d( 0.0, 0.0 );	glVertex2s(global.x,			global.y );
 		glTexCoord2d( 0.0, 1.0 );	glVertex2s(global.x,			global.y+tex->height );
 		glTexCoord2d( 1.0, 1.0 );	glVertex2s(global.x+tex->width, global.y+tex->height );
@@ -857,6 +778,7 @@ int BitmapAtlas::renderGL330() {
 	return true;
 }
 int BitmapAtlas::renderGL100() {
+	if (this->tex == nullptr) return false;
 	svec2 global = this->global + this->offset;
 	vec4 coord(
 		(float)(tex->rects[texRectID].x)/tex->width,
@@ -876,37 +798,6 @@ int BitmapAtlas::renderGL100() {
 	return true;
 }
 
-Buffer::Buffer() {
-	this->bufferInit = false;
-	this->bufferActivate = false;
-	this->bufferTexture = NULL;
-	this->bufferFrame = 0;
-}
-bool Buffer::bufferMode(bool mode) {
-	/*if (mode && !this->bufferActivate ) {
-		root.window->FBOBuffer.push_back(this);
-		this->bufferActivate = true;
-		this->bufferStatus = false;
-	}else if ( !mode && this->bufferActivate ) {
-		this->bufferActivate = false;
-	}*/
-	return false;
-}
-bool Buffer::bufferUpdate() {
-	return false;
-}
-int Buffer::bufferGLComptAll() {
-	return true;
-}
-int Buffer::bufferGL400() {
-	return true;
-}
-int Buffer::bufferGL330() {
-	return true;
-}
-int Buffer::bufferGL210() {
-	return true;
-}
 
 FPoint::FPoint(int rad, uint32_t color=0 ) :ShapeRect(FPoint::CRC32) {
 	this->radius = rad;

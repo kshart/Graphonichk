@@ -21,29 +21,10 @@ namespace Graphonichk {
 
 	class Bitmap;
 	class BitmapAtlas;
-	class Buffer;
 	class FPoint;
 	class FLines;
 	class FRect;
 	//class FCircle;
-	
-	class Buffer {
-	protected:
-		Buffer();
-	public:
-		virtual int bufferGLComptAll();
-		virtual int bufferGL400();
-		virtual int bufferGL330();
-		virtual int bufferGL210();
-		virtual bool bufferMode(bool mode);
-		virtual bool bufferUpdate();
-		bool bufferInit;
-		bool bufferActivate;
-		vector<Buffer*> bufChild;
-		Texture *bufferTexture;
-		GLuint bufferFrame;
-	};
-	
 	
 	class ShapeBasic {
 	//CHECKED
@@ -64,10 +45,6 @@ namespace Graphonichk {
 	public:
 		ShapeGroupBasic();
 		virtual void trace() override;
-		virtual int renderGL400() override;
-		virtual int renderGL330() override;
-		virtual int renderGL210() override;
-		virtual int renderGL100() override;
 		vector<ShapeBasic*> child;
 	};
 	
@@ -123,7 +100,7 @@ namespace Graphonichk {
 		
 		virtual ShapeRect* globalHitTest(short x, short y);
 	};
-	class ShapeGroupRect :public Buffer, public ShapeRect {
+	class ShapeGroupRect : public ShapeRect {
 	protected:
 		ShapeGroupRect(int crc32);
 	public:
@@ -146,9 +123,9 @@ namespace Graphonichk {
 		virtual void updateRect();
 		
 		virtual int renderGL100() override;
-		virtual int renderGL400() override;
+		//virtual int renderGL400() override;
 		virtual int renderGL330() override;
-		virtual int renderGL210() override;
+		//virtual int renderGL210() override;
 		
 		//int saveAsXML(FILE *str, unsigned short tab=0);
 		
@@ -182,9 +159,7 @@ namespace Graphonichk {
 		ShapeGroupMatrix2D();
 		//virtual void trace();
 		virtual int renderGL100() override;
-		virtual int renderGL400() override;
 		virtual int renderGL330() override;
-		virtual int renderGL210() override;
 		
 		vector<ShapeMatrix2D*> child;
 	};
@@ -194,9 +169,7 @@ namespace Graphonichk {
 		ShapeRectGateMatrix2D();
 		//virtual void trace();
 		virtual int renderGL100() override;
-		virtual int renderGL400() override;
 		virtual int renderGL330() override;
-		virtual int renderGL210() override;
 		ShapeGroupMatrix2D group;
 		Matrix3D view;
 	};
@@ -205,9 +178,7 @@ namespace Graphonichk {
 		ShapeRectGateMatrix3D();
 		//virtual void trace();
 		virtual int renderGL100() override;
-		virtual int renderGL400() override;
 		virtual int renderGL330() override;
-		virtual int renderGL210() override;
 		ShapeGroupBasic group;
 		Matrix3D view;
 	};
@@ -226,6 +197,10 @@ namespace Graphonichk {
 	private:
 		//friend class ShapeGroupRect;
 	public:
+		static float constexpr
+			BACK_COLOR_R=50.0f/255.0f,
+			BACK_COLOR_G=210.0f/255.0f,
+			BACK_COLOR_B=250.0f/255.0f;
 		enum {CRC32=0xC489C679};
 		ShapeMain();
 		void setRect(short w, short h) override;

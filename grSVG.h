@@ -26,10 +26,8 @@ namespace Graphonichk {
 		void loadVisualProperties(xmlNodePtr node, SVG::Group *group);
 	public:
 		ImageSVG(const char *filename);
-		int renderGLComptAll();
-		int renderGL400();
-		int renderGL330();
-		int renderGL210();
+		int renderGL330() override;
+		int renderGL100() override;
 		SVG::Group root;
 		Matrix3D viewMatrix;
 	};

@@ -30,7 +30,6 @@ int grAlgoritm::CompositionRect::addNode(Array<Rect> &rects, unsigned short imgI
 void grAlgoritm::CompositionRect::trace(Array<Rect> &rects) {
 	this->node.trace(0, 0, this->viewWidth, this->viewHeight, rects);
 }
-
 int grAlgoritm::CompositionRectNode::addNode(Array<Rect> &rects, unsigned short imgID, unsigned short viewWidth, unsigned short viewHeight, grAlgoritm::CompositionRectNodeResult* result) {
 	unsigned short thisOutPix;
 	if ( rects[imgID].width+1 <= viewWidth && rects[imgID].height+1 <= viewHeight ) {
@@ -64,33 +63,11 @@ TextFormat *TextFormat::defaultFormat = new TextFormat();
 
 
 TextFormat::TextFormat() {
-	this->fn = NULL;
-	this->size = 40;
-	this->direction = DIR::LTR;
-	this->lineHeight = __SHRT_MAX__;
-	this->tabSize = 4;
-	this->whiteSpace = __SHRT_MAX__;
 	this->textDecorationColor.color = 0x00FF00AA;
-	
 }
-FontFace::FontFace(unsigned short size, size_t glyphCount) :tex(0), texCoord(0), size(size), arr(glyphCount) {
-	
+FontFace::FontFace(unsigned short size, size_t glyphCount) :size(size), arr(glyphCount) {
 }
 
-FontFaceLoadTask::FontFaceLoadTask(FontFace *face, size_t sizeTexCoord) :bmpTexCoord(sizeTexCoord), face(face) {
-	
-}
-int FontFaceLoadTask::processExecute() {
-	glGenTextures(1, &this->face->texCoord);
-	if (this->face->texCoord==0) return false; 
-	glBindTexture(GL_TEXTURE_1D, this->face->texCoord );
-	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, this->bmpTexCoord.size/4, 0, GL_RGBA, GL_UNSIGNED_SHORT, this->bmpTexCoord.data);
-	return true;
-}
 
 Font::Font(string path) {
 	this->path = path;
@@ -135,7 +112,7 @@ bool Font::cached(unsigned short size) {
 	Array<Rect> bmpRect(glyphCount);
 	for (uint i=0; i<2048*2048; i++) imgRaw[i] = 0x55;
 	
-	FontFaceLoadTask *task = new FontFaceLoadTask(fface, glyphCount*4);
+	usvec4 *rectTexCoord = (usvec4*)malloc(glyphCount*sizeof(usvec4));
 	grAlgoritm::CompositionRect rectNode(2048, 2048);
 	
 	for(int i=0; i<this->face->num_glyphs; i++) {
@@ -156,17 +133,6 @@ bool Font::cached(unsigned short size) {
 		fface->arr.data[i].vertBearingX = this->face->glyph->metrics.vertBearingX >> 6;
 		fface->arr.data[i].vertBearingY = this->face->glyph->metrics.vertBearingY >> 6;
 		fface->ramUsed+=bmpRect.data[i].width*bmpRect.data[i].height;
-		
-		/*if (fface->arr->data[i].bmpWidth>maxWidth) {
-			maxWidth = fface->arr->data[i].bmpWidth;
-			mwid = i;
-		}
-		if (fface->arr->data[i].bmpHeight>maxHeight) {
-			maxHeight = fface->arr->data[i].bmpHeight;
-			mhid = i;
-		}
-		pix += fface->arr->data[i].bmpWidth*fface->arr->data[i].bmpHeight;*/
-		
 		rectNode.addNode(bmpRect, i);
 	}
 	rectNode.trace(bmpRect);
@@ -177,23 +143,24 @@ bool Font::cached(unsigned short size) {
 					(void*)( (ptrdiff_t)bmps.data[i] + bmpRect.data[i].width*y ), 
 					bmpRect.data[i].width );
 		}
-		task->bmpTexCoord.data[i*4+0] = 32*bmpRect.data[i].x;
-		task->bmpTexCoord.data[i*4+1] = 32*bmpRect.data[i].y;
-		task->bmpTexCoord.data[i*4+2] = 32*bmpRect.data[i].width;
-		task->bmpTexCoord.data[i*4+3] = 32*bmpRect.data[i].height;
+		rectTexCoord[i].x = bmpRect.data[i].x;
+		rectTexCoord[i].y = bmpRect.data[i].y;
+		rectTexCoord[i].z = bmpRect.data[i].x+bmpRect.data[i].width;
+		rectTexCoord[i].w = bmpRect.data[i].y+bmpRect.data[i].height;
 	}
 	Image *img = new Image(2048, 2048, Image::MONO_8, imgRaw);
-	fface->tex = new Texture(img);
-	Windows::window->eachFrame.addTask(task, 0);
+	fface->tex = new Texture(img, glyphCount, rectTexCoord);
 	this->cache.push_back(fface);
+	delete rectTexCoord;
+	return true;
 }
 void Font::trace() {
 	printf("<Fonts count='%i'>\n", Font::buffer.size());
 	//for (vector<ShapeRect*>::const_iterator it=this->child.begin(), end=this->child.end(); it!=end; ++it) {
-	for(vector<Font*>::const_iterator it=Font::buffer.begin(), end=Font::buffer.end(); it!=end; ++it) {
-		printf("\t<Font path='%s' cached='%i' error='%i'>\n", (*it)->path.c_str(), (*it)->cache.size(), (*it)->error);
-		for(int t=0; t<(*it)->cache.size(); t++) {
-			printf("\t\t<FontFace size='%i' count='%i' ramUsed='%iKb'/>\n", (*it)->cache[t]->size, (*it)->cache[t]->arr.size, (*it)->cache[t]->ramUsed/1024);
+	for(Font* &font : Font::buffer) {
+		printf("\t<Font path='%s' cached='%i' error='%i'>\n", font->path.c_str(), font->cache.size(), font->error);
+		for(int t=0; t<font->cache.size(); t++) {
+			printf("\t\t<FontFace size='%i' count='%i' ramUsed='%iKb'/>\n", font->cache[t]->size, font->cache[t]->arr.size, font->cache[t]->ramUsed/1024);
 		}
 		printf("\t</Font>\n");
 	}
@@ -209,26 +176,251 @@ FontFace* Font::getFontFace(unsigned short size) {
 	return NULL;
 }
 
-TextField::TextField(unsigned short w, unsigned short h) :ShapeRect(0), tex(0), _tf(TextFormat::defaultFormat), position(POSITION::LEFT_TOP) {
+TextFieldTask::TextFieldTask(TextField* text) :text(text) {
+}
+int TextFieldTask::processExecute() {
+	if (OpenGL::ver==OpenGL::VER_CORE_100) return true; 
+	TextFormat *format = text->_tf;
+	Font *font = nullptr;
+	FontFace *fface = nullptr;
+	
+	if (format->fn == NULL) {
+		if (Font::buffer.empty()) return false;
+		font = Font::buffer[0];
+	}else{
+		font = format->fn;
+	}
+	fface = font->getFontFace(format->size);
+	if (fface==nullptr) {
+		font->cached(format->size);
+		return false;
+	}else if (fface->tex->event!=Texture::LOADED) {
+		return false;
+	}else{
+		short minX, maxX, minY, maxY;
+		int bx, by, ch, id, lastID=0, lineHeight;
+		struct vertexPoint {
+			svec4 position;
+			short attrRectID;
+		} vec;
+		vector<struct vertexPoint> vertexs;
+		FontGlyph spaceGlyph = fface->arr.data[ FT_Get_Char_Index(font->face, ' ') ];
+		
+		lineHeight = (format->lineHeight == __SHRT_MAX__) ? format->size*1.5 : format->lineHeight;
+		bx = text->paddingLeft;
+		by = text->paddingTop+lineHeight;
+		minX = maxX = bx;
+		minY = maxY = by;
+		for(int i=0; i<text->strUTF8.length(); i++) {
+			if ( (unsigned char)(text->strUTF8[i])<0x20) {
+				switch (text->strUTF8[i]) {
+					case ASCII_SPEC::LF:
+						bx = text->paddingLeft;
+						by += lineHeight;
+						break;
+					case ASCII_SPEC::TAB:
+						bx += spaceGlyph.horiAdvance * format->tabSize;
+						break;
+				}
+				lastID = 0;
+			}else{
+				if ( (unsigned char)(text->strUTF8[i])<0x80 ) {//utf8-1 0xxx-xxxx
+					ch = text->strUTF8[i];
+					id = FT_Get_Char_Index(font->face, text->strUTF8[i]);
+				}else if ( (unsigned char)(text->strUTF8[i])<0xE0 ) {//utf8-2 110x-xxxx 10xx-xxxx
+					ch = (text->strUTF8[i]&0x1F)<<6 | (text->strUTF8[i+1]&0x3F);
+					id = FT_Get_Char_Index(font->face, ch);
+					i++;
+				}else if ( (unsigned char)(text->strUTF8[i])<0xF0 ) {//utf8-3 1110-xxxx 10xx-xxxx 10xx-xxxx
+					ch = (text->strUTF8[i]&0x0F)<<12 | (text->strUTF8[i+1]&0x3F)<<6 | (text->strUTF8[i+2]&0x3F );
+					id = FT_Get_Char_Index(font->face, ch);
+					i+=2;
+				}else if ( (unsigned char)(text->strUTF8[i])<0xF8 ) {//utf8-4 1111-0xxx 10xx-xxxx 10xx-xxxx 10xx-xxxx 
+					ch = (text->strUTF8[i]&0x0F)<<18 | (text->strUTF8[i+1]&0x3F)<<12 | (text->strUTF8[i+1]&0x3F)<<6 | (text->strUTF8[i+2]&0x3F);
+					id = FT_Get_Char_Index(font->face, ch);
+					i+=3;
+				}
+				if (fface->arr.data[id].horiAdvance > 0) {
+					lastID = ch;
+					vec.position.x = bx+fface->arr.data[id].horiBearingX;
+					vec.position.y = by-fface->arr.data[id].horiBearingY;
+					vec.position.z = fface->arr.data[id].bmpWidth;
+					vec.position.w = fface->arr.data[id].bmpHeight;
+					vec.attrRectID = id;
+					vertexs.push_back(vec);
+					//vertexsRectID.push_back(id);
+					bx+=fface->arr.data[id].horiAdvance;
+					if (vec.position.x < minX) minX = vec.position.x;
+					if (vec.position.y < minY) minY = vec.position.y;
+					if (vec.position.x+fface->arr.data[id].bmpWidth > maxX) maxX = vec.position.x+fface->arr.data[id].bmpWidth;
+					if (vec.position.y+fface->arr.data[id].bmpHeight > maxY) maxY = vec.position.y+fface->arr.data[id].bmpHeight;
+				}else{
+					int v1 = fface->arr.data[lastID].horiBearingX + fface->arr.data[lastID].width/2 - fface->arr.data[lastID].horiAdvance;
+					//glRasterPos2s(bx+f->cache[0].arr[id].horiBearingX+v1, by - f->cache[0].arr[lastID].horiBearingY - f->cache[0].arr[id].height );
+						//glRasterPos2s(bx+fface->arr->data[id].horiBearingX+v1, by-fface->arr->data[lastID].horiBearingY - fface->arr->data[id].height );
+						//glDrawPixels(fface->arr->data[id].bmpWidth, fface->arr->data[id].bmpHeight, GL_ALPHA, GL_UNSIGNED_BYTE, fface->arr->data[id].bmp);
+				}
+			}
+		}
+		text->_symvolCount = vertexs.size();
+		text->setRect(maxX-minX, maxY-minY);
+		text->setAligment(text->position);
+		text->tex = Texture::getTexture(text->width, text->height, GL_ALPHA, GL_UNSIGNED_BYTE);
+		if (text->tex==nullptr) return false;
+		
+		
+		GLuint buffer, bvao, bvbo;
+		
+		
+		glGenFramebuffers(1, &buffer);
+		glBindFramebuffer(GL_FRAMEBUFFER, buffer);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, text->tex->GLID, 0);
+		if (GL_FRAMEBUFFER_COMPLETE == glCheckFramebufferStatus(GL_FRAMEBUFFER)) {
+			puts("FBO set up successfully. Yay!\n");
+		}else{
+			printf("FBO set up error %i.\n", glGetError());
+		}
+		
+		Matrix3D mtr = Matrix3D::ViewOrtho(minX, maxX, maxY, minY, -1, 1);
+		OpenGL::pushViewport();
+		OpenGL::pushViewMatrix();
+		OpenGL::setViewport(0, 0, text->width, text->height);
+		OpenGL::setViewMatrix(mtr);
+		
+		SET_SHADER(ShaderBitmapAtlas);
+		glGetError();
+		
+		glGenVertexArrays(1, &bvao);
+		glBindVertexArray(bvao);
+		
+		glGenBuffers(1, &bvbo);
+		glBindBuffer(GL_ARRAY_BUFFER, bvbo);
+		glBufferData(GL_ARRAY_BUFFER, text->_symvolCount*10, vertexs.data(), GL_STATIC_DRAW);
+		glVertexAttribPointer(ShaderShRect::POSITION, 4, GL_SHORT, GL_FALSE, 10, NULL);
+		glEnableVertexAttribArray(ShaderShRect::POSITION);
+		
+		glVertexAttribPointer(ShaderBitmapAtlas::prog->attrRectID, 1, GL_SHORT, GL_FALSE, 10, (void*)8 );
+		glEnableVertexAttribArray(ShaderBitmapAtlas::prog->attrRectID);
+		
+		glBindTexture(GL_TEXTURE_2D, fface->tex->GLID);
+		glBindTexture(GL_TEXTURE_1D, fface->tex->rectGLID);
+		//glDrawArrays(GL_POINTS, 0, text->_symvolCount);
+		glUniform1i(ShaderBitmapAtlas::prog->rectID, -1);
+		for (int i=0; i<text->_symvolCount; i++) {
+			
+			//glUniform1i(ShaderBitmapAtlas::prog->rectID, vertexs[i].attrRectID);
+			glDrawArrays(GL_POINTS, i, 1);
+		}
+		//printf("ShaderBitmapAtlas::prog->attrRectID %i %i %i %i\n", ShaderBitmapAtlas::prog->attrRectID, ShaderShRect::POSITION, ShaderBitmapAtlas::prog->attrRectID, glGetError());
+		//glDeleteVertexArrays(1, &bvao);
+		//glDeleteBuffers(1, &bvbo);
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDeleteFramebuffers(1, &buffer);
+		OpenGL::popViewMatrix();
+		OpenGL::popViewport();
+		
+		printf("TextCached %i\\ %i %i %i %i\n", text->_symvolCount, minX, minY, text->width, text->height);
+	}
+}
+TextField::TextField(unsigned short w, unsigned short h) :ShapeRect(0), _tf(TextFormat::defaultFormat) {
 	//this->bufferTexture = new Texture(w, h, GL_ALPHA, GL_UNSIGNED_BYTE);
-	this->paddingLeft = 0;
-	this->paddingRight = 0;
-	this->paddingTop = 0;
-	this->paddingBottom = 0;
 	this->setRect(w, h);
 	//this->style
 	//this->style.borderRight = this->fn->cache[0].arr[ FT_Get_Char_Index(this->fn->face, ' ')].horiAdvance;
 	//this->style.borderTop = this->style.borderBottom = this->style.lineHeight = this->fn->cache[0].size*1.5;
 }
-void TextField::setString(string str) {
-	//this->strUTF8 = str;
+void TextField::trace() {
+	printf("<TextField x='%i' y='%i' gx='%i' gy='%i' w='%i' h='%i' texId='%i'/>\n", local.x, local.y, global.x, global.y, width, height, (int)tex);
+}
+int TextField::renderGL100() {
+	if (this->tex==nullptr) return false;
+	if (this->_tf==nullptr) {
+		glColor4ub(0xFF,0xFF,0xFF,0xFF);
+	}else{
+		glColor4ub(this->_tf->textDecorationColor.r,this->_tf->textDecorationColor.g,this->_tf->textDecorationColor.b,this->_tf->textDecorationColor.a);
+	}
+	svec2 global = this->global+this->offset;
+	//glEnable( GL_TEXTURE_2D );
+	glBindTexture(GL_TEXTURE_2D, tex->GLID);
+	
+	
+	glBegin( GL_QUADS );
+		glTexCoord2f( 0.0, 0.0 );	glVertex2s(global.x,		global.y );
+		glTexCoord2f( 0.0, 1.0 );	glVertex2s(global.x,		global.y+height );
+		glTexCoord2f( 1.0, 1.0 );	glVertex2s(global.x+width,	global.y+height );
+		glTexCoord2f( 1.0, 0.0 );	glVertex2s(global.x+width,	global.y );
+	glEnd();
+	//glDisable( GL_TEXTURE_2D );
+	return true;
+} 
+int TextField::renderGL330() {
+	if (this->tex==0) return false;
+	SET_SHADER(ShaderTextFieldBuffer);
+	glBindTexture(GL_TEXTURE_2D, this->tex->GLID);
+	
+	glBindVertexArray(this->vao);
+	glDrawArrays(GL_POINTS, 0, 1);
+	
+	return true;
+}
+void TextField::operator=(const string& right) {
+	this->strUTF8 = right;
+	Windows::window->eachFrame.addTask(new TextFieldTask(this));
+	printf("text11 %s\n", right.c_str());
 }
 void TextField::setFormat(TextFormat* tf) {
 	this->_tf = tf;
 }
-void TextField::trace() {
-	printf("<TextField x='%i' y='%i' gx='%i' gy='%i' w='%i' h='%i' texId='%i'/>\n", this->getX(), this->getY(), this->getGlobalX(), this->getGlobalY(), this->getWidth(), this->getHeight(), this->tex);
+void TextField::setAligment(POSITION align) {
+	this->position = align;
+	switch (this->position) {
+		case POSITION::LEFT_TOP:
+			this->setOffset(paddingLeft, paddingTop);
+			break;
+		case POSITION::LEFT_BOTTOM:
+			this->setOffset(paddingLeft, -height-paddingBottom);
+			break;
+		case POSITION::LEFT_CENTER:
+			this->setOffset(paddingLeft, -(height+paddingTop+paddingBottom)/2);
+			break;
+		case POSITION::RIGHT_TOP:
+			this->setOffset(-width-paddingRight, paddingTop);
+			break;
+		case POSITION::RIGHT_BOTTOM:
+			this->setOffset(-width-paddingRight, -height-paddingBottom);
+			break;
+		case POSITION::RIGHT_CENTER:
+			this->setOffset(-width-paddingRight, -(height+paddingTop+paddingBottom)/2);
+			break;
+		case POSITION::TOP_CENTER:
+			this->setOffset(-width/2, 0);
+			break;
+		case POSITION::BOTTOM_CENTER:
+			this->setOffset(-width/2, -height);
+			break;
+		case POSITION::CENTER:
+			this->setOffset(-width/2, -height/2);
+			break;
+	}
 }
+
+
+ShaderTextFieldBuffer* ShaderTextFieldBuffer::prog = nullptr;
+ShaderTextFieldBuffer::ShaderTextFieldBuffer() :ShaderShRect(ShaderTextFieldBuffer::CRC32) {
+	
+}
+void ShaderTextFieldBuffer::init() {
+	this->ShaderShRect::init();
+	this->texCoord = glGetAttribLocation(this->shaderProgram, "coordTex");
+	this->textColor = glGetAttribLocation(this->shaderProgram, "textColor");
+	this->textTexture = glGetUniformLocation(this->shaderProgram, "textTexture");
+	glUniform1i(this->textTexture, 0);
+}
+
+
+
+
 /*int TextField::bufferGLComptAll() {
 	if (this->bufferTexture->GLID == 0) return false; 
 		glBindFramebuffer(GL_FRAMEBUFFER, this->bufferFrame);
@@ -414,234 +606,3 @@ void TextField::trace() {
 	glDisable( GL_ALPHA_TEST );
 	return true;
 }*/
-int TextField::renderGLComptAll() {
-	//Texture *tex = this->bufferTexture;
-	glEnable( GL_TEXTURE_2D );
-	glBindTexture(GL_TEXTURE_2D, tex->GLID);
-	if (this->_tf == NULL) {
-		glColor4ub(0xFF,0xFF,0xFF,0xFF);
-	}else{
-		glColor4ub(this->_tf->textDecorationColor.r,this->_tf->textDecorationColor.g,this->_tf->textDecorationColor.b,this->_tf->textDecorationColor.a);
-	}
-	glBegin( GL_QUADS );
-		glTexCoord2d( 0.0, 0.0 );	glVertex2i(this->getGlobalX(),				this->getGlobalY() );
-		glTexCoord2d( 0.0, 1.0 );	glVertex2i(this->getGlobalX(),				this->getGlobalY()+tex->height );
-		glTexCoord2d( 1.0, 1.0 );	glVertex2i(this->getGlobalX()+tex->width,	this->getGlobalY()+tex->height );
-		glTexCoord2d( 1.0, 0.0 );	glVertex2i(this->getGlobalX()+tex->width,	this->getGlobalY() );
-	glEnd();
-	glDisable( GL_TEXTURE_2D );
-	return true;
-} 
-int TextField::renderGL400() {
-	return false;
-}
-int TextField::renderGL330() {
-	TextFormat *format = this->_tf;
-	Font *font;
-	FontFace *fface;
-	
-	if (format->fn == NULL) {
-		if (Font::buffer.empty()) return false;
-		font = Font::buffer[0];
-	}else{
-		font = format->fn;
-	}
-	fface = font->getFontFace(format->size);
-	if (this->tex==nullptr) {// <editor-fold defaultstate="collapsed" desc="CACHE">
-		if (fface==nullptr) {
-			font->cached(format->size);
-			return false;
-		}else if (fface->tex->event!=Texture::LOADED) {
-			return false;
-		}else{
-			short minX, maxX, minY, maxY;
-			int bx, by, ch, id, lastID=0, lineHeight;
-			svec3 vec;
-			vector<svec3> vertexs;
-			FontGlyph spaceGlyph = fface->arr.data[ FT_Get_Char_Index(font->face, ' ') ];
-			
-			lineHeight = (format->lineHeight == __SHRT_MAX__) ? format->size*1.5 : format->lineHeight;
-			bx = this->paddingLeft;
-			by = this->paddingTop+lineHeight;
-			minX = maxX = bx;
-			minY = maxY = by;
-			for(int i=0; i<this->strUTF8.length(); i++) {
-				if ( (unsigned char)(this->strUTF8[i])<0x20) {
-					switch (this->strUTF8[i]) {
-						case ASCII_SPEC::LF:
-							bx = this->paddingLeft;
-							by += lineHeight;
-							break;
-						case ASCII_SPEC::TAB:
-							bx += spaceGlyph.horiAdvance * format->tabSize;
-							break;
-					}
-					lastID = 0;
-					printf(" %#02x\n", this->strUTF8[i]);
-				}else{
-					if ( (unsigned char)(this->strUTF8[i])<0x80 ) {//utf8-1 0xxx-xxxx
-						ch = this->strUTF8[i];
-						id = FT_Get_Char_Index(font->face, this->strUTF8[i]);
-					}else if ( (unsigned char)(this->strUTF8[i])<0xE0 ) {//utf8-2 110x-xxxx 10xx-xxxx
-						ch = (this->strUTF8[i]&0x1F)<<6 | (this->strUTF8[i+1]&0x3F);
-						id = FT_Get_Char_Index(font->face, ch);
-						i++;
-					}else if ( (unsigned char)(this->strUTF8[i])<0xF0 ) {//utf8-3 1110-xxxx 10xx-xxxx 10xx-xxxx
-						ch = (this->strUTF8[i]&0x0F)<<12 | (this->strUTF8[i+1]&0x3F)<<6 | (this->strUTF8[i+2]&0x3F );
-						id = FT_Get_Char_Index(font->face, ch);
-						i+=2;
-					}else if ( (unsigned char)(this->strUTF8[i])<0xF8 ) {//utf8-4 1111-0xxx 10xx-xxxx 10xx-xxxx 10xx-xxxx 
-						ch = (this->strUTF8[i]&0x0F)<<18 | (this->strUTF8[i+1]&0x3F)<<12 | (this->strUTF8[i+1]&0x3F)<<6 | (this->strUTF8[i+2]&0x3F);
-						id = FT_Get_Char_Index(font->face, ch);
-						i+=3;
-					}
-					if (fface->arr.data[id].horiAdvance > 0) {
-						lastID = ch;
-						vec.x = bx+fface->arr.data[id].horiBearingX;
-						vec.y = by-fface->arr.data[id].horiBearingY;
-						vec.z = id;
-						vertexs.push_back(vec);
-						bx+=fface->arr.data[id].horiAdvance;
-						if (vec.x < minX) minX = vec.x;
-						if (vec.y < minY) minY = vec.y;
-						if (vec.x+fface->arr.data[id].bmpWidth > maxX) maxX = vec.x+fface->arr.data[id].bmpWidth;
-						if (vec.y+fface->arr.data[id].bmpHeight > maxY) maxY = vec.y+fface->arr.data[id].bmpHeight;
-					}else{
-						int v1 = fface->arr.data[lastID].horiBearingX + fface->arr.data[lastID].width/2 - fface->arr.data[lastID].horiAdvance;
-						//glRasterPos2s(bx+f->cache[0].arr[id].horiBearingX+v1, by - f->cache[0].arr[lastID].horiBearingY - f->cache[0].arr[id].height );
-						//glRasterPos2s(bx+fface->arr->data[id].horiBearingX+v1, by-fface->arr->data[lastID].horiBearingY - fface->arr->data[id].height );
-						//glDrawPixels(fface->arr->data[id].bmpWidth, fface->arr->data[id].bmpHeight, GL_ALPHA, GL_UNSIGNED_BYTE, fface->arr->data[id].bmp);
-					}
-				}
-			}
-			this->_symvolCount = vertexs.size();
-			this->setRect(maxX-minX, maxY-minY);
-			this->tex = Texture::getTexture(this->getWidth(), this->getHeight(), GL_ALPHA, GL_UNSIGNED_BYTE);
-			if (this->tex==nullptr) return false;
-			
-			
-			GLuint buffer, bvao, bvbo;
-			SET_SHADER(ShaderTextField);
-			glGenFramebuffers(1, &buffer);
-			glBindFramebuffer(GL_FRAMEBUFFER, buffer);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this->tex->GLID, 0);
-			if (GL_FRAMEBUFFER_COMPLETE == glCheckFramebufferStatus(GL_FRAMEBUFFER)) {
-				puts("FBO set up successfully. Yay!\n");
-			}else{
-				printf("FBO set up error %i.\n", glGetError());
-			}
-			
-			Matrix3D mtr = Matrix3D::ViewOrtho(minX, maxX, maxY, minY, -1, 1);
-			OpenGL::pushViewport();
-			OpenGL::pushViewMatrix();
-			OpenGL::setViewport(0, 0, this->getWidth(), this->getHeight());
-			OpenGL::setViewMatrix(mtr);
-			
-			
-			glGenVertexArrays(1, &bvao);
-			glBindVertexArray(bvao);
-			glGenBuffers(1, &bvbo);
-			glBindBuffer(GL_ARRAY_BUFFER, bvbo);
-			glBufferData(GL_ARRAY_BUFFER, this->_symvolCount*3*2, vertexs.data(), GL_STATIC_DRAW);
-			glVertexAttribPointer(ShaderTextField::prog->position, 3, GL_SHORT, GL_FALSE, 0, NULL);
-			glEnableVertexAttribArray(ShaderTextField::prog->position);
-			
-			glBindTexture(GL_TEXTURE_2D, fface->tex->GLID);
-			glBindTexture(GL_TEXTURE_1D, fface->texCoord);
-			printf("glBindTexture %i\\%i\n", fface->tex->GLID, fface->texCoord);
-			glDrawArrays(GL_POINTS, 0, this->_symvolCount);
-			glDeleteVertexArrays(1, &bvao);
-			glDeleteBuffers(1, &bvbo);
-			
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glDeleteFramebuffers(1, &buffer);
-			OpenGL::popViewMatrix();
-			OpenGL::popViewport();
-			
-			printf("TextCached %i\\ %i %i %i %i\n", this->_symvolCount, minX, minY, this->getWidth(), this->getHeight());
-		}
-	}// </editor-fold>
-	
-	if (this->vao==0) return false;
-	SET_SHADER(ShaderTextFieldBuffer);
-	glBindTexture(GL_TEXTURE_2D, this->tex->GLID);
-	if (this->vbo==0) {
-		struct {
-			unsigned char r, g, b, a;
-		} color;
-		switch (this->position) {
-			case POSITION::LEFT_TOP:
-				this->setOffset(paddingLeft, paddingTop);
-				break;
-			case POSITION::LEFT_BOTTOM:
-				this->setOffset(paddingLeft, -this->getHeight()-paddingBottom);
-				break;
-			case POSITION::LEFT_CENTER:
-				this->setOffset(paddingLeft, -(this->getHeight()+paddingTop+paddingBottom)/2);
-				break;
-			case POSITION::RIGHT_TOP:
-				this->setOffset(-this->getWidth()-paddingRight, paddingTop);
-				break;
-			case POSITION::RIGHT_BOTTOM:
-				this->setOffset(-this->getWidth()-paddingRight, -this->getHeight()-paddingBottom);
-				break;
-			case POSITION::RIGHT_CENTER:
-				this->setOffset(-this->getWidth()-paddingRight, -(this->getHeight()+paddingTop+paddingBottom)/2);
-				break;
-			case POSITION::TOP_CENTER:
-				this->setOffset(-this->getWidth()/2, 0);
-				break;
-			case POSITION::BOTTOM_CENTER:
-				this->setOffset(-this->getWidth()/2, -this->getHeight());
-				break;
-			case POSITION::CENTER:
-				this->setOffset(-this->getWidth()/2, -this->getHeight()/2);
-				break;
-		}
-		color.r = 0;
-		color.g = 0;
-		color.b = 0;
-		color.a = 0xFF;
-		glBindVertexArray(this->vao);
-		
-		glGenBuffers(1, &this->vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
-		glBufferData(GL_ARRAY_BUFFER, 4, &color, GL_STATIC_DRAW);
-		glVertexAttribPointer(ShaderTextFieldBuffer::prog->textColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, 4, 0);
-		glEnableVertexAttribArray(ShaderTextFieldBuffer::prog->textColor);
-	}
-	glBindVertexArray(this->vao);
-	glDrawArrays(GL_POINTS, 0, 1);
-	
-	return true;
-}
-int TextField::renderGL210() {
-	return false;
-}
-
-ShaderTextField* ShaderTextField::prog = nullptr;
-ShaderTextField::ShaderTextField() :GLShader(ShaderTextField::CRC32) {
-	
-}
-void ShaderTextField::init() {
-	this->position = glGetAttribLocation(this->shaderProgram, "position");
-	this->texture = glGetUniformLocation(this->shaderProgram, "texture");
-	this->coordTex = glGetUniformLocation(this->shaderProgram, "coordTex");
-	this->grShaderData = glGetUniformBlockIndex(this->shaderProgram, "grShaderData");
-	glUniform1i(this->texture, 0);
-	glUniform1i(this->coordTex, 0);
-	glUniformBlockBinding(this->shaderProgram, this->grShaderData, 1);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::grShaderData, 0, 4*4*sizeof(float));
-}
-
-ShaderTextFieldBuffer* ShaderTextFieldBuffer::prog = nullptr;
-ShaderTextFieldBuffer::ShaderTextFieldBuffer() :ShaderShRect(ShaderTextFieldBuffer::CRC32) {
-	
-}
-void ShaderTextFieldBuffer::init() {
-	this->ShaderShRect::init();
-	this->texCoord = glGetAttribLocation(this->shaderProgram, "coordTex");
-	this->textColor = glGetAttribLocation(this->shaderProgram, "textColor");
-	this->textTexture = glGetUniformLocation(this->shaderProgram, "textTexture");
-	glUniform1i(this->textTexture, 0);
-}

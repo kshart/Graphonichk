@@ -109,65 +109,65 @@ namespace Graphonichk {
 		union {
 			Type y, g, t;
 		};
-		_vec2() {};
-		_vec2(Type x, Type y) :x(x), y(y) {};
-		const bool operator==(const _vec2 &arg) {
+		_vec2() noexcept {};
+		_vec2(Type x, Type y) noexcept :x(x), y(y) {};
+		const bool operator==(const _vec2 &arg) noexcept {
 			return (this->x==arg.x) && (this->y==arg.y);
 		}
-		void operator+=(const _vec2& right) {
+		void operator+=(const _vec2& right) noexcept {
 			this->x += right.x;
 			this->y += right.y;
 		}
-		void operator+=(const Type right) {
+		void operator+=(const Type right) noexcept {
 			this->x += right;
 			this->y += right;
 		}
-		void operator*=(const _vec2& right) {
+		void operator*=(const _vec2& right) noexcept {
 			this->x *= right.x;
 			this->y *= right.y;
 		}
-		void operator*=(const Type right) {
+		void operator*=(const Type right) noexcept {
 			this->x *= right;
 			this->y *= right;
 		}
-		void operator-=(const _vec2& right) {
+		void operator-=(const _vec2& right) noexcept {
 			this->x -= right.x;
 			this->y -= right.y;
 		}
-		void operator-=(const Type right) {
+		void operator-=(const Type right) noexcept {
 			this->x -= right;
 			this->y -= right;
 		}
-		void operator/=(const _vec2& right) {
+		void operator/=(const _vec2& right) noexcept {
 			this->x /= right.x;
 			this->y /= right.y;
 		}
-		void operator/=(const Type right) {
+		void operator/=(const Type right) noexcept {
 			this->x /= right;
 			this->y /= right;
 		}
-		const friend _vec2 operator+(const _vec2 &a, const _vec2 &b) {
+		const friend _vec2 operator+(const _vec2 &a, const _vec2 &b) noexcept {
 			return _vec2(a.x+b.x, a.y+b.y);
 		}
-		const friend _vec2 operator+(const _vec2 &a, const Type b) {
+		const friend _vec2 operator+(const _vec2 &a, const Type b) noexcept {
 			return _vec2(a.x+b, a.y+b);
 		}
-		const friend _vec2 operator-(const _vec2 &a, const _vec2 &b) {
+		const friend _vec2 operator-(const _vec2 &a, const _vec2 &b) noexcept {
 			return _vec2(a.x-b.x, a.y-b.y);
 		}
-		const friend _vec2 operator-(const _vec2 &a, const Type b) {
+		const friend _vec2 operator-(const _vec2 &a, const Type b) noexcept {
 			return _vec2(a.x-b, a.y-b);
 		}
-		const friend _vec2 operator*(const _vec2 &a, const _vec2 &b) {
+		const friend _vec2 operator*(const _vec2 &a, const _vec2 &b) noexcept {
 			return _vec2(a.x*b.x, a.y*b.y);
 		}
-		const friend _vec2 operator*(const _vec2 &a, const Type b) {
+		const friend _vec2 operator*(const _vec2 &a, const Type b) noexcept {
 			return _vec2(a.x*b, a.y*b);
 		}
-		const friend _vec2 operator/(const _vec2 &a, const _vec2 &b) {
+		const friend _vec2 operator/(const _vec2 &a, const _vec2 &b) noexcept {
 			return _vec2(a.x/b.x, a.y/b.y);
 		}
-		const friend _vec2 operator/(const _vec2 &a, const Type b) {
+		const friend _vec2 operator/(const _vec2 &a, const Type b) noexcept {
 			return _vec2(a.x/b, a.y/b);
 		}
 	};
@@ -182,73 +182,73 @@ namespace Graphonichk {
 		union {
 			Type z, b, p;
 		};
-		_vec3() {};
-		_vec3(Type x, Type y, Type z) :x(x), y(y), z(z) {};
-		const bool operator==(const _vec3 &arg) {
+		_vec3() noexcept {};
+		_vec3(Type x, Type y, Type z) noexcept :x(x), y(y), z(z) {};
+		const bool operator==(const _vec3 &arg) noexcept {
 			return (this->x==arg.x) && (this->y==arg.y) && (this->z==arg.z);
 		}
-		void operator+=(const _vec3& right) {
+		void operator+=(const _vec3& right) noexcept {
 			this->x += right.x;
 			this->y += right.y;
 			this->z += right.z;
 		}
-		void operator+=(const Type right) {
+		void operator+=(const Type right) noexcept {
 			this->x += right;
 			this->y += right;
 			this->z += right;
 		}
-		void operator*=(const _vec3& right) {
+		void operator*=(const _vec3& right) noexcept {
 			this->x *= right.x;
 			this->y *= right.y;
 			this->z *= right.z;
 		}
-		void operator*=(const Type right) {
+		void operator*=(const Type right) noexcept {
 			this->x *= right;
 			this->y *= right;
 			this->z *= right;
 		}
-		void operator-=(const _vec3& right) {
+		void operator-=(const _vec3& right) noexcept {
 			this->x -= right.x;
 			this->y -= right.y;
 			this->z -= right.z;
 		}
-		void operator-=(const Type right) {
+		void operator-=(const Type right) noexcept {
 			this->x -= right;
 			this->y -= right;
 			this->z -= right;
 		}
-		void operator/=(const _vec3& right) {
+		void operator/=(const _vec3& right) noexcept {
 			this->x /= right.x;
 			this->y /= right.y;
 			this->z /= right.z;
 		}
-		void operator/=(const Type right) {
+		void operator/=(const Type right) noexcept {
 			this->x /= right;
 			this->y /= right;
 			this->z /= right;
 		}
-		const friend _vec3 operator+(const _vec3 &a, const _vec3 &b) {
+		const friend _vec3 operator+(const _vec3 &a, const _vec3 &b) noexcept {
 			return _vec3(a.x+b.x, a.y+b.y, a.z+b.z);
 		}
-		const friend _vec3 operator+(const _vec3 &a, const Type b) {
+		const friend _vec3 operator+(const _vec3 &a, const Type b) noexcept {
 			return _vec3(a.x+b, a.y+b, a.z+b);
 		}
-		const friend _vec3 operator-(const _vec3 &a, const _vec3 &b) {
+		const friend _vec3 operator-(const _vec3 &a, const _vec3 &b) noexcept {
 			return _vec3(a.x-b.x, a.y-b.y, a.z-b.z);
 		}
-		const friend _vec3 operator-(const _vec3 &a, const Type b) {
+		const friend _vec3 operator-(const _vec3 &a, const Type b) noexcept {
 			return _vec3(a.x-b, a.y-b, a.z-b);
 		}
-		const friend _vec3 operator*(const _vec3 &a, const _vec3 &b) {
+		const friend _vec3 operator*(const _vec3 &a, const _vec3 &b) noexcept {
 			return _vec3(a.x*b.x, a.y*b.y, a.z*b.z);
 		}
-		const friend _vec3 operator*(const _vec3 &a, const Type b) {
+		const friend _vec3 operator*(const _vec3 &a, const Type b) noexcept {
 			return _vec3(a.x*b, a.y*b, a.z*b);
 		}
-		const friend _vec3 operator/(const _vec3 &a, const _vec3 &b) {
+		const friend _vec3 operator/(const _vec3 &a, const _vec3 &b) noexcept {
 			return _vec3(a.x/b.x, a.y/b.y, a.z/b.z);
 		}
-		const friend _vec3 operator/(const _vec3 &a, const Type b) {
+		const friend _vec3 operator/(const _vec3 &a, const Type b) noexcept {
 			return _vec3(a.x/b, a.y/b, a.z/b);
 		}
 	};
@@ -266,81 +266,81 @@ namespace Graphonichk {
 		union {
 			Type w, a, q;
 		};
-		_vec4() {};
-		_vec4(Type x, Type y, Type z, Type w) :x(x), y(y), z(z), w(w) {};
-		const bool operator==(const _vec4 &arg) {
+		_vec4() noexcept {};
+		_vec4(Type x, Type y, Type z, Type w) noexcept :x(x), y(y), z(z), w(w) {};
+		const bool operator==(const _vec4 &arg) noexcept {
 			return (this->x==arg.x) && (this->y==arg.y) && (this->z==arg.z) && (this->w==arg.w);
 		}
-		void operator+=(const _vec4& right) {
+		void operator+=(const _vec4& right) noexcept {
 			this->x += right.x;
 			this->y += right.y;
 			this->z += right.z;
 			this->w += right.w;
 		}
-		void operator+=(const Type right) {
+		void operator+=(const Type right) noexcept {
 			this->x += right;
 			this->y += right;
 			this->z += right;
 			this->w += right;
 		}
-		void operator*=(const _vec4& right) {
+		void operator*=(const _vec4& right) noexcept {
 			this->x *= right.x;
 			this->y *= right.y;
 			this->z *= right.z;
 			this->w *= right.w;
 		}
-		void operator*=(const Type right) {
+		void operator*=(const Type right) noexcept {
 			this->x *= right;
 			this->y *= right;
 			this->z *= right;
 			this->w *= right;
 		}
-		void operator-=(const _vec4& right) {
+		void operator-=(const _vec4& right) noexcept {
 			this->x -= right.x;
 			this->y -= right.y;
 			this->z -= right.z;
 			this->w -= right.w;
 		}
-		void operator-=(const Type right) {
+		void operator-=(const Type right) noexcept {
 			this->x -= right;
 			this->y -= right;
 			this->z -= right;
 			this->w -= right;
 		}
-		void operator/=(const _vec4& right) {
+		void operator/=(const _vec4& right) noexcept {
 			this->x /= right.x;
 			this->y /= right.y;
 			this->z /= right.z;
 			this->w /= right.w;
 		}
-		void operator/=(const Type right) {
+		void operator/=(const Type right) noexcept {
 			this->x /= right;
 			this->y /= right;
 			this->z /= right;
 			this->w /= right;
 		}
-		const friend _vec4 operator+(const _vec4 &a, const _vec4 &b) {
+		const friend _vec4 operator+(const _vec4 &a, const _vec4 &b) noexcept {
 			return _vec4(a.x+b.x, a.y+b.y, a.z+b.z, a.w+b.w);
 		}
-		const friend _vec4 operator+(const _vec4 &a, const Type b) {
+		const friend _vec4 operator+(const _vec4 &a, const Type b) noexcept {
 			return _vec4(a.x+b, a.y+b, a.z+b, a.w+b);
 		}
-		const friend _vec4 operator-(const _vec4 &a, const _vec4 &b) {
+		const friend _vec4 operator-(const _vec4 &a, const _vec4 &b) noexcept {
 			return _vec4(a.x-b.x, a.y-b.y, a.z-b.z, a.w-b.w);
 		}
-		const friend _vec4 operator-(const _vec4 &a, const Type b) {
+		const friend _vec4 operator-(const _vec4 &a, const Type b) noexcept {
 			return _vec4(a.x-b, a.y-b, a.z-b, a.w-b);
 		}
-		const friend _vec4 operator*(const _vec4 &a, const _vec4 &b) {
+		const friend _vec4 operator*(const _vec4 &a, const _vec4 &b) noexcept {
 			return _vec4(a.x*b.x, a.y*b.y, a.z*b.z, a.w*b.w);
 		}
-		const friend _vec4 operator*(const _vec4 &a, const Type b) {
+		const friend _vec4 operator*(const _vec4 &a, const Type b) noexcept {
 			return _vec4(a.x*b, a.y*b, a.z*b, a.w*b);
 		}
-		const friend _vec4 operator/(const _vec4 &a, const _vec4 &b) {
+		const friend _vec4 operator/(const _vec4 &a, const _vec4 &b) noexcept {
 			return _vec4(a.x/b.x, a.y/b.y, a.z/b.z, a.w/b.w);
 		}
-		const friend _vec4 operator/(const _vec4 &a, const Type b) {
+		const friend _vec4 operator/(const _vec4 &a, const Type b) noexcept {
 			return _vec4(a.x/b, a.y/b, a.z/b, a.w/b);
 		}
 	};

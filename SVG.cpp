@@ -453,27 +453,19 @@ TransformMatrix	DataTypes::getTransformMatrix(const char *str) {
 
 Symbol::Symbol() :matrix() {
 }
-int Symbol::renderGLComptAll() {
+int Symbol::renderGL100() {
 	fputs("SVG::Symbol::renderGLComptAll\n", iovir);
-	return false;
-}
-int Symbol::renderGL400() {
-	fputs("SVG::Symbol::renderGL400\n", iovir);
 	return false;
 }
 int Symbol::renderGL330() {
 	fputs("SVG::Symbol::renderGL330\n", iovir);
 	return false;
 }
-int Symbol::renderGL210() {
-	fputs("SVG::Symbol::renderGL210\n", iovir);
-	return false;
-}
 
 Group::Group() {
 	
 }
-int Group::renderGLComptAll() {
+int Group::renderGL100() {
 	float mat[16] = {
 		this->matrix.a,	this->matrix.d,	0,	0,
 		this->matrix.b,	this->matrix.e,	0,	0,
@@ -482,26 +474,14 @@ int Group::renderGLComptAll() {
 	glPushMatrix();
 	glMultMatrixf(mat);
 	for(int i=0; i<this->child.size(); i++) {
-		this->child[i]->renderGLComptAll();
+		this->child[i]->renderGL100();
 	}
 	glPopMatrix();
-	return true;
-}
-int Group::renderGL400() {
-	for(int i=0; i<this->child.size(); i++) {
-		this->child[i]->renderGL400();
-	}
 	return true;
 }
 int Group::renderGL330() {
 	for(int i=0; i<this->child.size(); i++) {
 		this->child[i]->renderGL330();
-	}
-	return true;
-}
-int Group::renderGL210() {
-	for(int i=0; i<this->child.size(); i++) {
-		this->child[i]->renderGL210();
 	}
 	return true;
 }
@@ -537,7 +517,7 @@ BasicShapeRect::BasicShapeRect() {
 	this->matrix.e = .707;
 	this->matrix.f = 111.21;*/
 }
-int BasicShapeRect::renderGLComptAll() {
+int BasicShapeRect::renderGL100() {
 	float mat[16] = {
 		this->matrix.a,	this->matrix.d,	0,	0,
 		this->matrix.b,	this->matrix.e,	0,	0,
@@ -554,9 +534,6 @@ int BasicShapeRect::renderGLComptAll() {
 	glEnd();
 	glPopMatrix();
 	return true;
-}
-int BasicShapeRect::renderGL400() {
-	return false;
 }
 int BasicShapeRect::renderGL330() {
 	Matrix3D mat;
@@ -599,9 +576,6 @@ int BasicShapeRect::renderGL330() {
 	OpenGL::popViewMatrix();
 	return true;
 }
-int BasicShapeRect::renderGL210() {
-	return false;
-}
 
 BasicShapeCircle::BasicShapeCircle() {
 	/*Coordinate cx, cy;
@@ -634,7 +608,7 @@ BasicShapeCircle::BasicShapeCircle() {
 	this->matrix.e = .707;
 	this->matrix.f = 111.21;*/
 }
-int BasicShapeCircle::renderGLComptAll() {
+int BasicShapeCircle::renderGL100() {
 	float mat[16] = {
 		this->matrix.a,	this->matrix.d,	0,	0,
 		this->matrix.b,	this->matrix.e,	0,	0,
@@ -656,9 +630,6 @@ int BasicShapeCircle::renderGLComptAll() {
 	
 	glPopMatrix();
 	return true;
-}
-int BasicShapeCircle::renderGL400() {
-	return false;
 }
 int BasicShapeCircle::renderGL330() {
 	Matrix3D mat;
@@ -692,9 +663,6 @@ int BasicShapeCircle::renderGL330() {
 	OpenGL::popViewMatrix();
 	return true;
 }
-int BasicShapeCircle::renderGL210() {
-	return false;
-}
 
 BasicShapeEllipse::BasicShapeEllipse() {
 	/*Coordinate cx, cy;
@@ -727,7 +695,7 @@ BasicShapeEllipse::BasicShapeEllipse() {
 	this->matrix.e = .707;
 	this->matrix.f = 111.21;*/
 }
-int BasicShapeEllipse::renderGLComptAll() {
+int BasicShapeEllipse::renderGL100() {
 	float mat[16] = {
 		this->matrix.a,	this->matrix.d,	0,	0,
 		this->matrix.b,	this->matrix.e,	0,	0,
@@ -751,13 +719,7 @@ int BasicShapeEllipse::renderGLComptAll() {
 	glPopMatrix();
 	return true;
 }
-int BasicShapeEllipse::renderGL400() {
-	return false;
-}
 int BasicShapeEllipse::renderGL330() {
-	return false;
-}
-int BasicShapeEllipse::renderGL210() {
 	return false;
 }
 
@@ -792,7 +754,7 @@ BasicShapeLine::BasicShapeLine() {
 	this->matrix.e = .707;
 	this->matrix.f = 111.21;*/
 }
-int BasicShapeLine::renderGLComptAll() {
+int BasicShapeLine::renderGL100() {
 	float mat[16] = {
 		this->matrix.a,	this->matrix.d,	0,	0,
 		this->matrix.b,	this->matrix.e,	0,	0,
@@ -810,9 +772,6 @@ int BasicShapeLine::renderGLComptAll() {
 	
 	glPopMatrix();
 	return true;
-}
-int BasicShapeLine::renderGL400() {
-	return false;
 }
 int BasicShapeLine::renderGL330() {
 	Matrix3D mat;
@@ -850,13 +809,10 @@ int BasicShapeLine::renderGL330() {
 	OpenGL::popViewMatrix();
 	return true;
 }
-int BasicShapeLine::renderGL210() {
-	return false;
-}
 
 BasicShapePolyline::BasicShapePolyline() :length(0), points(nullptr) {
 }
-int BasicShapePolyline::renderGLComptAll() {
+int BasicShapePolyline::renderGL100() {
 	if (length == 0) return true;
 	float mat[16] = {
 		this->matrix.a,	this->matrix.d,	0,	0,
@@ -878,19 +834,13 @@ int BasicShapePolyline::renderGLComptAll() {
 	glPopMatrix();
 	return true;
 }
-int BasicShapePolyline::renderGL400() {
-	return false;
-}
 int BasicShapePolyline::renderGL330() {
-	return false;
-}
-int BasicShapePolyline::renderGL210() {
 	return false;
 }
 
 BasicShapePolygon::BasicShapePolygon() :length(0), points(nullptr) {
 }
-int BasicShapePolygon::renderGLComptAll() {
+int BasicShapePolygon::renderGL100() {
 	if (length < 2) return true;
 	float mat[16] = {
 		this->matrix.a,	this->matrix.d,	0,	0,
@@ -913,12 +863,6 @@ int BasicShapePolygon::renderGLComptAll() {
 	glPopMatrix();
 	return true;
 }
-int BasicShapePolygon::renderGL400() {
-	return false;
-}
 int BasicShapePolygon::renderGL330() {
-	return false;
-}
-int BasicShapePolygon::renderGL210() {
 	return false;
 }

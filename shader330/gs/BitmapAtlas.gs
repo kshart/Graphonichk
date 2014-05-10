@@ -9,16 +9,17 @@ layout(shared) uniform grShaderData {
 };
 uniform sampler2D colorTexture;
 uniform sampler1D coordRect;
-uniform int rectID;
 
 in VertexData {
 	vec4 position;
+	int rectID;
 } VertexIn[];
 
 out vec2 TexCoord;
+
 void main () {
 	ivec2 texSize = textureSize(colorTexture, 0);
-	vec4 coord = texelFetch(coordRect, rectID, 0);
+	vec4 coord = texelFetch(coordRect, VertexIn[0].rectID, 0);
 	vec4 Pos = VertexIn[0].position;
 	
 	gl_Position = vec4(Pos.x, Pos.y, 0.0, 1.0)*viewMatrixValue;

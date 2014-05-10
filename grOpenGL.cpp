@@ -60,7 +60,6 @@ int OpenGL::init(OPENGL_VER ver) {
 		vsBitmapChar->addEventHandler(EventFileLoad::FILE_SUCCESS, glslLoaded, ShaderBitmap::prog);*/
 		ShaderBitmap::prog = new ShaderBitmap();
 		ShaderBitmapAtlas::prog = new ShaderBitmapAtlas();
-		ShaderTextField::prog = new ShaderTextField();
 		ShaderTextFieldBuffer::prog = new ShaderTextFieldBuffer();
 		ShaderSVGmain::prog = new ShaderSVGmain();
 		ShaderFPrimitiv::prog = new ShaderFPrimitiv();
@@ -70,7 +69,6 @@ int OpenGL::init(OPENGL_VER ver) {
 		GLShaderLoad *shLoad;
 		shLoad = new GLShaderLoad(ShaderBitmap::prog, "shader330/vs/Bitmap.vs", "shader330/gs/Bitmap.gs", "shader330/fs/Bitmap.fs");
 		shLoad = new GLShaderLoad(ShaderBitmapAtlas::prog, "shader330/vs/BitmapAtlas.vs", "shader330/gs/BitmapAtlas.gs", "shader330/fs/BitmapAtlas.fs");
-		shLoad = new GLShaderLoad(ShaderTextField::prog, "shader330/vs/TextField.vs", "shader330/gs/TextField.gs", "shader330/fs/TextField.fs");
 		shLoad = new GLShaderLoad(ShaderTextFieldBuffer::prog, "shader330/vs/TextFieldBuffer.vs", "shader330/gs/TextFieldBuffer.gs", "shader330/fs/TextFieldBuffer.fs");
 		shLoad = new GLShaderLoad(ShaderSVGmain::prog, "shader330/vs/SVGmain.vs", "", "shader330/fs/SVGmain.fs");
 		shLoad = new GLShaderLoad(ShaderFPrimitiv::prog, "shader330/vs/FPrimitiv.vs", "shader330/gs/FPrimitiv.gs", "shader330/fs/FPrimitiv.fs");
@@ -253,12 +251,12 @@ ShaderBitmapAtlas::ShaderBitmapAtlas() :ShaderShRect(ShaderBitmapAtlas::CRC32) {
 }
 void ShaderBitmapAtlas::init() {
 	this->ShaderShRect::init();
+	this->attrRectID = glGetAttribLocation(this->shaderProgram, "attrRectID");
 	this->texture = glGetUniformLocation(this->shaderProgram, "colorTexture");
 	this->coordRect = glGetUniformLocation(this->shaderProgram, "coordRect");
 	this->rectID = glGetUniformLocation(this->shaderProgram, "rectID");
 	glUniform1i(this->texture, 0);
 	glUniform1i(this->coordRect, 0);
-	glUniform1i(this->rectID, 0);
 }
 
 ShaderPartRect* ShaderPartRect::prog = nullptr;

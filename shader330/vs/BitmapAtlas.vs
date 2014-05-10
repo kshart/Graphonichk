@@ -1,12 +1,21 @@
 #version 330 core
-in vec4 position;
+uniform int rectID = -1;
+
+layout(location = 0) in vec4 position;
+layout(location = 1) in int attrRectID;
 
 out VertexData {
 	vec4 position;
+	int rectID;
 } VertexOut;
 
 void main () {
 	VertexOut.position = position;
+	if (rectID<0) {
+		VertexOut.rectID = attrRectID;
+	}else{
+		VertexOut.rectID = rectID;
+	}
 }
 //35970 0 39240 6550
 //65535

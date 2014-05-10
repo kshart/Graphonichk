@@ -187,20 +187,16 @@ namespace SVG {
 	public:
 		//SVGElement();
 		Symbol();
-		virtual int renderGLComptAll();
-		virtual int renderGL400();
+		virtual int renderGL100();
 		virtual int renderGL330();
-		virtual int renderGL210();
 		
 		TransformMatrix matrix;
 	};
 	class Group :public Symbol {
 	public:
 		Group();
-		virtual int renderGLComptAll();
-		virtual int renderGL400();
-		virtual int renderGL330();
-		virtual int renderGL210();
+		int renderGL100() override;
+		int renderGL330() override;
 		
 		vector<Symbol*> child;
 	};
@@ -209,10 +205,8 @@ namespace SVG {
 	public:
 		enum :GLuint {CRC32=0xB7D63381};
 		BasicShapeRect();
-		int renderGLComptAll();
-		int renderGL400();
-		int renderGL330();
-		int renderGL210();
+		int renderGL100() override;
+		int renderGL330() override;
 		
 		//class;
 		//style;
@@ -227,10 +221,8 @@ namespace SVG {
 	public:
 		enum :GLuint {CRC32=0xD4B76579};
 		BasicShapeCircle();
-		int renderGLComptAll();
-		int renderGL400();
-		int renderGL330();
-		int renderGL210();
+		int renderGL100() override;
+		int renderGL330() override;
 		
 		//class;
 		//style;
@@ -244,10 +236,8 @@ namespace SVG {
 	class BasicShapeEllipse :public Symbol{
 	public:
 		BasicShapeEllipse();
-		int renderGLComptAll();
-		int renderGL400();
-		int renderGL330();
-		int renderGL210();
+		int renderGL100() override;
+		int renderGL330() override;
 		
 		//class;
 		//style;
@@ -260,10 +250,8 @@ namespace SVG {
 	public:
 		enum :GLuint {CRC32=0xD114B4F6};
 		BasicShapeLine();
-		int renderGLComptAll();
-		int renderGL400();
-		int renderGL330();
-		int renderGL210();
+		int renderGL100() override;
+		int renderGL330() override;
 		
 		//class;
 		//style;
@@ -276,10 +264,8 @@ namespace SVG {
 	class BasicShapePolyline :public Symbol{
 	public:
 		BasicShapePolyline();
-		int renderGLComptAll();
-		int renderGL400();
-		int renderGL330();
-		int renderGL210();
+		int renderGL100() override;
+		int renderGL330() override;
 		
 		//class;
 		//style;
@@ -291,10 +277,8 @@ namespace SVG {
 	class BasicShapePolygon :public Symbol{
 	public:
 		BasicShapePolygon();
-		int renderGLComptAll();
-		int renderGL400();
-		int renderGL330();
-		int renderGL210();
+		int renderGL100() override;
+		int renderGL330() override;
 		
 		//class;
 		//style;

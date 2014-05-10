@@ -6,6 +6,7 @@
 using namespace std;
 namespace Graphonichk {
 	class TextField;
+	class TextFieldTask;
 	class TextFormat;
 	class FontFace;
 	class Font;
@@ -25,26 +26,24 @@ namespace Graphonichk {
 		FontFace(unsigned short size, size_t glyphCount);
 		unsigned short size;
 		unsigned int ramUsed;
-		GLuint texCoord;
-		Texture *tex;
+		GLuint texCoord = 0;
+		Texture *tex = nullptr;
 		Array<FontGlyph> arr;
 	};
 	class TextFormat {
 	public:
 		static TextFormat *defaultFormat;
 		TextFormat();
+		Font *fn = nullptr;
+		unsigned short size = 40;
 		enum DIR:char {
 			LTR,
 			RTL
-		};
-		Font *fn;
-		//unsigned short strWidth, strHeight;
-		unsigned short size;
-		DIR direction;
+		} direction = DIR::LTR;
 		short letterSpacing;
-		short lineHeight;
-		unsigned short tabSize;
-		unsigned short whiteSpace;
+		short lineHeight = __SHRT_MAX__;
+		unsigned short tabSize = 4;
+		unsigned short whiteSpace = __SHRT_MAX__;
 		argb textDecorationColor;
 		/*void
 			hyphens,
@@ -92,9 +91,6 @@ namespace Graphonichk {
 		string strUTF8;
 	};
 	class TextField :public ShapeRect {
-	private:
-		TextFormat *_tf;
-		uint _symvolCount;
 	public:
 		enum POSITION {
 			LEFT_TOP,
@@ -108,14 +104,9 @@ namespace Graphonichk {
 			CENTER
 		};
 		TextField(unsigned short, unsigned short);
-		void trace();
-		int renderGLComptAll();
-		int renderGL400();
-		int renderGL330();
-		int renderGL210();
-		
-		void setString(string str);
-		void setFormat(TextFormat *tf);
+		void trace() override;
+		int renderGL330() override;
+		int renderGL100() override;
 		
 		string strUTF8;
 		/*enum STR_TYPE:char {
@@ -123,14 +114,16 @@ namespace Graphonichk {
 		};
 		STR_TYPE strType;*/
 		
-		Texture *tex;
+		Texture *tex = nullptr;
 		GLuint vbo;
 		
-		POSITION position;
 		unsigned short borderSize;
 		char background, multiline;
 		unsigned int borderColor, backgroundColor, textColor;
-		short paddingLeft, paddingRight, paddingTop, paddingBottom;
+		short paddingLeft = 0,
+			paddingRight = 0,
+			paddingTop = 0,
+			paddingBottom = 0;
 		/*struct {
 			char decoration, decorationStyle, writingMode, whiteSpace,
 				align, alignLast;
@@ -146,25 +139,22 @@ namespace Graphonichk {
 				wordBreak,
 				wordSpacing;
 		} style;*/
+		
+		void operator=(const string& right);
+		void setFormat(TextFormat *tf);
+		void setAligment(POSITION align);
+	private:
+		TextFormat *_tf;
+		uint _symvolCount;
+		POSITION position = POSITION::LEFT_TOP;
+		friend TextFieldTask;
 	};
 	
-	class FontFaceLoadTask :public EachFrameTask {
+	class TextFieldTask : public EachFrameTask {
 	public:
-		FontFaceLoadTask(FontFace *face, size_t sizeTexCoord);
-		int processExecute();
-		FontFace *face;
-		Array<uint16_t> bmpTexCoord;
-	};
-	class ShaderTextField :public GLShader {
-	public:
-		enum {CRC32=0x51923};
-		ShaderTextField();
-		static ShaderTextField* prog;
-		
-		GLint position, texture, coordTex, grShaderData;
-		
-		friend GLShaderLoadTask;
-		void init();
+		TextFieldTask(TextField *text);
+		int processExecute() override;
+		TextField *text;
 	};
 	class ShaderTextFieldBuffer :public ShaderShRect {
 	public:
@@ -175,7 +165,7 @@ namespace Graphonichk {
 		GLint textColor, textTexture, texCoord, grShaderData;
 		
 		friend GLShaderLoadTask;
-		void init();
+		void init() override;
 	};
 }
 

@@ -214,7 +214,7 @@ void ImageSVG::loadShapePolygon(xmlNodePtr node, SVG::Group* group) {
 	}*/
 	group->child.push_back(polygon);
 }
-int ImageSVG::renderGLComptAll() {
+int ImageSVG::renderGL100() {
 	OpenGL::pushViewport();
 	OpenGL::pushViewMatrix();
 	OpenGL::setViewport(this->getGlobalX()+this->getOffsetX(), 
@@ -222,7 +222,7 @@ int ImageSVG::renderGLComptAll() {
 			this->getWidth(), this->getHeight());
 	OpenGL::setViewMatrix(this->viewMatrix);
 	
-	this->root.renderGLComptAll();
+	this->root.renderGL100();
 	
 	OpenGL::popViewMatrix();
 	OpenGL::popViewport();
@@ -236,20 +236,6 @@ int ImageSVG::renderGLComptAll() {
 		glVertex2s( this->getGlobalX()+this->getOffsetX(),					this->getGlobalY()+this->getOffsetY()+this->getHeight() );
 		glVertex2s( this->getGlobalX()+this->getOffsetX(),					this->getGlobalY()+this->getOffsetY() );
 	glEnd();// </editor-fold>
-	return true;
-}
-int ImageSVG::renderGL400() {
-	OpenGL::pushViewport();
-	OpenGL::pushViewMatrix();
-	OpenGL::setViewport(this->getGlobalX()+this->getOffsetX(), 
-			Windows::window->height-this->getGlobalY()+this->getOffsetY()-this->getHeight(),
-			this->getWidth(), this->getHeight());
-	OpenGL::setViewMatrix(this->viewMatrix);
-	
-	this->root.renderGL400();
-	
-	OpenGL::popViewMatrix();
-	OpenGL::popViewport();
 	return true;
 }
 int ImageSVG::renderGL330() {
@@ -264,29 +250,5 @@ int ImageSVG::renderGL330() {
 	
 	OpenGL::popViewMatrix();
 	OpenGL::popViewport();
-	return true;
-}
-int ImageSVG::renderGL210() {
-	OpenGL::pushViewport();
-	OpenGL::pushViewMatrix();
-	OpenGL::setViewport(this->getGlobalX()+this->getOffsetX(), 
-			Windows::window->height-this->getGlobalY()+this->getOffsetY()-this->getHeight(),
-			this->getWidth(), this->getHeight());
-	OpenGL::setViewMatrix(this->viewMatrix);
-	
-	this->root.renderGL210();
-	
-	OpenGL::popViewMatrix();
-	OpenGL::popViewport();
-	
-	glLineWidth(1);
-	glColor4ub(0xFF,0,0,0xFF);
-	glBegin(GL_LINE_STRIP);// <editor-fold defaultstate="collapsed" desc="GL_LINE_STRIP">
-		glVertex2s( this->getGlobalX()+this->getOffsetX(),					this->getGlobalY()+this->getOffsetY() );
-		glVertex2s( this->getGlobalX()+this->getOffsetX()+this->getWidth(), this->getGlobalY()+this->getOffsetY() );
-		glVertex2s( this->getGlobalX()+this->getOffsetX()+this->getWidth(), this->getGlobalY()+this->getOffsetY()+this->getHeight() );
-		glVertex2s( this->getGlobalX()+this->getOffsetX(),					this->getGlobalY()+this->getOffsetY()+this->getHeight() );
-		glVertex2s( this->getGlobalX()+this->getOffsetX(),					this->getGlobalY()+this->getOffsetY() );
-	glEnd();// </editor-fold>
 	return true;
 }

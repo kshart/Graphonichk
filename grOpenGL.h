@@ -74,7 +74,10 @@ namespace Graphonichk {
 		ShaderBitmapAtlas();
 		static ShaderBitmapAtlas* prog;
 		
-		GLint texture, coordRect, rectID;
+		GLint texture = -1,
+			coordRect = -1,
+			rectID = -1,
+			attrRectID = -1;
 		
 		friend GLShaderLoadTask;
 		void init();

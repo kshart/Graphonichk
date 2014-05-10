@@ -38,6 +38,7 @@ namespace FlatUI {
 		
 		int callEvent(EventMouseShape* event) override;
 		int renderGL330() override;
+		int renderGL100() override;
 	};
 	class FlatUICheckbox :public Graphonichk::BitmapAtlas, public Graphonichk::UICheckbox {
 	public:

@@ -381,8 +381,8 @@ int TextureToUpdateTask::processExecute() {
 				glGenTextures( 1, &_tex->rectGLID );
 				if (_tex->rectGLID==0) return false;
 				Array<usvec4> arr(_tex->rects.size);
-				unsigned short mnWidth = 0xFFFF/_tex->width;
-				unsigned short mnHeight = 0xFFFF/_tex->height;
+				unsigned short mnWidth = round(((float)0xFFFF)/_tex->width);
+				unsigned short mnHeight = round(((float)0xFFFF)/_tex->height);
 				for(size_t i=0; i<_tex->rects.size; i++) {
 					arr[i].x = _tex->rects[i].x*mnWidth;
 					arr[i].y = _tex->rects[i].y*mnHeight;
@@ -392,8 +392,8 @@ int TextureToUpdateTask::processExecute() {
 				glBindTexture(GL_TEXTURE_1D, _tex->rectGLID );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects.size, 0, GL_RGBA, GL_UNSIGNED_SHORT, arr.data);
 			} 
 		}else{
@@ -403,8 +403,8 @@ int TextureToUpdateTask::processExecute() {
 				glGenTextures( 1, &_tex->rectGLID );
 				if (_tex->rectGLID==0) return false;
 				Array<usvec4> arr(_tex->rects.size);
-				unsigned short mnWidth = 0xFFFF/_tex->width;
-				unsigned short mnHeight = 0xFFFF/_tex->height;
+				unsigned short mnWidth = round(((float)0xFFFF)/_tex->width);
+				unsigned short mnHeight = round(((float)0xFFFF)/_tex->height);
 				for(size_t i=0; i<_tex->rects.size; i++) {
 					arr[i].x = _tex->rects[i].x*mnWidth;
 					arr[i].y = _tex->rects[i].y*mnHeight;
@@ -414,8 +414,8 @@ int TextureToUpdateTask::processExecute() {
 				glBindTexture(GL_TEXTURE_1D, _tex->rectGLID );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects.size, 0, GL_RGBA, GL_UNSIGNED_SHORT, arr.data);
 			} 
 		}
@@ -459,8 +459,8 @@ int TextureToUpdateTask::processExecute() {
 				glGenTextures( 1, &_tex->rectGLID );
 				if (_tex->rectGLID==0) return false;
 				Array<usvec4> arr(_tex->rects.size);
-				unsigned short mnWidth = 0xFFFF/_tex->width;
-				unsigned short mnHeight = 0xFFFF/_tex->height;
+				unsigned short mnWidth = round(((float)0xFFFF)/_tex->width);
+				unsigned short mnHeight = round(((float)0xFFFF)/_tex->height);
 				for(size_t i=0; i<_tex->rects.size; i++) {
 					arr[i].x = _tex->rects[i].x*mnWidth;
 					arr[i].y = _tex->rects[i].y*mnHeight;
@@ -470,8 +470,8 @@ int TextureToUpdateTask::processExecute() {
 				glBindTexture(GL_TEXTURE_1D, _tex->rectGLID );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects.size, 0, GL_RGBA, GL_UNSIGNED_SHORT, arr.data);
 			} 
 		}else{
@@ -481,8 +481,8 @@ int TextureToUpdateTask::processExecute() {
 				glGenTextures( 1, &_tex->rectGLID );
 				if (_tex->rectGLID==0) return false;
 				Array<usvec4> arr(_tex->rects.size);
-				unsigned short mnWidth = 0xFFFF/_tex->width;
-				unsigned short mnHeight = 0xFFFF/_tex->height;
+				unsigned short mnWidth = round(((float)0xFFFF)/_tex->width);
+				unsigned short mnHeight = round(((float)0xFFFF)/_tex->height);
 				for(size_t i=0; i<_tex->rects.size; i++) {
 					arr[i].x = _tex->rects[i].x*mnWidth;
 					arr[i].y = _tex->rects[i].y*mnHeight;
@@ -492,8 +492,8 @@ int TextureToUpdateTask::processExecute() {
 				glBindTexture(GL_TEXTURE_1D, _tex->rectGLID );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+				glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 				glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16, _tex->rects.size, 0, GL_RGBA, GL_UNSIGNED_SHORT, arr.data);
 			} 
 		}
