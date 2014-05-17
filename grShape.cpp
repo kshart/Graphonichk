@@ -89,25 +89,17 @@ int ShapeRectGateMatrix2D::renderGL330() {
 }
 
 
-ShapeRect::ShapeRect(int crc32) :ShapeBasic(crc32), parent(nullptr) {
-	this->mouseEventActive = false;
-	this->mouseEventRollOver = false;
-	this->visible = true;
-	this->local.x = this->local.y = 0;
-	this->global.x = this->global.y = 0;
-	this->width = this->height = 0;
-	this->offset.x = this->offset.y = 0;
-	this->vao = 0;
-	this->vboRect = 0;
+ShapeRect::ShapeRect(int crc32) :ShapeBasic(crc32),
+		local(0, 0), global(0, 0), offset(0, 0) {
 	ShapeRectTask::task.addTask(this);
 }
 void ShapeRect::setPosition(short x, short y) {
 	this->local.x = x;
 	this->local.y = y;
-	if (this->parent!=NULL) {
+	if (this->parent!=nullptr) {
 		this->global.x = this->parent->global.x+x;
 		this->global.y = this->parent->global.y+y;
-		this->parent->updateRect();
+		if (parent->chengeRect) parent->updateRect();
 	}
 	ShapeRectTask::task.addTask(this);
 	#ifdef REDRAWN_BY_THE_ACTION
@@ -248,21 +240,9 @@ int ShapeRect::addEventHandler( int type, void(*fun)(const EventMouseShape*)) {
 }
 
 ShapeGroupRect::ShapeGroupRect() :ShapeRect(ShapeGroupRect::CRC32) {
-	this->shapeCache = NULL;
-	this->totalShape = this->totalDir = 0;
-	this->parent = NULL;
-	this->cutTheRect = false;
-	this->chengeRect = true;
-	this->offset.x = SHRT_MAX;
-	this->offset.y = SHRT_MAX;
 	this->addChildLock = CreateMutex(NULL, FALSE, NULL);
 }
 ShapeGroupRect::ShapeGroupRect(int crc32) :ShapeRect(crc32) {
-	this->shapeCache = NULL;
-	this->totalShape = this->totalDir = 0;
-	this->parent = NULL;
-	this->cutTheRect = false;
-	this->chengeRect = true;
 	this->addChildLock = CreateMutex(NULL, FALSE, NULL);
 }
 void ShapeGroupRect::trace() {
@@ -365,7 +345,6 @@ void ShapeGroupRect::updateGlobalPosition() {
 	}
 }
 void ShapeGroupRect::updateRect() {
-	//puts("ShapeGroupRect::updateRect");
 	if (this->child.empty() || !this->chengeRect) return;
 	svec2 newOffset, rect, offset, SHpos, SHoffset, SHrect;
 	ShapeRect* sh;
@@ -439,21 +418,17 @@ bool ShapeGroupRect::addChild(ShapeRect *sh) {
 	if (sh->mouseEventActive) {
 		this->mouseEventActive = true;
 		ShapeRect *shape = this;
-		while (shape->parent != NULL) {
+		while (shape->parent != nullptr) {
 			shape = shape->parent;
 			shape->mouseEventActive = true;
 		}
 	}
-	if (this->parent!=NULL || this==Windows::window->root) sh->updateGlobalPosition();
-	if (this->getOffsetX()==SHRT_MAX||this->getOffsetY()==SHRT_MAX) {
-		if (sh->visible) this->updateRect();
-	}else if (sh->visible) {
-		this->updateRect();
-	}
+	if (this->parent!=nullptr || this==Windows::window->root) sh->updateGlobalPosition();
+	if (sh->visible) this->updateRect();
 	this->child.push_back( sh );
 	dir = dynamic_cast<ShapeGroupRect*>(sh);
-	if ( dir!=NULL ) {
-		while(dir->parent!=NULL) {
+	if ( dir!=nullptr ) {
+		while(dir->parent!=nullptr) {
 			dir = dir->parent;
 			dir->totalShape += ((ShapeGroupRect*)sh)->totalShape;
 			dir->totalDir += ((ShapeGroupRect*)sh)->totalDir+1;
@@ -461,7 +436,7 @@ bool ShapeGroupRect::addChild(ShapeRect *sh) {
 	}else{
 		dir = this;
 		dir->totalShape++;
-		while(dir->parent!=NULL) {
+		while(dir->parent!=nullptr) {
 			dir = dir->parent;
 			dir->totalShape++;
 		}
@@ -546,8 +521,10 @@ int ShapeGroupRect::callEvent(EventMouseShape* event) {
 }
 
 ShapeMain::ShapeMain() :ShapeGroupRect(ShapeMain::CRC32) {
-	this->frameBuffer.color = new Texture(this->width, this->height, GL_RGB, GL_UNSIGNED_BYTE);
-	this->frameBuffer.depth = new Texture(this->width, this->height, GL_DEPTH_COMPONENT, GL_FLOAT);
+	this->frameBuffer.color = new Texture(this->width, this->height, GL_RGB8, GL_RGB, GL_UNSIGNED_BYTE);
+	this->frameBuffer.depth = new Texture(this->width, this->height, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
+	puts(">>>>>>>>>>>>ShapeMain");
+	if (OpenGL::ver!=OpenGL::VER_CORE_100) puts(">>>>>>>>>>>>ShapeMain");
 	if (OpenGL::ver!=OpenGL::VER_CORE_100) Windows::window->eachFrame.addTask(new ShapeMainInitTask(this));
 }
 void ShapeMain::setRect(short w, short h) {
@@ -623,7 +600,6 @@ int ShapePostEffect::renderGL330() {
 	SET_SHADER_H(this->shader);
 	glDrawArrays(GL_POINTS, 0, 1);	
 }
-
 
 ShapeRectTask ShapeRectTask::task;
 int ShapeRectTask::processExecute() {
@@ -734,8 +710,7 @@ void Bitmap::updateBitmaps() {
 		for(int i=0; i<Bitmap::updateBuffer.size()-countUpdateBMP; i++) {
 			bmp = Bitmap::updateBuffer[i];
 			if (bmp->tex->GLID!=0 && bmp->tex->event==Texture::LOADED) {
-				bmp->setRect(bmp->tex->width, bmp->tex->height);
-				bmp->tex->trace();
+				if (bmp->width==0 && bmp->height==0) bmp->setRect(bmp->tex->width, bmp->tex->height);
 				countUpdateBMP++;
 				if (countUpdateBMP >= Bitmap::updateBuffer.size()) {
 					Bitmap::updateBuffer.clear();
@@ -799,9 +774,9 @@ int BitmapAtlas::renderGL100() {
 }
 
 
-FPoint::FPoint(int rad, uint32_t color=0 ) :ShapeRect(FPoint::CRC32) {
+FPoint::FPoint(int rad, ubvec4 color ) :ShapeRect(FPoint::CRC32) {
 	this->radius = rad;
-	this->color.color = color;
+	this->color = color;
 }
 int FPoint::renderGL100() {
 	glPushMatrix();
@@ -810,12 +785,12 @@ int FPoint::renderGL100() {
 	glPointSize(this->radius);
 	glBegin(GL_POINTS);
 	  glColor3ub(this->color.r, this->color.g, this->color.b );
-	  glVertex2s(this->getGlobalX(), this->getGlobalY());
+	  glVertex2s(this->global.x, this->global.y);
 	glEnd();
 	glPopMatrix();
 	return true;
 }
-FLines::FLines(Segment *sgs, short length, short lineWidth, argb color) :ShapeRect(FLines::CRC32), segments(length) {
+FLines::FLines(Segment *sgs, short length, short lineWidth, ubvec4 color) :ShapeRect(FLines::CRC32), segments(length) {
 	memcpy(this->segments.data, sgs, length*sizeof(Segment));
 	this->lineWidth = lineWidth;
 	this->color = color;
@@ -856,48 +831,30 @@ int FLines::renderGL100() {
 	return true;
 }
 
-FRect::FRect(short width, short height, uint32_t backgroundColor) :ShapeRect(FRect::CRC32) {
+FRect::FRect(short width, short height, ubvec4 backgroundColor) :ShapeRect(FRect::CRC32) {
 	this->setRect(width, height);
-	this->backgroundColor.color = backgroundColor;
+	this->backgroundColor = backgroundColor;
 }
 int FRect::renderGL100() {
-	/*glPushMatrix();
+	svec2 global = this->global+this->offset;
 	glBegin(GL_QUADS);
 		glColor3ub(this->backgroundColor.r, this->backgroundColor.g, this->backgroundColor.b );
-		glVertex2s(this->globalx, this->globaly);
-		glVertex2s(this->globalx+this->width, this->globaly);
-		glVertex2s(this->globalx+this->width, this->globaly+this->height);
-		glVertex2s(this->globalx, this->globaly+this->height);
+		glVertex2s(global.x,				global.y);
+		glVertex2s(global.x+this->width,	global.y);
+		glVertex2s(global.x+this->width,	global.y+this->height);
+		glVertex2s(global.x,				global.y+this->height);
 	glEnd();
-	glPopMatrix();*/
-	return false;
+	return true;
 }
 int FRect::renderGL330() {
-	//glUseProgram();
-	puts("FRect::renderGL330");
-	/*if (GLShader::shader->crc32!=ShaderFPrimitiv::CRC32) GLShader::setShader(ShaderFPrimitiv::prog);
-	if (this->vao==0) {
-		short vertex[4] = {
-			this->globalx, this->globaly, (short)this->width, (short)this->height
-		};
-		glGenVertexArrays(1, &this->vao);
-		if (this->vao==0) printf("VAO_NULL");
-		glBindVertexArray(this->vao);
-		
-		glGenBuffers(1, &this->vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
-		glBufferData(GL_ARRAY_BUFFER, 4*2, vertex, GL_STATIC_DRAW);
-		glVertexAttribPointer(ShaderBitmap::prog->position, 4, GL_SHORT, GL_FALSE, 0, NULL);
-		glEnableVertexAttribArray(ShaderBitmap::prog->position);
-	}
+	SET_SHADER(ShaderFPrimitiv);
 	glBindVertexArray(this->vao);
-	//printf("color %i %i %i %i\n", backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
 	glUniform4f(ShaderFPrimitiv::prog->fillColor, 
 			backgroundColor.r/255.0, 
 			backgroundColor.g/255.0, 
 			backgroundColor.b/255.0, 
 			backgroundColor.a/255.0);
-	glDrawArrays(GL_POINTS, 0, 1);*/
+	glDrawArrays(GL_POINTS, 0, 1);
 	return true;
 }
 

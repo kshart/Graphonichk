@@ -20,7 +20,7 @@ Texture::Texture(unsigned short rectCount, usvec4 *rect) :
 		rects(rectCount) {
 	memcpy(this->rects.data, rect, rectCount*sizeof(usvec4));
 }
-Texture* Texture::getTexture(unsigned short w, unsigned short h, GLuint format, GLuint type, unsigned short rectCount, usvec4 *rect) {
+Texture* Texture::getTexture(unsigned short w, unsigned short h, GLuint format, GLuint internalType, GLuint type, unsigned short rectCount, usvec4 *rect) {
 	Texture *tex = new Texture(rectCount, rect);
 	glGenTextures( 1, &tex->GLID );
 	if (tex->GLID==0) {
@@ -30,6 +30,7 @@ Texture* Texture::getTexture(unsigned short w, unsigned short h, GLuint format, 
 	tex->width = w;
 	tex->height = h;
 	tex->type = type;
+	tex->internalType = internalType;
 	tex->format = format;
 	tex->event = Texture::LOADED;
 	glBindTexture( GL_TEXTURE_2D, tex->GLID );
@@ -37,14 +38,14 @@ Texture* Texture::getTexture(unsigned short w, unsigned short h, GLuint format, 
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-	glTexImage2D( GL_TEXTURE_2D, 0, format, w, h, 0, format, type, NULL );
+	glTexImage2D( GL_TEXTURE_2D, 0, internalType, w, h, 0, format, type, NULL );
 	return tex;
 }
-Texture::Texture(unsigned short w, unsigned short h, GLuint format, GLuint type, unsigned short rectCount, usvec4 *rect) :
+Texture::Texture(unsigned short w, unsigned short h, GLuint internalType, GLuint format, GLuint type, unsigned short rectCount, usvec4 *rect) :
 		_loadedInFile(false), event(Texture::TO_UPDATE),
 		img(nullptr), GLID(0),
 		width(w), height(h),
-		format(format), type(type),
+		format(format), internalType(internalType), type(type),
 		rects(rectCount) {
 	memcpy(this->rects.data, rect, rectCount*sizeof(usvec4));
 	ADD_TEXTURE_TO_UPDATE_BUFFER(this);
@@ -81,6 +82,10 @@ Texture::Texture(Image *img, unsigned short rectCount, usvec4 *rect) :
 			this->type = GL_UNSIGNED_BYTE;
 			break;
 		case Image::MONO_8:
+			this->format = GL_LUMINANCE;
+			this->type = GL_UNSIGNED_BYTE;
+			break;
+		case Image::ALPHA_8:
 			this->format = GL_ALPHA;
 			this->type = GL_UNSIGNED_BYTE;
 			break;
@@ -88,8 +93,7 @@ Texture::Texture(Image *img, unsigned short rectCount, usvec4 *rect) :
 		case Image::MONO_2:
 		case Image::MONO_4:
 		case Image::MONO_16:
-		case Image::MONO_ALPHA_8:
-		case Image::MONO_ALPHA_16:
+		case Image::ALPHA_16:
 		case Image::BGR_48:
 		case Image::RGB_48:
 		case Image::BGRA_64:
@@ -150,6 +154,115 @@ Image::Image(string path) {
 	FileLoad *fl = new FileLoad(path);
 	fl->addEventHandler(EventFileLoad::FILE_SUCCESS, Image::loaded, this);
 	
+}
+int Image::convert(TYPE type) {
+	switch (this->type) {
+		case Image::RGBA_32:
+			puts("Image::RGBA_32");
+			switch (type) {
+				case Image::RGBA_32: return true;
+				case Image::BGRA_32:
+					for(size_t i=0, size=this->width*this->height; i<size; i++) {
+						ubvec4 color = ((ubvec4*)this->raw)[i];
+						((ubvec4*)this->raw)[i].r = color.b;
+						((ubvec4*)this->raw)[i].b = color.r;
+					}
+					this->type = type;
+					return true;
+				case Image::RGB_24:
+					for(size_t i=1, size=this->width*this->height; i<size; i++) {
+						((ubvec3*)this->raw)[i].r = ((ubvec4*)this->raw)[i].r;
+						((ubvec3*)this->raw)[i].g = ((ubvec4*)this->raw)[i].g;
+						((ubvec3*)this->raw)[i].b = ((ubvec4*)this->raw)[i].b;
+					}
+					this->raw = realloc(this->raw, this->width*this->height*sizeof(ubvec3));
+					this->type = type;
+					return true;
+				case Image::BGR_24:
+					for(size_t i=1, size=this->width*this->height; i<size; i++) {
+						ubvec4 color = ((ubvec4*)this->raw)[i];
+						((ubvec3*)this->raw)[i].r = color.b;
+						((ubvec3*)this->raw)[i].g = color.g;
+						((ubvec3*)this->raw)[i].b = color.r;
+					}
+					this->raw = realloc(this->raw, this->width*this->height*sizeof(ubvec3));
+					this->type = type;
+					return true;
+				case Image::ALPHA_8:
+					for(size_t i=0, size=this->width*this->height; i<size; i++) {
+						ubvec4 color = ((ubvec4*)this->raw)[i];
+						((uint8_t*)this->raw)[i] = color.a;
+					}
+					this->raw = realloc(this->raw, this->width*this->height);
+					this->type = type;
+					return true;
+				case Image::MONO_8:
+					for(size_t i=0, size=this->width*this->height; i<size; i++) {
+						ubvec4 color = ((ubvec4*)this->raw)[i];
+						((uint8_t*)this->raw)[i] = (color.r+color.g+color.b)/3;
+					}
+					this->raw = realloc(this->raw, this->width*this->height);
+					this->type = type;
+					return true;
+				case Image::MONO_1: break;
+				case Image::MONO_2: break;
+				case Image::MONO_4: break;
+				case Image::MONO_16:
+					for(size_t i=0, size=this->width*this->height; i<size; i++) {
+						ubvec4 color = ((ubvec4*)this->raw)[i];
+						((uint16_t*)this->raw)[i] = (uint16_t)((color.r+color.g+color.b)*85);
+					}
+					this->raw = realloc(this->raw, this->width*this->height*sizeof(uint16_t));
+					this->type = type;
+					return true;
+				case Image::ALPHA_16:
+					for(size_t i=0, size=this->width*this->height; i<size; i++) {
+						ubvec4 color = ((ubvec4*)this->raw)[i];
+						((uint16_t*)this->raw)[i] = (uint16_t)(color.a*0x101);
+					}
+					this->raw = realloc(this->raw, this->width*this->height*sizeof(uint16_t));
+					this->type = type;
+					return true;
+				case Image::BGR_48:
+				case Image::RGB_48:
+				case Image::BGRA_64:
+				case Image::RGBA_64:
+				case Image::PALETTE_1:
+				case Image::PALETTE_2:
+				case Image::PALETTE_4:
+				case Image::PALETTE_8:
+				case Image::NC:
+					fputs("Texture::Texture(Image *img) NOT SUPPORTED TYPE", stderr);
+					break;
+			}
+			break;
+		case Image::BGRA_32:
+			break;
+		case Image::RGB_24:
+			break;
+		case Image::BGR_24:
+			break;
+		case Image::MONO_8:
+		case Image::ALPHA_8:
+			break;
+		case Image::MONO_1:
+		case Image::MONO_2:
+		case Image::MONO_4:
+		case Image::MONO_16:
+		case Image::ALPHA_16:
+		case Image::BGR_48:
+		case Image::RGB_48:
+		case Image::BGRA_64:
+		case Image::RGBA_64:
+		case Image::PALETTE_1:
+		case Image::PALETTE_2:
+		case Image::PALETTE_4:
+		case Image::PALETTE_8:
+		case Image::NC:
+			fputs("Texture::Texture(Image *img) NOT SUPPORTED TYPE", stderr);
+			break;
+	}
+	return true;
 }
 void Image::copyPixels(unsigned short x, unsigned short y, unsigned short width, unsigned short height, char *raw) {
 	
@@ -248,11 +361,11 @@ bool Image::load(char* data, unsigned int size) {
 				case PNG_COLOR_TYPE_GRAY_ALPHA:
 					switch (bitDepth) {
 						case 8:
-							this->type = TYPE::MONO_ALPHA_8;
+							this->type = TYPE::ALPHA_8;
 							rowSize = ((this->width+3)&~3);
 							break;
 						case 16:
-							this->type = TYPE::MONO_ALPHA_16;
+							this->type = TYPE::ALPHA_16;
 							rowSize = ((this->width*2+3)&~3);
 							break;
 					} break;
@@ -376,7 +489,7 @@ int TextureToUpdateTask::processExecute() {
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, NULL );
+			glTexImage2D( GL_TEXTURE_2D, 0, _tex->internalType, _tex->width, _tex->height, 0, _tex->format, _tex->type, NULL );
 			if (_tex->rects.size>0) {
 				glGenTextures( 1, &_tex->rectGLID );
 				if (_tex->rectGLID==0) return false;
@@ -398,7 +511,7 @@ int TextureToUpdateTask::processExecute() {
 			} 
 		}else{
 			glBindTexture( GL_TEXTURE_2D, _tex->GLID );
-			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, NULL );
+			glTexImage2D( GL_TEXTURE_2D, 0, _tex->internalType, _tex->width, _tex->height, 0, _tex->format, _tex->type, NULL );
 			if (_tex->rects.size>0) {
 				glGenTextures( 1, &_tex->rectGLID );
 				if (_tex->rectGLID==0) return false;
@@ -425,22 +538,32 @@ int TextureToUpdateTask::processExecute() {
 		switch (_tex->img->type) {
 			case Image::RGBA_32:
 				_tex->format = GL_RGBA;
+				_tex->internalType = GL_RGBA8;
 				_tex->type = GL_UNSIGNED_BYTE;
 				break;
 			case Image::BGRA_32:
 				_tex->format = GL_BGRA;
+				_tex->internalType = GL_BGRA;
 				_tex->type = GL_UNSIGNED_BYTE;
 				break;
 			case Image::RGB_24:
 				_tex->format = GL_RGB;
+				_tex->internalType = GL_RGB;
 				_tex->type = GL_UNSIGNED_BYTE;
 				break;
 			case Image::BGR_24:
 				_tex->format = GL_BGR;
+				_tex->internalType = GL_BGR;
 				_tex->type = GL_UNSIGNED_BYTE;
 				break;
 			case Image::MONO_8:
+				_tex->format = GL_INTENSITY;
+				_tex->internalType = GL_INTENSITY;
+				_tex->type = GL_UNSIGNED_BYTE;
+				break;
+			case Image::ALPHA_8:
 				_tex->format = GL_ALPHA;
+				_tex->internalType = GL_ALPHA;
 				_tex->type = GL_UNSIGNED_BYTE;
 				break;
 		}
@@ -454,7 +577,7 @@ int TextureToUpdateTask::processExecute() {
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, _tex->img->raw );
+			glTexImage2D( GL_TEXTURE_2D, 0, _tex->internalType, _tex->width, _tex->height, 0, _tex->format, _tex->type, _tex->img->raw );
 			if (_tex->rects.size>0) {
 				glGenTextures( 1, &_tex->rectGLID );
 				if (_tex->rectGLID==0) return false;
@@ -476,7 +599,7 @@ int TextureToUpdateTask::processExecute() {
 			} 
 		}else{
 			glBindTexture( GL_TEXTURE_2D, _tex->GLID );
-			glTexImage2D( GL_TEXTURE_2D, 0, _tex->format, _tex->width, _tex->height, 0, _tex->format, _tex->type, _tex->img->raw );
+			glTexImage2D( GL_TEXTURE_2D, 0, _tex->internalType, _tex->width, _tex->height, 0, _tex->format, _tex->type, _tex->img->raw );
 			if (_tex->rects.size>0) {
 				glGenTextures( 1, &_tex->rectGLID );
 				if (_tex->rectGLID==0) return false;

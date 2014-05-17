@@ -16,7 +16,18 @@ OpenGL::OPENGL_VER OpenGL::ver;
 vector<OpenGL::viewport> OpenGL::viewportBuffer;
 vector<Matrix3D> OpenGL::viewMatrixBuffer;
 int OpenGL::init(OPENGL_VER ver) {
-	glewInit();
+	if (glewInit() != GLEW_OK) {
+		puts("glewInit ERROR;");
+	}
+	if (GLEW_VERSION_1_1) {
+		puts("GLEW_VERSION_1_1");
+	}
+	if (GLEW_VERSION_3_3) {
+		puts("GLEW_VERSION_3_3");
+	}
+	if (GLEW_VERSION_4_0) {
+		puts("GLEW_VERSION_4_0");
+	}
 	OpenGL::ver = ver;
 	viewport vp;
 	vp.x = 0;
@@ -289,15 +300,12 @@ void ShaderSVGmain::init() {
 }
 
 ShaderFPrimitiv* ShaderFPrimitiv::prog = nullptr;
-ShaderFPrimitiv::ShaderFPrimitiv() :GLShader(ShaderFPrimitiv::CRC32) {
+ShaderFPrimitiv::ShaderFPrimitiv() :ShaderShRect(ShaderFPrimitiv::CRC32) {
 	
 }
 void ShaderFPrimitiv::init() {
-	this->position = glGetAttribLocation(this->shaderProgram, "position");
+	this->ShaderShRect::init();
 	this->fillColor = glGetUniformLocation(this->shaderProgram, "fillColor");
-	this->grShaderData = glGetUniformBlockIndex(this->shaderProgram, "grShaderData");
-	glUniformBlockBinding(this->shaderProgram, this->grShaderData, 1);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 1, OpenGL::grShaderData, 0, 4*4*sizeof(float));
 }
 
 ShaderF3D* ShaderF3D::prog = nullptr;
@@ -391,8 +399,7 @@ void ShaderBW::init33() {
 			"EndPrimitive();"
 		"}";
 	ShaderBW::prog = sh;
-	GLShaderLoadTask *task = new GLShaderLoadTask(sh, vrsh, frsh, gmsh);
-	Windows::window->eachFrame.addTask(task, 0);
+	Windows::window->eachFrame.addTask(new GLShaderLoadTask(sh, vrsh, frsh, gmsh));
 }
 
 
@@ -411,6 +418,8 @@ int GLShaderLoadTask::processExecute() {
 	if (this->fsLength==0) this->fsLength = strlen(this->fs);
 	if (this->vsLength==0) this->vsLength = strlen(this->vs);
 	if (this->gs!=nullptr && this->gsLength==0) this->gsLength = strlen(this->gs);
+	
+	GLint vsLength = (GLint)this->vsLength, gsLength = (GLint)this->gsLength, fsLength = (GLint)this->fsLength;
 	GLint success;
 	this->shader->shaderProgram = glCreateProgram();
 	this->shader->vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -498,12 +507,14 @@ void GLShaderLoad::loading(const EventFileLoad* e) {
 		sh->fsLength = e->file->size;
 	}
 	if (sh->gsLoad) {
-		if (sh->vs!=nullptr && sh->gs!=nullptr && sh->fs!=nullptr) {
+		if (sh->vs!=nullptr && sh->gs!=nullptr && sh->fs!=nullptr &&
+			sh->vsLength>0 && sh->gsLength>0 && sh->fsLength>0) {
 			Windows::window->eachFrame.addTask( new GLShaderLoadTask(sh->shader, sh->vs, sh->fs, sh->gs, sh->vsLength, sh->fsLength, sh->gsLength) );
 			delete sh;
 		}
 	}else{
-		if (sh->vs!=nullptr && sh->fs!=nullptr) {
+		if (sh->vs!=nullptr && sh->fs!=nullptr &&
+			sh->vsLength>0 && sh->fsLength>0) {
 			Windows::window->eachFrame.addTask( new GLShaderLoadTask(sh->shader, sh->vs, sh->fs, nullptr, sh->vsLength, sh->fsLength, 0) );
 			delete sh;
 		}

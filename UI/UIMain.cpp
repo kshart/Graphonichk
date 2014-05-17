@@ -190,13 +190,13 @@ void UIUnit::resize(unsigned short w, unsigned short h) {
 }
 ShapeGroupRect* UIUnit::getRect() {
 	ShapeGroupRect *dir = new ShapeGroupRect();
-	FRect *rect = new FRect(this->scaledWidth-2, this->scaledHeight-2, 0xFF00FFFF);
+	FRect *rect = new FRect(this->scaledWidth-2, this->scaledHeight-2, ubvec4(99, 0xFF, 0, 0xFF));
 	rect->setPosition(this->globalx+1, this->globaly+1);
 	dir->addChild(rect);
 	return dir;
 }
 void UIUnit::getRect(ShapeGroupRect *dir) {
-	FRect *rect = new FRect(this->scaledWidth-2, this->scaledHeight-2, 0xFF686868);
+	FRect *rect = new FRect(this->scaledWidth-2, this->scaledHeight-2, ubvec4(22, 0xFF, 0, 0xFF));
 	rect->setPosition(this->globalx+1, this->globaly+1);
 	dir->addChild(rect);
 }
@@ -291,8 +291,8 @@ void ScrollBarWmouseMove (const EventMouse *e) {
 }
 
 UIScrollBarH::UIScrollBarH(unsigned short w, unsigned short h) :ShapeGroupRect(UIScrollBarH::CRC32) {
-	this->pad = new FRect(w, h, 0xFF0000FF);
-	this->bar = new FRect(w, 60, 0xFFFF0000);
+	this->pad = new FRect(w, h, ubvec4(0xFF, 0, 0, 0xFF));
+	this->bar = new FRect(w, 60, ubvec4(0, 0xFF, 0, 0xFF));
 	this->addChild(this->pad);
 	this->addChild(this->bar);
 	this->scrollStarted = false;
@@ -306,8 +306,8 @@ UIScrollBarH::UIScrollBarH(unsigned short w, unsigned short h) :ShapeGroupRect(U
 	#endif
 }
 UIScrollBarW::UIScrollBarW(unsigned short w, unsigned short h) :ShapeGroupRect(UIScrollBarW::CRC32) {
-	this->pad = new FRect(w, h, 0xFF0000FF);
-	this->bar = new FRect(60, h, 0xFFFF0000);
+	this->pad = new FRect(w, h, ubvec4(0xFF, 0, 0, 0xFF));
+	this->bar = new FRect(60, h, ubvec4(0, 0xFF, 0, 0xFF));
 	this->addChild(this->pad);
 	this->addChild(this->bar);
 	this->scrollStarted = false;
@@ -508,7 +508,7 @@ UITable::UITable(unsigned short w, unsigned short h, vector<unsigned short> *col
 	this->rowsHeight = 30;
 	this->setRect(w, h);
 	this->viewPosition = 0.0f;
-	this->background = new FRect(w, h, 0xFF333333);
+	this->background = new FRect(w, h, ubvec4(33, 33, 33, 0xFF));
 	if (columnsWidth==NULL) return;
 	for(int i=0; i<columnsWidth->size(); i++) {
 		this->columnsWidth.push_back(columnsWidth->at(i));
@@ -548,7 +548,7 @@ void UITable::updateRows() {
 	
 	//(unsigned short)
 	while (i<this->columnsWidth.size()) {
-		r1 = new FRect(this->columnsWidth[i], this->getHeight(), 0xFF555555);
+		r1 = new FRect(this->columnsWidth[i], this->getHeight(), ubvec4(55, 55, 55, 0xFF));
 		r1->setPosition(xx, 0);
 		xx+=this->columnsWidth[i]+this->columnsWidth[i+1];
 		this->addChild(r1);
@@ -557,7 +557,7 @@ void UITable::updateRows() {
 	//int y;
 	for (int i=startPos; i<stopPos; i++) {
 		row = this->rows[i];
-		r1 = new FRect(this->getWidth()-4, this->rowsHeight-4, 0xFF222222);
+		r1 = new FRect(this->getWidth()-4, this->rowsHeight-4, ubvec4(55, 55, 0, 55));
 		r1->setPosition(2, i*this->rowsHeight-offsetY+2);
 		this->addChild(r1);
 		row->columnsUpdate(0, i*this->rowsHeight-offsetY);
@@ -595,7 +595,7 @@ UITableDirectory::UITableDirectory(unsigned short w, unsigned short h, vector<un
 	this->rowsHeight = 30;
 	this->setRect(w, h);
 	this->viewPosition = 0.0f;
-	this->background = new FRect(w, h, 0xFF333333);
+	this->background = new FRect(w, h, ubvec4(33, 33, 33, 0xFF));
 	if (columnsWidth==NULL) return;
 	for(int i=0; i<columnsWidth->size(); i++) {
 		this->columnsWidth.push_back(columnsWidth->at(i));
@@ -629,7 +629,7 @@ void UITableDirectory::setPos(float n) {
 	if (startPos>this->rows.size()) startPos=0;
 	if (stopPos>this->rows.size()) stopPos=this->rows.size();
 	while (i<this->columnsWidth.size()) {
-		r1 = new FRect(this->columnsWidth[i], this->getHeight(), 0xFF555555);
+		r1 = new FRect(this->columnsWidth[i], this->getHeight(), ubvec4(55, 55, 55, 0xFF));
 		r1->setPosition(xx, 0);
 		xx+=this->columnsWidth[i]+this->columnsWidth[i+1];
 		this->addChild(r1);

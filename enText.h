@@ -44,7 +44,7 @@ namespace Graphonichk {
 		short lineHeight = __SHRT_MAX__;
 		unsigned short tabSize = 4;
 		unsigned short whiteSpace = __SHRT_MAX__;
-		argb textDecorationColor;
+		ubvec4 textDecorationColor;
 		/*void
 			hyphens,
 			textAlign,

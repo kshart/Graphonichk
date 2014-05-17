@@ -37,13 +37,13 @@ namespace Graphonichk {
 			PALETTE_2,
 			PALETTE_4,
 			PALETTE_8,
-			MONO_ALPHA_8,
-			MONO_ALPHA_16,
 			MONO_1,
 			MONO_2,
 			MONO_4,
 			MONO_8,
-			MONO_16
+			MONO_16,
+			ALPHA_8,
+			ALPHA_16,
 		};
 		enum EXT:char {
 			EXT_NC,
@@ -53,6 +53,7 @@ namespace Graphonichk {
 		Image(unsigned short width, unsigned short height, TYPE type, char *raw);
 		Image(char *data, unsigned int size);
 		Image(string path);
+		int convert(TYPE type);
 		void copyPixels(unsigned short x, unsigned short y, unsigned short width, unsigned short height, char *raw);
 		string name;
 		unsigned short width, height;
@@ -76,7 +77,7 @@ namespace Graphonichk {
 		};
 		Texture(string path, unsigned short rectCount=0, usvec4 *rect=nullptr);
 		Texture(Image *img, unsigned short rectCount=0, usvec4 *rect=nullptr);
-		Texture(unsigned short w, unsigned short h, GLuint format, GLuint type, unsigned short rectCount=0, usvec4 *rect=nullptr);
+		Texture(unsigned short w, unsigned short h, GLuint internalType, GLuint format, GLuint type, unsigned short rectCount=0, usvec4 *rect=nullptr);
 		~Texture();
 		
 		Image *getImage();
@@ -87,9 +88,9 @@ namespace Graphonichk {
 		Image *img;
 		Array<usvec4> rects;
 		unsigned short width, height;
-		GLuint format, type, GLID, rectGLID;
+		GLuint format, type, internalType, GLID, rectGLID;
 		
-		static Texture* getTexture(unsigned short w, unsigned short h, GLuint format, GLuint type, unsigned short rectCount=0, usvec4 *rect=nullptr);
+		static Texture* getTexture(unsigned short w, unsigned short h, GLuint format, GLuint internalType, GLuint type, unsigned short rectCount=0, usvec4 *rect=nullptr);
 	};
 	
 	class TextureToUpdateTask :public EachFrameTask {

@@ -5,8 +5,13 @@ layout (max_vertices = 4) out;
 layout(shared) uniform grShaderData {
 	mat4 viewMatrixValue;
 };
+
+in VertexData {
+	vec4 rect;
+} VertexIn[];
+
 void main () {
-	vec4 Pos = gl_in[0].gl_Position.xyzw;
+	vec4 Pos = VertexIn[0].rect;
 	gl_Position = vec4(Pos.x, Pos.y, 0.0, 1.0)*viewMatrixValue;
 	EmitVertex();
 	

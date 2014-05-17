@@ -39,9 +39,9 @@ namespace Graphonichk {
 	class GLShaderLoad {
 	private:
 		GLShader *shader;
-		bool vsLoad, gsLoad, fsLoad;
-		GLchar *vs, *gs, *fs;
-		GLint fsLength, vsLength, gsLength;
+		bool vsLoad = false, gsLoad = false, fsLoad = false;
+		GLchar *vs = nullptr, *gs = nullptr, *fs = nullptr;
+		GLint fsLength = 0, vsLength = 0, gsLength = 0;
 	public:
 		GLShaderLoad(GLShader *sh, string vs, string gs, string fs);
 		static void loading(const EventFileLoad* e);
@@ -54,8 +54,8 @@ namespace Graphonichk {
 		GLint posRect, grShaderData;
 		
 		friend GLShaderLoadTask;
-		virtual void mapping();
-		virtual void init();
+		virtual void mapping() override;
+		virtual void init() override;
 	};
 	class ShaderBitmap :public ShaderShRect {
 	public:
@@ -66,7 +66,7 @@ namespace Graphonichk {
 		GLint texture;
 		
 		friend GLShaderLoadTask;
-		void init();
+		void init() override;
 	};
 	class ShaderBitmapAtlas :public ShaderShRect {
 	public:
@@ -80,7 +80,7 @@ namespace Graphonichk {
 			attrRectID = -1;
 		
 		friend GLShaderLoadTask;
-		void init();
+		void init() override;
 	};
 	class ShaderPartRect :public ShaderShRect {
 	public:
@@ -91,7 +91,7 @@ namespace Graphonichk {
 		GLint texture, coordRect, rectID, offset;
 		
 		friend GLShaderLoadTask;
-		void init();
+		void init() override;
 	};
 	class ShaderSVGmain :public GLShader {
 	public:
@@ -102,18 +102,18 @@ namespace Graphonichk {
 		GLint position, fillColor, typeShape, circleTransform, grShaderData, transformMatrix;
 		
 		friend GLShaderLoadTask;
-		void init();
+		void init() override;
 	};
-	class ShaderFPrimitiv :public GLShader {
+	class ShaderFPrimitiv :public ShaderShRect {
 	public:
 		enum {CRC32=0x5123};
 		ShaderFPrimitiv();
 		static ShaderFPrimitiv* prog;
 		
-		GLint position, fillColor, grShaderData;
+		GLint fillColor;
 		
 		friend GLShaderLoadTask;
-		void init();
+		void init() override;
 	};
 	class ShaderF3D :public GLShader {
 	public:
@@ -124,7 +124,7 @@ namespace Graphonichk {
 		GLint position, fillColor, transformMatrix, grShaderData;
 		
 		friend GLShaderLoadTask;
-		void init();
+		void init() override;
 	};
 	class ShaderPost :public GLShader {
 	public:
@@ -135,7 +135,7 @@ namespace Graphonichk {
 		GLint texture, grShaderData;
 		
 		friend GLShaderLoadTask;
-		void init();
+		void init() override;
 	};
 	class ShaderBW :public GLShader {
 	public:
@@ -148,7 +148,7 @@ namespace Graphonichk {
 		GLint texture, grShaderData;
 		
 		friend GLShaderLoadTask;
-		void init();
+		void init() override;
 	};
 	class OpenGL {
 	  public:
@@ -185,8 +185,8 @@ namespace Graphonichk {
 		GLShaderLoadTask(GLShader* sh, const GLchar *vs, const GLchar *fs, const GLchar *gs=nullptr, size_t vsLength=0, size_t fsLength=0, size_t gsLength=0 );
 		int processExecute();
 		GLShader *shader;
-		const GLchar *vs, *fs, *gs;
-		GLint fsLength, vsLength, gsLength;
+		const GLchar *vs = nullptr, *fs = nullptr, *gs = nullptr;
+		size_t fsLength = 0, vsLength = 0, gsLength = 0;
 	};
 };
 

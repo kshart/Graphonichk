@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <GL/glew.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

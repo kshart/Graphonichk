@@ -1,4 +1,6 @@
 //add gcc -mno-ms-bitfields
+//add make -lxml2 -ljpeg -lpng16 -lfreetype -ldinput -ldxguid -lgdi32 -glew32s -lopengl32 
+//define WIN32 GLEW_STATIC
 #ifndef GRBASETYPES_H
 #define	GRBASETYPES_H
 
@@ -6,6 +8,7 @@
 	#include <dinput.h>
 	#include <windows.h>
 	#include <windowsx.h>
+	#include <GL/glew.h>
 	#include <GL/wglext.h>
 	#include <GL/glext.h>
 
@@ -346,18 +349,24 @@ namespace Graphonichk {
 	};
 	
 	typedef _vec2<float> vec2;
+	typedef _vec2<char> bvec2;
+	typedef _vec2<unsigned char> ubvec2;
 	typedef _vec2<short> svec2;
 	typedef _vec2<unsigned short> usvec2;
 	typedef _vec2<int> ivec2;
 	typedef _vec2<unsigned int> uivec2;
 	
 	typedef _vec3<float> vec3;
+	typedef _vec3<char> bvec3;
+	typedef _vec3<unsigned char> ubvec3;
 	typedef _vec3<short> svec3;
 	typedef _vec3<unsigned short> usvec3;
 	typedef _vec3<int> ivec3;
 	typedef _vec3<unsigned int> uivec3;
 	
 	typedef _vec4<float> vec4;
+	typedef _vec4<char> bvec4;
+	typedef _vec4<unsigned char> ubvec4;
 	typedef _vec4<short> svec4;
 	typedef _vec4<unsigned short> usvec4;
 	typedef _vec4<int> ivec4;
@@ -453,36 +462,6 @@ namespace Graphonichk {
 		//id
 		//item
 	} sdTypeImg;
-	
-	typedef union {
-		struct {
-			uint8_t b;
-			uint8_t g;
-			uint8_t r;
-			uint8_t a;
-		};
-		uint32_t color;
-	} argb;
-	typedef struct {
-		char r;
-		char g;
-		char b;
-	} rgb;
-	typedef union {
-		struct {
-			uint8_t r;
-			uint8_t g;
-			uint8_t b;
-			uint8_t a;
-		};
-		uint32_t color;
-	} abgr;
-	typedef struct {
-		uint8_t b;
-		uint8_t g;
-		uint8_t r;
-	} bgr;
-	typedef uint8_t monochrome;
 	
 	
 

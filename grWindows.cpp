@@ -92,8 +92,6 @@ Windows::Windows(short x, short y, short width, short height) :
 	
 	puts("<Windows message='start WIN32'/>");
 	Windows::window = this;
-	this->root = new ShapeMain();
-	this->root->chengeRect = false;
 	HANDLE semaphore = CreateSemaphore(NULL, 0, 1, NULL);
 	THREAD_START_H(this->winThread, Windows::threadWindow, &semaphore);
 	WaitForSingleObject(semaphore, INFINITE);
@@ -278,6 +276,8 @@ THREAD Windows::threadRender (void* sys) {
 	Screen::dpi = ( Screen::width/(float)GetDeviceCaps(win->hDC,HORZSIZE) )*25.4;
 	printf("<LCD res='%i %i' dpi='%f'/>\n", Screen::width, Screen::height, Screen::dpi );
 	OpenGL::init(OGL_VER);
+	win->root = new ShapeMain();
+	win->root->chengeRect = false;
 	win->resize(win->width, win->height);
 	ReleaseSemaphore(  *(HANDLE*)sys, 1, NULL);
 	
@@ -337,6 +337,12 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 				fprintf(stdout, "WndProc WM_DESTROY\n");
 				PostQuitMessage(0);
 				return 0;*/
+			case WM_CHAR:
+				eventKey = new EventKeyboard( EventKeyboard::CHAR_INPUT );
+				eventKey->charCode = wParam;
+				win->events.keyboard.callEvent(eventKey);
+				delete eventKey;
+				return 0;
 			case WM_KEYUP:
 				eventDKey = new EventDeviceKeyboard( EventDeviceKeyboard::DEVICE_KEYBOARD_UP );
 				Device::device->events.keyboard.callEvent(eventDKey);
@@ -354,6 +360,12 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 				win->events.keyboard.callEvent(eventKey);
 				delete eventDKey;
 				delete eventKey;
+				MSG message;
+				message.hwnd = hWnd;
+				message.message = msg;
+				message.wParam = wParam;
+				message.lParam = lParam;
+				TranslateMessage(&message);
 				return 0;
 			
 			case WM_MOUSEMOVE:

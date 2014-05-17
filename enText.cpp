@@ -63,7 +63,7 @@ TextFormat *TextFormat::defaultFormat = new TextFormat();
 
 
 TextFormat::TextFormat() {
-	this->textDecorationColor.color = 0x00FF00AA;
+	this->textDecorationColor = ubvec4(0, 0xFF, 0, 0xAA);
 }
 FontFace::FontFace(unsigned short size, size_t glyphCount) :size(size), arr(glyphCount) {
 }
@@ -148,7 +148,7 @@ bool Font::cached(unsigned short size) {
 		rectTexCoord[i].z = bmpRect.data[i].x+bmpRect.data[i].width;
 		rectTexCoord[i].w = bmpRect.data[i].y+bmpRect.data[i].height;
 	}
-	Image *img = new Image(2048, 2048, Image::MONO_8, imgRaw);
+	Image *img = new Image(2048, 2048, Image::ALPHA_8, imgRaw);
 	fface->tex = new Texture(img, glyphCount, rectTexCoord);
 	this->cache.push_back(fface);
 	delete rectTexCoord;
@@ -219,7 +219,7 @@ int TextFieldTask::processExecute() {
 						by += lineHeight;
 						break;
 					case ASCII_SPEC::TAB:
-						bx += spaceGlyph.horiAdvance * format->tabSize;
+						bx = ceil( ((float)bx)/(spaceGlyph.horiAdvance*format->tabSize))*spaceGlyph.horiAdvance*format->tabSize ;
 						break;
 				}
 				lastID = 0;
@@ -248,14 +248,13 @@ int TextFieldTask::processExecute() {
 					vec.position.w = fface->arr.data[id].bmpHeight;
 					vec.attrRectID = id;
 					vertexs.push_back(vec);
-					//vertexsRectID.push_back(id);
 					bx+=fface->arr.data[id].horiAdvance;
 					if (vec.position.x < minX) minX = vec.position.x;
 					if (vec.position.y < minY) minY = vec.position.y;
 					if (vec.position.x+fface->arr.data[id].bmpWidth > maxX) maxX = vec.position.x+fface->arr.data[id].bmpWidth;
 					if (vec.position.y+fface->arr.data[id].bmpHeight > maxY) maxY = vec.position.y+fface->arr.data[id].bmpHeight;
 				}else{
-					int v1 = fface->arr.data[lastID].horiBearingX + fface->arr.data[lastID].width/2 - fface->arr.data[lastID].horiAdvance;
+					//int v1 = fface->arr.data[lastID].horiBearingX + fface->arr.data[lastID].width/2 - fface->arr.data[lastID].horiAdvance;
 					//glRasterPos2s(bx+f->cache[0].arr[id].horiBearingX+v1, by - f->cache[0].arr[lastID].horiBearingY - f->cache[0].arr[id].height );
 						//glRasterPos2s(bx+fface->arr->data[id].horiBearingX+v1, by-fface->arr->data[lastID].horiBearingY - fface->arr->data[id].height );
 						//glDrawPixels(fface->arr->data[id].bmpWidth, fface->arr->data[id].bmpHeight, GL_ALPHA, GL_UNSIGNED_BYTE, fface->arr->data[id].bmp);
@@ -265,8 +264,14 @@ int TextFieldTask::processExecute() {
 		text->_symvolCount = vertexs.size();
 		text->setRect(maxX-minX, maxY-minY);
 		text->setAligment(text->position);
-		text->tex = Texture::getTexture(text->width, text->height, GL_ALPHA, GL_UNSIGNED_BYTE);
-		if (text->tex==nullptr) return false;
+		if (text->tex==nullptr) {
+			text->tex = Texture::getTexture(text->width, text->height, GL_ALPHA, GL_ALPHA, GL_UNSIGNED_BYTE);
+			if (text->tex==nullptr) return false;
+		}else{
+			glBindTexture(GL_TEXTURE_2D, text->tex->GLID);
+			glTexImage2D( GL_TEXTURE_2D, 0, text->tex->internalType, text->width, text->height, 0, text->tex->format, text->tex->type, NULL );
+		}
+		
 		
 		
 		GLuint buffer, bvao, bvbo;
@@ -279,6 +284,7 @@ int TextFieldTask::processExecute() {
 			puts("FBO set up successfully. Yay!\n");
 		}else{
 			printf("FBO set up error %i.\n", glGetError());
+			return false;
 		}
 		
 		Matrix3D mtr = Matrix3D::ViewOrtho(minX, maxX, maxY, minY, -1, 1);
@@ -288,8 +294,6 @@ int TextFieldTask::processExecute() {
 		OpenGL::setViewMatrix(mtr);
 		
 		SET_SHADER(ShaderBitmapAtlas);
-		glGetError();
-		
 		glGenVertexArrays(1, &bvao);
 		glBindVertexArray(bvao);
 		
@@ -305,22 +309,20 @@ int TextFieldTask::processExecute() {
 		glBindTexture(GL_TEXTURE_2D, fface->tex->GLID);
 		glBindTexture(GL_TEXTURE_1D, fface->tex->rectGLID);
 		//glDrawArrays(GL_POINTS, 0, text->_symvolCount);
-		glUniform1i(ShaderBitmapAtlas::prog->rectID, -1);
+		//glUniform1i(ShaderBitmapAtlas::prog->rectID, -1);
 		for (int i=0; i<text->_symvolCount; i++) {
 			
-			//glUniform1i(ShaderBitmapAtlas::prog->rectID, vertexs[i].attrRectID);
+			glUniform1i(ShaderBitmapAtlas::prog->rectID, vertexs[i].attrRectID);
 			glDrawArrays(GL_POINTS, i, 1);
 		}
 		//printf("ShaderBitmapAtlas::prog->attrRectID %i %i %i %i\n", ShaderBitmapAtlas::prog->attrRectID, ShaderShRect::POSITION, ShaderBitmapAtlas::prog->attrRectID, glGetError());
-		//glDeleteVertexArrays(1, &bvao);
-		//glDeleteBuffers(1, &bvbo);
+		glDeleteVertexArrays(1, &bvao);
+		glDeleteBuffers(1, &bvbo);
 		
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glDeleteFramebuffers(1, &buffer);
 		OpenGL::popViewMatrix();
 		OpenGL::popViewport();
-		
-		printf("TextCached %i\\ %i %i %i %i\n", text->_symvolCount, minX, minY, text->width, text->height);
 	}
 }
 TextField::TextField(unsigned short w, unsigned short h) :ShapeRect(0), _tf(TextFormat::defaultFormat) {

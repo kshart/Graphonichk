@@ -62,7 +62,7 @@ namespace Graphonichk {
 	protected:
 		bool _toUpdate;
 		svec2 offset, global, local;
-		unsigned short width, height;
+		unsigned short width = 0, height = 0;
 		friend class ShapeGroupRect;
 		ShapeRect(int crc32);
 	public:
@@ -86,13 +86,13 @@ namespace Graphonichk {
 		svec4 getBox() const;
 		virtual void trace();
 		virtual void updateGlobalPosition();
-		ShapeGroupRect* parent;
-		GLuint vao, vboRect;
-		bool visible;
+		ShapeGroupRect* parent = nullptr;
+		GLuint vao = 0, vboRect = 0;
+		bool visible = true;
 		string name;
 		
-		bool mouseEventActive;
-		bool mouseEventRollOver;
+		bool mouseEventActive = false;
+		bool mouseEventRollOver = false;
 		
 		virtual int saveAsXML(FILE *str, unsigned short tab=0);
 		virtual int addEventHandler( int type, void(*)(const EventMouseShape*));
@@ -123,7 +123,6 @@ namespace Graphonichk {
 		virtual void updateRect();
 		
 		virtual int renderGL100() override;
-		//virtual int renderGL400() override;
 		virtual int renderGL330() override;
 		//virtual int renderGL210() override;
 		
@@ -135,13 +134,11 @@ namespace Graphonichk {
 		virtual ShapeRect* globalHitTest(short x, short y) override;
 		virtual int callEvent(EventMouseShape *e) override;
 		
-		GLuint totalShapeVertexInit;
 		vector<ShapeRect*> child;
-		vector<ShapeRect*> *shapeCache;
-		//Windows *window;
-		bool chengeRect;
-		bool cutTheRect;
-		unsigned int totalShape, totalDir;
+		vector<ShapeRect*> *shapeCache = nullptr;
+		bool chengeRect = true;
+		bool cutTheRect = false;
+		unsigned int totalShape = 0, totalDir = 0;
 		#ifdef WIN32
 			HANDLE addChildLock;
 		#endif
@@ -198,9 +195,9 @@ namespace Graphonichk {
 		//friend class ShapeGroupRect;
 	public:
 		static float constexpr
-			BACK_COLOR_R=50.0f/255.0f,
-			BACK_COLOR_G=210.0f/255.0f,
-			BACK_COLOR_B=250.0f/255.0f;
+			BACK_COLOR_R = 90.0f/255.0f,
+			BACK_COLOR_G = 210.0f/255.0f,
+			BACK_COLOR_B = 79.0f/255.0f;
 		enum {CRC32=0xC489C679};
 		ShapeMain();
 		void setRect(short w, short h) override;
@@ -217,6 +214,7 @@ namespace Graphonichk {
 	public:
 		ShapeMainInitTask(ShapeMain *sh) :sh(sh) {}
 		int processExecute() {
+			puts(">>>>>>>>>>>>ShapeMainInitTask");
 			if (this->sh->frameBuffer.color->GLID==0 || this->sh->frameBuffer.depth->GLID==0) return false;
 			svec2 rect = this->sh->getRect();
 			glGenVertexArrays(1, &this->sh->frameBuffer.vao);
@@ -265,10 +263,10 @@ namespace Graphonichk {
 	class FPoint :public ShapeRect {
 	  public:
 		enum {CRC32=0xD88563EF};
-		FPoint(int, uint32_t);
+		FPoint(int, ubvec4);
 		int renderGL100() override;
 		int radius;
-		argb color;
+		ubvec4 color;
 	};
 	class FLines :public ShapeRect {
 	public:
@@ -279,20 +277,19 @@ namespace Graphonichk {
 			svec2 p1, p2;
 		} Segment;
 		enum {CRC32=0x20211C5D};
-		FLines(Segment *sgs, short length, short lineWidth, argb color);
+		FLines(Segment *sgs, short length, short lineWidth, ubvec4 color);
 		int renderGL100() override;
 		short lineWidth;
-		argb color;
+		ubvec4 color;
 		Array<Segment> segments;
 	};
 	class FRect :public ShapeRect {
 	  public:
 		enum {CRC32=0x27311957};
-		FRect(short width, short height, uint32_t backgroundColor);
+		FRect(short width, short height, ubvec4 backgroundColor);
 		int renderGL100() override;
 		int renderGL330() override;
-		argb backgroundColor;
-		GLuint vao, vbo;
+		ubvec4 backgroundColor;
 	};
 	class Model3D;
 	

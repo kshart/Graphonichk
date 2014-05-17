@@ -39,11 +39,13 @@ namespace Graphonichk {
 	  public:
 		enum :int{
 			KEY_DOWN,
-			KEY_UP
+			KEY_UP,
+			CHAR_INPUT
 		};
 		EventKeyboard(int type);
 		bool ctrlKey, shiftKey, altKey;
 		char keyCode;
+		int charCode;
 	};
 	class EventMouse :public Event {
 	  public:
