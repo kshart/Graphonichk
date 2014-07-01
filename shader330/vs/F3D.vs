@@ -1,4 +1,4 @@
-//#version 330 core
+#version 330 core
 layout(shared) uniform grShaderData {
 	mat4 viewMatrixValue;
 };

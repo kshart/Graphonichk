@@ -7,11 +7,10 @@ using namespace std;
 namespace Graphonichk {
 	class FileLoad;
 	class EventFileLoad;
-	//template<class TEvent> class EventDispatcher;//handler
 	template class EventDispatcher<EventFileLoad>;
 	class EventFileLoad :public Event {
 	  public:
-		enum :int{
+		enum :int {
 			FILE_SUCCESS,
 			FILE_ERROR,
 			FILE_PROCESS
@@ -36,8 +35,6 @@ namespace Graphonichk {
 			FILE_NOT_FOUND,
 			READ_FILE_ERROR
 		};
-		//void trace();
-		
 		STATUS status;
 		unsigned long int size, progres;
 		void *data;
@@ -45,6 +42,15 @@ namespace Graphonichk {
 		static vector<FileLoad*> buffer;
 		static void init();
 		static void trace();
+	};
+	
+	class FileResource {
+	private:
+		//void* type;
+	public:
+		//void* hash, size;
+		string name;
+		
 	};
 }
 

@@ -248,28 +248,90 @@ THREAD Windows::threadRender (void* sys) {
 		return 0;
 	}
 	if (!(hRCTemp = wglCreateContext(win->hDC)) || !wglMakeCurrent(win->hDC, hRCTemp)) {
-		printf("<Error str='Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р Р†РІР‚С›РЎС›Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р В РІР‚В Р В Р’В Р Р†Р вЂљРЎв„ўР В Р вЂ Р Р†Р вЂљРЎвЂєР РЋРЎвЂєР В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р Р†РІР‚С›РЎС›Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р Р†РІР‚С›РЎС›Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В РІР‚в„ўР вЂ™Р’В Р В Р’В Р Р†Р вЂљРІвЂћСћР В РІР‚в„ўР вЂ™Р’В Р В Р’В Р вЂ™Р’В Р В Р’В Р Р†Р вЂљР’В Р В Р’В Р вЂ™Р’В Р В Р вЂ Р В РІР‚С™Р РЋРІвЂћСћР В Р’В Р В РІР‚В Р В Р вЂ Р В РІР‚С™Р РЋРІР‚С”Р В Р вЂ Р В РІР‚С™Р Р†Р вЂљРЎС™reating temp render context fail (%d)'/>\n", GetLastError());
+		printf("<Error str='reating temp render context fail (%d)'/>\n", GetLastError());
 		return 0;
 	}
-	/*
+	
+	
+	/*pfd = {
+			sizeof(PIXELFORMATDESCRIPTOR),				// Size Of This Pixel Format Descriptor
+			1,											// Version Number
+			PFD_DRAW_TO_WINDOW |						// Format Must Support Window
+			PFD_SUPPORT_OPENGL |						// Format Must Support OpenGL
+			PFD_DOUBLEBUFFER,							// Must Support Double Buffering
+			PFD_TYPE_RGBA,								// Request An RGBA Format
+			32,											// Select Our Color Depth
+			0, 0, 0, 0, 0, 0,							// Color Bits Ignored
+			8,											// 8-bit alpha
+			0,											// Shift Bit Ignored
+			0,											// No Accumulation Buffer
+			0, 0, 0, 0,									// Accumulation Bits Ignored
+			24,											// 24Bit Z-Buffer (Depth Buffer)  
+			8,											// 8-bit Stencil Buffer
+			0,											// No Auxiliary Buffer
+			PFD_MAIN_PLANE,								// Main Drawing Layer
+			0,											// Reserved
+			0, 0, 0										// Layer Masks Ignored
+		};
+	int pixelFormat=0;
+    bool valid;
+    UINT numFormats = 0;
+	float fAttributes[] = {0,0};
 	int attributes[] = {
-		WGL_CONTEXT_MAJOR_VERSION_ARB,	3,
-		WGL_CONTEXT_MINOR_VERSION_ARB,	3,
-		//WGL_CONTEXT_FLAGS_ARB,         WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
-        //WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,//WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-		0};
-	OPENGL_GET_PROC(PFNWGLCREATECONTEXTATTRIBSARBPROC, wglCreateContextAttribsARB);
+		WGL_SUPPORT_OPENGL_ARB, 1, // Must support OGL rendering
+		WGL_DRAW_TO_WINDOW_ARB, 1, // pf that can run a window
+		WGL_ACCELERATION_ARB,   1, // must be HW accelerated
+		WGL_COLOR_BITS_ARB,     24, // 8 bits of each R, G and B
+		WGL_DEPTH_BITS_ARB,     16, // 16 bits of depth precision for window
+		WGL_DOUBLE_BUFFER_ARB,  GL_TRUE, // Double buffered context
+		WGL_SAMPLE_BUFFERS_ARB, GL_TRUE, // MSAA on
+		WGL_SAMPLES_ARB,        8, // 8x MSAA 
+		WGL_PIXEL_TYPE_ARB,      WGL_TYPE_RGBA_ARB, // pf should be RGBA type
+		0}; // NULL termination};
+	const int cca_list[] = {
+		0,0,
+        WGL_CONTEXT_MAJOR_VERSION_ARB,  3,
+	    WGL_CONTEXT_MINOR_VERSION_ARB,  3,
+	    WGL_CONTEXT_FLAGS_ARB,          WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+	    WGL_CONTEXT_PROFILE_MASK_ARB,   WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
+        0,0
+    };
+	PFNWGLGETPIXELFORMATATTRIBIVARBPROC wglGetPixelFormatAttribivARB = (PFNWGLGETPIXELFORMATATTRIBIVARBPROC)wglGetProcAddress("wglGetPixelFormatAttribivARB");
+	PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)wglGetProcAddress("wglChoosePixelFormatARB");
+	PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
+	valid = wglChoosePixelFormatARB(win->hDC, attributes, fAttributes, 1, &pixelFormat, &numFormats);
+	
+	int attrib[] = { WGL_SAMPLES_ARB };
+	int nResults = 0;
+	bool resas = wglGetPixelFormatAttribivARB(win->hDC, pixelFormat, 0, 1, attrib, &nResults);
+	printf("valid %i %i %i %i %i %i %i\n", valid, pixelFormat, format, numFormats, nResults, resas, GetPixelFormat(win->hDC) );
+	printf("1 (%d)\n", GetLastError());
+	if ( !valid ) {
+		MessageBox( NULL, "Invalid Pixel Format", "Error! (SetupWGLPixelFormat)", MB_OK );
+		return false;
+	}
+	DescribePixelFormat(win->hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
+	format = ChoosePixelFormat(win->hDC, &pfd);
+	//DescribePixelFormat(win->hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
+	printf("2 (%d)\n", GetLastError());
+	SetPixelFormat (win->hDC, format, &pfd);
+	printf("valid %i %i %i %i %i %i %i\n", valid, pixelFormat, format, numFormats, nResults, resas, GetPixelFormat(win->hDC) );
+	printf("3 (%d)\n", GetLastError());
+	
+	
 	if (!wglCreateContextAttribsARB) {
 		printf("wglCreateContextAttribsARB fail (%d)\n", GetLastError());
 		return 0;
 	}
-	win->hRC = wglCreateContextAttribsARB(win->hDC, 0, attributes);
-	if (!win->hRC|| !wglMakeCurrent(win->hDC, win->hRC)) {
+	printf("4 (%d)\n", GetLastError());
+	win->hRC = wglCreateContextAttribsARB(win->hDC, 0, cca_list);
+	if (!win->hRC || !wglMakeCurrent(win->hDC, win->hRC)) {
 		printf("Creating render context fail (%d)\n", GetLastError());
 		return 0;
 	}
 	wglDeleteContext(hRCTemp);
-	*/
+	wglMakeCurrent(win->hDC, win->hRC);
+	printf("5 (%d)\n", GetLastError());*/
 	win->hRC = hRCTemp;
 	Screen::width = GetDeviceCaps(win->hDC,HORZRES);
 	Screen::height = GetDeviceCaps(win->hDC,VERTRES);

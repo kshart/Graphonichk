@@ -325,7 +325,7 @@ void ShaderF3D::init() {
 ShaderPost* ShaderPost::prog = nullptr;
 ShaderPost::ShaderPost() :GLShader(ShaderPost::CRC32) {}
 void ShaderPost::init() {
-	this->texture = glGetUniformLocation(this->shaderProgram, "texture");
+	this->texture = glGetUniformLocation(this->shaderProgram, "img");
 	glUniform1i(this->texture, 0);
 }
 
@@ -338,12 +338,12 @@ void ShaderBW::init() {
 void ShaderBW::init33() {
 	ShaderBW *sh = new ShaderBW();
 	const GLchar *vrsh = 
-		//"#version 330 core\n"
+		"#version 330 core\n"
 		"in vec2 position;"
 		"void main () {"
 		"}",
 		*frsh = 
-		//"#version 330 core\n"
+		"#version 330 core\n"
 		"#define MODE_BRIGHTNESS 1\n"
 		"#define MODE_GAMMA 2\n"
 		"#define MODE_CONTRAST 3\n"
@@ -372,7 +372,7 @@ void ShaderBW::init33() {
 			"}"
 		"}",
 		*gmsh = 
-		//"#version 330 core\n"
+		"#version 330 core\n"
 		"layout (points) in;"
 		"layout (triangle_strip) out;"
 		"layout (max_vertices = 4) out;"

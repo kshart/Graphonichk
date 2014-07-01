@@ -25,6 +25,7 @@ namespace Graphonichk {
 		void loadShapePolygon(xmlNodePtr node, SVG::Group *group);
 		void loadVisualProperties(xmlNodePtr node, SVG::Group *group);
 	public:
+		ImageSVG();
 		ImageSVG(const char *filename);
 		int renderGL330() override;
 		int renderGL100() override;

@@ -371,8 +371,6 @@ int UIButton::callEvent(EventMouseShape* event) {
 	return false;
 }
 
-EventCheckButton::EventCheckButton(int type) :Event(type) {
-}
 UICheckbox::UICheckbox() :
 	press(false),
 	checked(false),

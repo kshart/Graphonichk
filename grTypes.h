@@ -5,6 +5,7 @@
 #include "grEvent.h"
 #include "grProcessingQueue.h"
 #include "grFile.h"
+#include "grLibrary.h"
 #include "grOpenGL.h"
 #include "enTexture.h"
 #include "grShape.h"

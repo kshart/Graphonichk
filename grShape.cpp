@@ -77,7 +77,7 @@ int ShapeRectGateMatrix2D::renderGL100() {
 	glPushMatrix();
 	OpenGL::pushViewport();
 	OpenGL::setViewport(this->getGlobalX(), this->getGlobalY(), this->getWidth(), this->getHeight());
-	glMultMatrixf(this->view.a);
+	glMultMatrixf(this->viewMatrix.a);
 	this->group.renderGL100();
 	OpenGL::popViewport();
 	glPopMatrix();
@@ -120,7 +120,11 @@ void ShapeRect::setBox(short x, short y, short w, short h) {
 	this->local.y = y;
 	this->width = w;
 	this->height = h;
-	if (this->parent!=nullptr) this->parent->updateRect();
+	if (this->parent!=nullptr) {
+		this->global.x = this->parent->global.x+x;
+		this->global.y = this->parent->global.y+y;
+		if (parent->chengeRect) parent->updateRect();
+	}
 	ShapeRectTask::task.addTask(this);
 	#ifdef REDRAWN_BY_THE_ACTION
 	Windows::window->renderComplete = false;
@@ -491,7 +495,7 @@ int ShapeGroupRect::callEvent(EventMouseShape* event) {
 		}
 	}
 	for(int i=this->child.size()-1; i>=0; i--) {
-		if (this->child[i]->mouseEventActive) {
+		if (this->child[i]->mouseEventActive && this->child[i]->visible) {
 			sh = this->child[i];
 			if (event->localx>sh->getX()+sh->getOffsetX() &&
 				event->localy>sh->getY()+sh->getOffsetY() &&
@@ -522,7 +526,7 @@ int ShapeGroupRect::callEvent(EventMouseShape* event) {
 
 ShapeMain::ShapeMain() :ShapeGroupRect(ShapeMain::CRC32) {
 	this->frameBuffer.color = new Texture(this->width, this->height, GL_RGB8, GL_RGB, GL_UNSIGNED_BYTE);
-	this->frameBuffer.depth = new Texture(this->width, this->height, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
+	//this->frameBuffer.depth = new Texture(this->width, this->height, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT);
 	puts(">>>>>>>>>>>>ShapeMain");
 	if (OpenGL::ver!=OpenGL::VER_CORE_100) puts(">>>>>>>>>>>>ShapeMain");
 	if (OpenGL::ver!=OpenGL::VER_CORE_100) Windows::window->eachFrame.addTask(new ShapeMainInitTask(this));
@@ -531,28 +535,37 @@ void ShapeMain::setRect(short w, short h) {
 	this->ShapeGroupRect::setRect(w, h);
 	this->frameBuffer.color->width = w;
 	this->frameBuffer.color->height = h;
-	this->frameBuffer.depth->width = w;
-	this->frameBuffer.depth->height = h;
+	//this->frameBuffer.depth->width = w;
+	//this->frameBuffer.depth->height = h;
 	if (this->frameBuffer.color->event == Texture::LOADED) {
 		this->frameBuffer.color->event = Texture::TO_UPDATE;
 		ADD_TEXTURE_TO_UPDATE_BUFFER(this->frameBuffer.color);
 	}
-	if (this->frameBuffer.depth->event == Texture::LOADED) {
+	/*if (this->frameBuffer.depth->event == Texture::LOADED) {
 		this->frameBuffer.depth->event = Texture::TO_UPDATE;
 		ADD_TEXTURE_TO_UPDATE_BUFFER(this->frameBuffer.depth);
-	}
+	}*/
 }
 int ShapeMain::renderGL330() {
-	glBindFramebuffer(GL_FRAMEBUFFER, this->frameBuffer.fbo);
+	//glBindFramebuffer(GL_FRAMEBUFFER, this->frameBuffer.fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	OpenGL::setViewport(0, 0, this->width, this->height);
 	glClearColor( ShapeMain::BACK_COLOR_R, ShapeMain::BACK_COLOR_G, ShapeMain::BACK_COLOR_B, 1.0 );
 	glClear( GL_COLOR_BUFFER_BIT );
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	//glEnable( GL_ALPHA_TEST );
+	//glEnable(GL_POLYGON_SMOOTH);
 	//glFrontFace(GL_CW);
+	//glShadeModel(GL_SMOOTH); 
 	//glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 	//glHint(GL_FOG_HINT, GL_NICEST);
 	//glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+	
+	//printf("%s\n", glGetString(GL_EXTENSIONS));
+	//glHint(GL_POLYGON_SMOOTH_HINT, GL_FASTEST);
+	
+	//glHint(GL_MULTISAMPLE_FILTER_HINT_NV,GL_NICEST);
 	//glPolygonMode(GL_FRONT, GL_LINE);
 	//glPolygonMode(GL_BACK, GL_LINE);
 	//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
@@ -560,9 +573,11 @@ int ShapeMain::renderGL330() {
 	//printf("GLShader::glsl->shaderProgram %i\n", GLShader::glsl->shaderProgram);
 	this->ShapeGroupRect::renderGL330();
 	
+	//glDisable( GL_ALPHA_TEST );
+	//glDisable( GL_POLYGON_SMOOTH );
 	glDisable( GL_BLEND );
 	
-	
+	/*
 	OpenGL::setViewport(0, 0, this->width, this->height);
 	glBindVertexArray(this->frameBuffer.vao);
 	glBindTexture(GL_TEXTURE_2D, this->frameBuffer.color->GLID);
@@ -572,8 +587,10 @@ int ShapeMain::renderGL330() {
 		}
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindVertexArray(this->frameBuffer.vao);
+	glBindTexture(GL_TEXTURE_2D, this->frameBuffer.color->GLID);
 	SET_SHADER(ShaderPost);
-	glDrawArrays(GL_POINTS, 0, 1);	
+	glDrawArrays(GL_POINTS, 0, 1);*/
 	
 	return true;
 }
@@ -858,7 +875,7 @@ int FRect::renderGL330() {
 	return true;
 }
 
-Scene3D::Scene3D():ShapeRect(1232123), model(nullptr) {
+Scene3D::Scene3D() :ShapeRect(1232123) {
 	this->viewMatrix = Matrix3D::ViewPerspective2(45.0, (float)Windows::window->width/(float)Windows::window->height, 1, 1000);
 	this->setBox(0, 0, Windows::window->width, Windows::window->height);
 }
@@ -897,13 +914,13 @@ int Scene3D::renderGL330() {
 	glEnable(GL_CULL_FACE);
 	glClear(GL_DEPTH_BUFFER_BIT);
 	
-	if (this->model!=nullptr && ShaderF3D::prog->shaderProgram!=0) {
+	/*if (this->model!=nullptr && ShaderF3D::prog->shaderProgram!=0) {
 		SET_SHADER(ShaderF3D);
 		glUniform4f(ShaderF3D::prog->fillColor, 0, 0.4, 0, 1);
 		glUniformMatrix4fv(ShaderF3D::prog->transformMatrix, 1, GL_FALSE, this->viewPosMatrix.a);
-		glBindVertexArray(this->model->vao);
-		glDrawElements(GL_TRIANGLES, this->model->polygon.size()*3, GL_UNSIGNED_INT, NULL);
-	}
+		//glBindVertexArray(this->model->vao);
+		//glDrawElements(GL_TRIANGLES, this->model->polygon.size()*3, GL_UNSIGNED_INT, NULL);
+	}*/
 	/*
 	float s = 1;
 		float vertex[24][3] = {

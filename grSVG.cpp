@@ -1,6 +1,9 @@
 #include "grSVG.h"
 
 using namespace Graphonichk;
+ImageSVG::ImageSVG() :ShapeRect(0)  {
+	
+}
 ImageSVG::ImageSVG(const char *filename) :ShapeRect(0) {
 	xmlDocPtr doc;
 	xmlAttr *attr;
@@ -23,10 +26,10 @@ ImageSVG::ImageSVG(const char *filename) :ShapeRect(0) {
 		value = (char*)xmlNodeListGetString(node->doc, attr->children, 1);
 		if ( strcmp("width", name)==0 ) {
 			SVG::Length w = SVG::DataTypes::getLength(value);
-			size.x = SVG::DataTypes::getPixels(w);
+			size.x = w.getPixel();
 		}else if ( strcmp("height", name)==0 ) {
 			SVG::Length h = SVG::DataTypes::getLength(value);
-			size.y = SVG::DataTypes::getPixels(h);
+			size.y = h.getPixel();
 		}else{
 			printf("%s=%s ", name, value);
 		}
@@ -246,7 +249,11 @@ int ImageSVG::renderGL330() {
 			this->getWidth(), this->getHeight());
 	OpenGL::setViewMatrix(this->viewMatrix);
 	
+	//glEnable(GL_MULTISAMPLE);
+	
 	this->root.renderGL330();
+	
+	//glDisable(GL_MULTISAMPLE);
 	
 	OpenGL::popViewMatrix();
 	OpenGL::popViewport();

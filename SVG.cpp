@@ -161,19 +161,6 @@ const DataTypes::ColorWord DataTypes::colorWords[147] = {
 #define STRCHAR_TO_INT(ch, value) if ( ch>=0x30&&ch<=0x39 ) {	value = ch-0x30;\
 							}else if ( ch>=0x41&&ch<=0x46 ) {	value = ch-0x37;\
 							}else if ( ch>=0x61&&ch<=0x66 ) {	value = ch-0x57;}
-float DataTypes::getPixels(Length l) {
-	switch (l.type) {//win->dpi = round((hRes/hSize)*25.4);
-		case Length::_PX: return l.value;
-		case Length::_IN: return l.value*Screen::dpi;
-		case Length::_CM: return (l.value*Screen::dpi)/25.4*10;
-		case Length::_MM: return (l.value*Screen::dpi)/25.4;
-		case Length::_EM: return l.value;
-		case Length::_EX: return l.value;
-		case Length::_PT: return l.value;
-		case Length::_PC: return l.value;
-	}
-	return 0;
-}
 Color DataTypes::getColor(const char* str) {
 	size_t strLength = strlen(str), i=0;
 	Color color;
@@ -329,8 +316,6 @@ Color DataTypes::getColor(const char* str) {
 Length DataTypes::getLength(const char* str) {
 	size_t strLength = strlen(str);
 	Length length;
-	length.type = Length::_PX;
-	length.value = 0;
 	bool dot = false, plus = true;
 	unsigned int leftNumber=0, rightNumber=0, rightNumberPos=1;
 	char ext[2];
@@ -527,10 +512,10 @@ int BasicShapeRect::renderGL100() {
 	glMultMatrixf(mat);
 	glBegin(GL_QUADS);
 		glColor3ub(0xFF, 0, 0);
-		glVertex2s(this->x.value,					this->y.value);
-		glVertex2s(this->x.value+this->width.value,	this->y.value);
-		glVertex2s(this->x.value+this->width.value,	this->y.value+this->height.value);
-		glVertex2s(this->x.value,					this->y.value+this->height.value);
+		glVertex2s(this->x.getPixel(),							this->y.getPixel());
+		glVertex2s(this->x.getPixel()+this->width.getPixel(),	this->y.getPixel());
+		glVertex2s(this->x.getPixel()+this->width.getPixel(),	this->y.getPixel()+this->height.getPixel());
+		glVertex2s(this->x.getPixel(),							this->y.getPixel()+this->height.getPixel());
 	glEnd();
 	glPopMatrix();
 	return true;
@@ -554,10 +539,10 @@ int BasicShapeRect::renderGL330() {
 	
 	if (this->vao==0 && ShaderSVGmain::prog->shaderProgram!=0) {
 		float vertex[8] = {
-			DataTypes::getPixels(this->x),										DataTypes::getPixels(this->y),
-			DataTypes::getPixels(this->x)+DataTypes::getPixels(this->width),	DataTypes::getPixels(this->y),
-			DataTypes::getPixels(this->x)+DataTypes::getPixels(this->width),	DataTypes::getPixels(this->y)+DataTypes::getPixels(this->height),
-			DataTypes::getPixels(this->x),										DataTypes::getPixels(this->y)+DataTypes::getPixels(this->height),
+			this->x.getPixel(),							this->y.getPixel(),
+			this->x.getPixel(),							this->y.getPixel()+this->height.getPixel(),
+			this->x.getPixel()+this->width.getPixel(),	this->y.getPixel(),
+			this->x.getPixel()+this->width.getPixel(),	this->y.getPixel()+this->height.getPixel(),
 		};
 		glGenVertexArrays(1, &this->vao);
 		glBindVertexArray(this->vao);
@@ -565,14 +550,30 @@ int BasicShapeRect::renderGL330() {
 		glGenBuffers(1, &this->vbo);
 		glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
 		glBufferData(GL_ARRAY_BUFFER, 8*sizeof(float), vertex, GL_STATIC_DRAW);
-		printf("this->vbo %i\n", this->vbo);
 		glVertexAttribPointer(ShaderSVGmain::prog->position, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 		glEnableVertexAttribArray(ShaderSVGmain::prog->position);
 	}
 	glBindVertexArray(this->vao);
 	glUniform1i(ShaderSVGmain::prog->typeShape, BasicShapeRect::CRC32);
-	//glUniform4f(ShaderSVGmain::prog->fillColor, (float)this->color.r/0xFF, (float)this->color.g/0xFF, (float)this->color.b/0xFF, 1.0);
-	glDrawArrays(GL_QUADS, 0, 4);
+	glUniform4f(ShaderSVGmain::prog->fillColor, 0, 0, 1, 1.0);
+	
+	
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	
+	
+	glPolygonMode(GL_FRONT, GL_LINE);
+	glPolygonMode(GL_BACK, GL_LINE);
+	glShadeModel(GL_SMOOTH);
+	glEnable(GL_LINE_SMOOTH);
+	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+	
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	
+	glDisable(GL_LINE_SMOOTH);
+	glPolygonMode(GL_FRONT, GL_FILL);
+	glPolygonMode(GL_BACK, GL_FILL);
+	
+	
 	OpenGL::popViewMatrix();
 	return true;
 }
@@ -619,13 +620,13 @@ int BasicShapeCircle::renderGL100() {
 	
 	glBegin(GL_TRIANGLE_FAN);
 		glColor4ub(0xFF, 0, 0, 0x88);
-		glVertex2f(this->cx.value, this->cy.value);
-		float a, radius=this->r.value, max=M_PI*2*radius;
+		glVertex2f(this->cx.getPixel(), this->cy.getPixel());
+		float a, radius=this->r.getPixel(), max=M_PI*2*radius;
 		for(int i=0; i<max; i+=5) {
 			a = i/radius;
-			glVertex2f(cos(a)*radius+this->cx.value, sin(a)*radius+this->cy.value);
+			glVertex2f(cos(a)*radius+this->cx.getPixel(), sin(a)*radius+this->cy.getPixel());
 		}
-		glVertex2f(radius+this->cx.value, this->cy.value);
+		glVertex2f(radius+this->cx.getPixel(), this->cy.getPixel());
 	glEnd();
 	
 	glPopMatrix();
@@ -658,7 +659,7 @@ int BasicShapeCircle::renderGL330() {
 	glBindVertexArray(this->vao);
 	glUniform1i(ShaderSVGmain::prog->typeShape, BasicShapeCircle::CRC32);
 	glUniform4f(ShaderSVGmain::prog->fillColor, 1, 1, 0, 1);
-	glUniform4f(ShaderSVGmain::prog->circleTransform, DataTypes::getPixels(this->cx), DataTypes::getPixels(this->cy), DataTypes::getPixels(this->r), DataTypes::getPixels(this->r));
+	glUniform4f(ShaderSVGmain::prog->circleTransform, this->cx.getPixel(), this->cy.getPixel(), this->r.getPixel(), this->r.getPixel());
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 130);
 	OpenGL::popViewMatrix();
 	return true;
@@ -707,13 +708,13 @@ int BasicShapeEllipse::renderGL100() {
 	//GL_TRIANGLE_FAN
 	glBegin(GL_TRIANGLE_FAN);
 		glColor3ub(0xFF, 0, 0);
-		glVertex2f(this->cx.value, this->cy.value);
-		float a, irx=this->rx.value, iry=this->ry.value;//, max=M_PI*2*radius;
+		glVertex2f(this->cx.getPixel(), this->cy.getPixel());
+		float a, irx=this->rx.getPixel(), iry=this->ry.getPixel();//, max=M_PI*2*radius;
 		for(int i=0; i<360; i+=5) {
 			a = M_PI/180*i;
-			glVertex2f(cos(a)*irx+this->cx.value, sin(a)*iry+this->cy.value);
+			glVertex2f(cos(a)*irx+this->cx.getPixel(), sin(a)*iry+this->cy.getPixel());
 		}
-		glVertex2f(irx+this->cx.value, this->cy.value);
+		glVertex2f(irx+this->cx.getPixel(), this->cy.getPixel());
 	glEnd();
 	
 	glPopMatrix();
@@ -766,8 +767,8 @@ int BasicShapeLine::renderGL100() {
 	
 	glBegin(GL_LINES);
 		glColor3ub(0xFF, 0, 0);
-		glVertex2s(this->x1.value, this->y1.value);
-		glVertex2s(this->x2.value, this->y2.value);
+		glVertex2s(this->x1.getPixel(), this->y1.getPixel());
+		glVertex2s(this->x2.getPixel(), this->y2.getPixel());
 	glEnd();
 	
 	glPopMatrix();
@@ -791,8 +792,8 @@ int BasicShapeLine::renderGL330() {
 	SET_SHADER(ShaderSVGmain);
 	if (this->vao==0 && ShaderSVGmain::prog->shaderProgram!=0) {
 		float vertex[4] = {
-			DataTypes::getPixels(this->x1),	DataTypes::getPixels(this->y1),
-			DataTypes::getPixels(this->x2),	DataTypes::getPixels(this->y2),
+			this->x1.getPixel(),	this->y1.getPixel(),
+			this->x2.getPixel(),	this->y2.getPixel(),
 		};
 		glGenVertexArrays(1, &this->vao);
 		glBindVertexArray(this->vao);
@@ -825,9 +826,9 @@ int BasicShapePolyline::renderGL100() {
 	
 	glBegin(GL_LINE_STRIP);
 		glColor3ub(0xFF, 0, 0);
-		glVertex2f(this->points[0].x.value, this->points[0].y.value);
+		glVertex2f(this->points[0].x.getPixel(), this->points[0].y.getPixel());
 		for(uint i=1; i<this->length; i++) {
-			glVertex2f(this->points[i].x.value, this->points[i].y.value);
+			glVertex2f(this->points[i].x.getPixel(), this->points[i].y.getPixel());
 		}
 	glEnd();
 	
@@ -853,11 +854,11 @@ int BasicShapePolygon::renderGL100() {
 	
 	glBegin(GL_POLYGON);
 		glColor3ub(0xFF, 0, 0);
-		glVertex2f(this->points[0].x.value, this->points[0].y.value);
+		glVertex2f(this->points[0].x.getPixel(), this->points[0].y.getPixel());
 		for(int i=1; i<this->length; i++) {
-			glVertex2f(this->points[i].x.value, this->points[i].y.value);
+			glVertex2f(this->points[i].x.getPixel(), this->points[i].y.getPixel());
 		}
-		glVertex2f(this->points[0].x.value, this->points[0].y.value);
+		glVertex2f(this->points[0].x.getPixel(), this->points[0].y.getPixel());
 	glEnd();
 	
 	glPopMatrix();

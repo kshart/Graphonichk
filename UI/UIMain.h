@@ -92,10 +92,8 @@ namespace Graphonichk {
 	
 	class EventCheckButton :public Event {
 	  public:
-		enum :int{
-			CHECK_UPDATE
-		};
-		EventCheckButton(int type);
+		enum :int{ CHECK_UPDATE };
+		EventCheckButton(int type) :Event(type) {};
 		bool checked;
 	};
 	class UIButton {

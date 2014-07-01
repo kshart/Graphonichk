@@ -100,6 +100,11 @@ namespace Graphonichk {
 		
 		virtual ShapeRect* globalHitTest(short x, short y);
 	};
+	class ShapeBoxAlign :public ShapeRect {
+	protected:
+		ShapeBoxAlign(int crc32) :ShapeRect(crc32) {};
+		
+	};
 	class ShapeGroupRect : public ShapeRect {
 	protected:
 		ShapeGroupRect(int crc32);
@@ -168,7 +173,7 @@ namespace Graphonichk {
 		virtual int renderGL100() override;
 		virtual int renderGL330() override;
 		ShapeGroupMatrix2D group;
-		Matrix3D view;
+		Matrix3D viewMatrix;
 	};
 	class ShapeRectGateMatrix3D :public ShapeRect {
 	public:
@@ -207,7 +212,7 @@ namespace Graphonichk {
 		ShapeGroupBasic postEffects;
 		struct _fbo {
 			GLuint fbo, vao, vbo;
-			Texture *color, *depth;
+			Texture *color;//, *depth;
 		} frameBuffer;
 	};
 	class ShapeMainInitTask :public EachFrameTask {
@@ -215,7 +220,7 @@ namespace Graphonichk {
 		ShapeMainInitTask(ShapeMain *sh) :sh(sh) {}
 		int processExecute() {
 			puts(">>>>>>>>>>>>ShapeMainInitTask");
-			if (this->sh->frameBuffer.color->GLID==0 || this->sh->frameBuffer.depth->GLID==0) return false;
+			if (this->sh->frameBuffer.color->GLID==0) return false; //this->sh->frameBuffer.depth->GLID==0
 			svec2 rect = this->sh->getRect();
 			glGenVertexArrays(1, &this->sh->frameBuffer.vao);
 			glBindVertexArray(this->sh->frameBuffer.vao);
@@ -227,7 +232,7 @@ namespace Graphonichk {
 			glGenFramebuffers(1, &this->sh->frameBuffer.fbo);
 			glBindFramebuffer(GL_FRAMEBUFFER, this->sh->frameBuffer.fbo);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this->sh->frameBuffer.color->GLID, 0);
-			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, this->sh->frameBuffer.depth->GLID, 0);
+			//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, this->sh->frameBuffer.depth->GLID, 0);
 			return true;
 		}
 		ShapeMain *sh;
@@ -290,18 +295,6 @@ namespace Graphonichk {
 		int renderGL100() override;
 		int renderGL330() override;
 		ubvec4 backgroundColor;
-	};
-	class Model3D;
-	
-	class Scene3D :public ShapeRect {
-	public:
-		Scene3D();
-		int renderGL100() override;
-		int renderGL330() override;
-		Matrix3D viewMatrix;
-		Matrix3D viewPosMatrix;
-		Matrix3D transformMatrix;
-		Model3D *model;
 	};
 /*CRC32
 Bitmap		0xEFC15B9A

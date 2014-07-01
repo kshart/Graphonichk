@@ -36,8 +36,8 @@ Texture* Texture::getTexture(unsigned short w, unsigned short h, GLuint format, 
 	glBindTexture( GL_TEXTURE_2D, tex->GLID );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );//GL_NEAREST
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	glTexImage2D( GL_TEXTURE_2D, 0, internalType, w, h, 0, format, type, NULL );
 	return tex;
 }
@@ -487,8 +487,8 @@ int TextureToUpdateTask::processExecute() {
 			glBindTexture( GL_TEXTURE_2D, _tex->GLID );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 			glTexImage2D( GL_TEXTURE_2D, 0, _tex->internalType, _tex->width, _tex->height, 0, _tex->format, _tex->type, NULL );
 			if (_tex->rects.size>0) {
 				glGenTextures( 1, &_tex->rectGLID );
@@ -575,8 +575,8 @@ int TextureToUpdateTask::processExecute() {
 			glBindTexture( GL_TEXTURE_2D, _tex->GLID );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 			glTexImage2D( GL_TEXTURE_2D, 0, _tex->internalType, _tex->width, _tex->height, 0, _tex->format, _tex->type, _tex->img->raw );
 			if (_tex->rects.size>0) {
 				glGenTextures( 1, &_tex->rectGLID );

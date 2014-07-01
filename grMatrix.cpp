@@ -1,20 +1,10 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
-
 #include "grMatrix.h"
 
 #define M_PI 3.14159265358979323846
 
 using namespace std;
-using namespace Graphonichk;
-
-
-/*void ViewMatrix::trace() {
-	printf("matrix=\n%f\t%f\t%f\t%f\t\n%f\t%f\t%f\t%f\t\n%f\t%f\t%f\t%f\t\n%f\t%f\t%f\t%f\t\n", this->a[0], this->a[1], this->a[2], this->a[3], this->a[4], this->a[5], 
-			this->a[6], this->a[7], this->a[8], this->a[9], this->a[10], this->a[11], this->a[12], this->a[13], this->a[14], this->a[15]);
-}*/
+using Graphonichk::TransformMatrix;
+using Graphonichk::Matrix3D;
 
 
 TransformMatrix::TransformMatrix(float ina, float inb, float inc, float ind, float ine, float inf) :a(ina), b(inb), c(inc), d(ind), e(ine), f(inf) {
@@ -22,10 +12,10 @@ TransformMatrix::TransformMatrix(float ina, float inb, float inc, float ind, flo
 TransformMatrix::TransformMatrix() {
 	this->loadIdentity();
 }
-void TransformMatrix::trace() {
+void TransformMatrix::trace() const noexcept {
 	printf("matrix=\n%f\t%f\t%f\t\n%f\t%f\t%f\t\n", this->a, this->b, this->c, this->d, this->e, this->f);
 }
-void TransformMatrix::loadIdentity() {
+void TransformMatrix::loadIdentity() noexcept {
 	this->a = 1;
 	this->b = 0;
 	this->c = 0;
@@ -33,7 +23,7 @@ void TransformMatrix::loadIdentity() {
 	this->e = 1;
 	this->f = 0;
 }
-void TransformMatrix::scale(float s) {
+void TransformMatrix::scale(float s) noexcept {
 	//s 0 0
 	//0 s 0
 	//0 0 1
@@ -70,7 +60,7 @@ void TransformMatrix::scale(float s) {
 	 * c23 = a21*b13+a22*b23+a23*b33
 	 */
 }
-void TransformMatrix::scale(float sx, float sy) {
+void TransformMatrix::scale(float sx, float sy) noexcept {
 	//sx 0 0
 	//0 sy 0
 	//0 0 1
@@ -79,14 +69,14 @@ void TransformMatrix::scale(float sx, float sy) {
 	this->d *= sx;
 	this->e *= sy;
 }
-void TransformMatrix::translate(float cx, float cy) {
+void TransformMatrix::translate(float cx, float cy) noexcept {
 	//1 0 x
 	//0 1 y
 	//0 0 1
 	this->c = this->a*cx+this->b*cy+this->c;
 	this->f = this->d*cx+this->e*cy+this->f;
 }
-void TransformMatrix::rotate(float angle) {
+void TransformMatrix::rotate(float angle) noexcept {
 	//cos	sin 0
 	//-sin	cos 0
 	//0		0 1
@@ -96,13 +86,13 @@ void TransformMatrix::rotate(float angle) {
 	this->d = d*cos(ag)+e*sin(ag);
 	this->e = d*-sin(ag)+e*cos(ag);
 }
-void TransformMatrix::skewX(float angle) {
+void TransformMatrix::skewX(float angle) noexcept {
 	//1	0 0
 	//tg 1 0
 	//0	0 1
 	float ag = angle*M_PI/180;
 }
-void TransformMatrix::skewY(float angle) {
+void TransformMatrix::skewY(float angle) noexcept {
 	//1	tg 0
 	//0	1 0
 	//0	0 1
@@ -110,25 +100,16 @@ void TransformMatrix::skewY(float angle) {
 }
 
 Matrix3D::Matrix3D() {
-	this->a[0] = 1;
-	this->a[1] = 0;
-	this->a[2] = 0;
-	this->a[3] = 0;
-	
-	this->a[4] = 0;
-	this->a[5] = 1;
-	this->a[6] = 0;
-	this->a[7] = 0;
-	
-	this->a[8] = 0;
-	this->a[9] = 0;
-	this->a[10] = 1;
-	this->a[11] = 0;
-	
-	this->a[12] = 0;
-	this->a[13] = 0;
-	this->a[14] = 0;
-	this->a[15] = 1;
+	a[0]  = 1; a[1]  = 0; a[2]  = 0; a[3]  = 0;
+	a[4]  = 0; a[5]  = 1; a[6]  = 0; a[7]  = 0;
+	a[8]  = 0; a[9]  = 0; a[10] = 1; a[11] = 0;
+	a[12] = 0; a[13] = 0; a[14] = 0; a[15] = 1;
+}
+Matrix3D::Matrix3D(float x, float y, float z, float xs, float ys, float zs, float xr, float yr, float zr) {
+	a[0]  = 1; a[1]  = 0; a[2]  = 0; a[3]  = x;
+	a[4]  = 0; a[5]  = 1; a[6]  = 0; a[7]  = y;
+	a[8]  = 0; a[9]  = 0; a[10] = 1; a[11] = z;
+	a[12] = 0; a[13] = 0; a[14] = 0; a[15] = 1;
 }
 Matrix3D::Matrix3D(const Matrix3D *m) {
 	memcpy(this->a, m->a, 16*sizeof(float));
@@ -203,11 +184,11 @@ Matrix3D Matrix3D::ViewPerspective2(float fov, float aspect, float n, float f) {
 	vm.a[15] = 0;
 	return vm;
 }
-void Matrix3D::trace() {
+void Matrix3D::trace() const noexcept {
 	printf("matrix=\n%f\t%f\t%f\t%f\t\n%f\t%f\t%f\t%f\t\n%f\t%f\t%f\t%f\t\n%f\t%f\t%f\t%f\t\n", this->a[0], this->a[1], this->a[2], this->a[3], this->a[4], this->a[5], 
 			this->a[6], this->a[7], this->a[8], this->a[9], this->a[10], this->a[11], this->a[12], this->a[13], this->a[14], this->a[15]);
 }
-void Matrix3D::loadIdentity() {
+void Matrix3D::loadIdentity() noexcept {
 	this->a[0] = 1;
 	this->a[1] = 0;
 	this->a[2] = 0;
@@ -228,35 +209,7 @@ void Matrix3D::loadIdentity() {
 	this->a[14] = 0;
 	this->a[15] = 1;
 }
-void Matrix3D::multiple(Matrix3D &m2) {
-	Matrix3D m1(this);
-	//i = 4
-	//j = 4
-	//  0  1  2  3
-	//  4  5  6  7
-	//  8  9 10 11
-	// 12 13 14 15
-	this->a[0] = m1.a[0]*m2.a[0] + m1.a[1]*m2.a[4] + m1.a[2]*m2.a[8] + m1.a[3]*m2.a[12];
-	this->a[1] = m1.a[0]*m2.a[1] + m1.a[1]*m2.a[5] + m1.a[2]*m2.a[9] + m1.a[3]*m2.a[13];
-	this->a[2] = m1.a[0]*m2.a[2] + m1.a[1]*m2.a[6] + m1.a[2]*m2.a[10] + m1.a[3]*m2.a[14];
-	this->a[3] = m1.a[0]*m2.a[3] + m1.a[1]*m2.a[7] + m1.a[2]*m2.a[11] + m1.a[3]*m2.a[15];
-	
-	this->a[4] = m1.a[4]*m2.a[0] + m1.a[5]*m2.a[4] + m1.a[6]*m2.a[8] + m1.a[7]*m2.a[12];
-	this->a[5] = m1.a[4]*m2.a[1] + m1.a[5]*m2.a[5] + m1.a[6]*m2.a[9] + m1.a[7]*m2.a[13];
-	this->a[6] = m1.a[4]*m2.a[2] + m1.a[5]*m2.a[6] + m1.a[6]*m2.a[10] + m1.a[7]*m2.a[14];
-	this->a[7] = m1.a[4]*m2.a[3] + m1.a[5]*m2.a[7] + m1.a[6]*m2.a[11] + m1.a[7]*m2.a[15];
-	
-	this->a[8] = m1.a[8]*m2.a[0] + m1.a[9]*m2.a[4] + m1.a[10]*m2.a[8] + m1.a[11]*m2.a[12];
-	this->a[9] = m1.a[8]*m2.a[1] + m1.a[9]*m2.a[5] + m1.a[10]*m2.a[9] + m1.a[11]*m2.a[13];
-	this->a[10] = m1.a[8]*m2.a[2] + m1.a[9]*m2.a[6] + m1.a[10]*m2.a[10] + m1.a[11]*m2.a[14];
-	this->a[11] = m1.a[8]*m2.a[3] + m1.a[9]*m2.a[7] + m1.a[10]*m2.a[11] + m1.a[11]*m2.a[15];
-	
-	this->a[12] = m1.a[12]*m2.a[0] + m1.a[13]*m2.a[4] + m1.a[14]*m2.a[8] + m1.a[15]*m2.a[12];
-	this->a[13] = m1.a[12]*m2.a[1] + m1.a[13]*m2.a[5] + m1.a[14]*m2.a[9] + m1.a[15]*m2.a[13];
-	this->a[14] = m1.a[12]*m2.a[2] + m1.a[13]*m2.a[6] + m1.a[14]*m2.a[10] + m1.a[15]*m2.a[14];
-	this->a[15] = m1.a[12]*m2.a[3] + m1.a[13]*m2.a[7] + m1.a[14]*m2.a[11] + m1.a[15]*m2.a[15];
-}
-void Matrix3D::scale(float s) {
+void Matrix3D::scale(float s) noexcept {
 	// s 0 0 0
 	// 0 s 0 0
 	// 0 0 s 0
@@ -265,9 +218,9 @@ void Matrix3D::scale(float s) {
 	mt.a[0] = s;
 	mt.a[5] = s;
 	mt.a[10] = s;
-	this->multiple(mt);
+	(*this) *= mt;
 }
-void Matrix3D::translate(float x, float y, float z) {
+void Matrix3D::translate(float x, float y, float z) noexcept {
 	// 1 0 0 tx
 	// 0 1 0 ty
 	// 0 0 1 tz
@@ -276,9 +229,9 @@ void Matrix3D::translate(float x, float y, float z) {
 	mt.a[3] = x;
 	mt.a[7] = y;
 	mt.a[11] = z;
-	this->multiple(mt);
+	(*this) *= mt;
 }
-void Matrix3D::rotate(float angleX, float angleY, float angleZ) {
+void Matrix3D::rotate(float angleX, float angleY, float angleZ) noexcept {
 	/*
 	
 	1 0       0        0
@@ -327,5 +280,5 @@ void Matrix3D::rotate(float angleX, float angleY, float angleZ) {
 	mt.a[9]  = cax*say*saz + sax*caz;
 	mt.a[10] = cax*cay;
 	
-	this->multiple(mt);
+	(*this) *= mt;
 }

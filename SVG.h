@@ -10,7 +10,9 @@ namespace SVG {
 	class Group;
 	class Symbol;
 	
-	typedef struct {
+	class _length {
+	public:
+		float value;
 		enum TYPE:short {
 			_PX=0,
 			_IN,
@@ -20,10 +22,28 @@ namespace SVG {
 			_EX,
 			_PT,
 			_PC
+		} type = _PX;
+		_length() {};
+		_length(float v, TYPE type=TYPE::_PX) {
+			this->value = v;
+			this->type = type;
 		};
-		TYPE type;
-		float value;
-	} Length, Coordinate;
+		float getPixel() const noexcept {
+			switch (this->type) {
+				case _length::_PX: return this->value;
+				case _length::_IN: return this->value*Screen::dpi;
+				case _length::_CM: return (this->value*Screen::dpi)/25.4*10;
+				case _length::_MM: return (this->value*Screen::dpi)/25.4;
+				case _length::_EM: return this->value;
+				case _length::_EX: return this->value;
+				case _length::_PT: return this->value;
+				case _length::_PC: return this->value;
+			}
+			return 0.0f;
+		}
+	};
+	typedef _length Length, Coordinate;
+	
 	typedef struct {
 		unsigned char type, idColorWord;
 		unsigned char r, g, b, a;
@@ -201,7 +221,7 @@ namespace SVG {
 		vector<Symbol*> child;
 	};
 	//rect circle ellipse line polyline
-	class BasicShapeRect :public Symbol{
+	class BasicShapeRect :public Symbol {
 	public:
 		enum :GLuint {CRC32=0xB7D63381};
 		BasicShapeRect();
@@ -217,7 +237,7 @@ namespace SVG {
 		//Color color;
 		GLuint vao, vbo;
 	};
-	class BasicShapeCircle :public Symbol{
+	class BasicShapeCircle :public Symbol {
 	public:
 		enum :GLuint {CRC32=0xD4B76579};
 		BasicShapeCircle();
@@ -233,7 +253,7 @@ namespace SVG {
 		
 		GLuint vao;
 	};
-	class BasicShapeEllipse :public Symbol{
+	class BasicShapeEllipse :public Symbol {
 	public:
 		BasicShapeEllipse();
 		int renderGL100() override;
@@ -246,7 +266,7 @@ namespace SVG {
 		Coordinate cx, cy;
 		Length rx, ry;
 	};
-	class BasicShapeLine :public Symbol{
+	class BasicShapeLine :public Symbol {
 	public:
 		enum :GLuint {CRC32=0xD114B4F6};
 		BasicShapeLine();
@@ -261,7 +281,7 @@ namespace SVG {
 		
 		GLuint vao, vbo;
 	};
-	class BasicShapePolyline :public Symbol{
+	class BasicShapePolyline :public Symbol {
 	public:
 		BasicShapePolyline();
 		int renderGL100() override;
@@ -274,7 +294,7 @@ namespace SVG {
 		BasicPoint *points;
 		unsigned int length;
 	};
-	class BasicShapePolygon :public Symbol{
+	class BasicShapePolygon :public Symbol {
 	public:
 		BasicShapePolygon();
 		int renderGL100() override;
