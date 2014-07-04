@@ -49,6 +49,7 @@ namespace Graphonichk {
 		//void* type;
 	public:
 		//void* hash, size;
+		size_t size;
 		string name;
 		
 	};

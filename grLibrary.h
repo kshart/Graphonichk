@@ -3,6 +3,7 @@
 //gzip
 
 #include "grMain.h"
+#include "lzlib.h"
 using namespace std;
 
 namespace GraphonichkFileLibrary {
@@ -17,6 +18,12 @@ namespace GraphonichkFileLibrary {
 		uint8_t		operatingSystem;
 		///
 	} gzipHead;
+	typedef struct __attribute__((packed)) {
+		uint8_t		IDstring[4];//1f 8B
+		uint8_t		version;
+		uint8_t		dictionarySize;
+		///Lzma stream
+	} lzipHead;
 	typedef union {
 		uint8_t raw[512];
 		struct __attribute__((packed)) {
@@ -45,7 +52,8 @@ namespace GraphonichkFileLibrary {
 	public:
 		Resource(string name, string path, size_t size) :name(name), path(path), size(size) {};
 		string name, path;
-		size_t size;
+		size_t size=0, chunkBegin=0, chunkCount=0;
+		time_t modifyTime;
 	};
 	class ResourceDirectory {
 		vector<Resource> recources;
@@ -67,6 +75,8 @@ namespace Graphonichk {
 	class FileLibrary;
 	
 	class FileLibrary {
+		size_t chunkSize, chunkBufferSize, chunkBufferFullness = 0;
+		uint8_t *chunkBuffer;
 	public:
 		enum STATUS:char {
 			ERROR_OUTMEM,
@@ -97,7 +107,10 @@ namespace Graphonichk {
 		GraphonichkFileLibrary::ResourceDirectory mainDirectory;
 	private:
 		STATUS status = STATUS::UNABLE;
-		size_t readBlock(uint8_t *data);//data = 512
+		size_t readBlockHead(uint8_t *data, size_t *&chunkBegin, size_t *&chunkCount);//data = 512
+		size_t readBlocks(uint8_t *data, size_t count);
+		size_t readChunk(struct LZ_Decoder* decoder, size_t size);
+		size_t readBuffer(struct LZ_Decoder* decoder, uint8_t *data, size_t size);
 	};
 }
 

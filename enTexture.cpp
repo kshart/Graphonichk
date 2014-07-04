@@ -1,11 +1,11 @@
-#include <malloc.h>
+#include "grMain.h"
+
 #include <png.h>
 #include <jpeglib.h>
 #include <jerror.h>
 #include <setjmp.h>
 #include <zlib.h>
 
-#include "grMain.h"
 
 using namespace std;
 using namespace Graphonichk;

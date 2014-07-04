@@ -1,10 +1,3 @@
-/* 
- * File:   grSVG.h
- * Author: Артем
- *
- * Created on 18 Февраль 2014 г., 23:31
- */
-
 #ifndef GRSVG_H
 #define	GRSVG_H
 

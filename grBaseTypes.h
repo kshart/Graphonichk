@@ -5,12 +5,12 @@
 #define	GRBASETYPES_H
 
 #if defined(WIN32)
+	#include <GL/glew.h>
 	#include <dinput.h>
 	#include <windows.h>
 	#include <windowsx.h>
-	#include <GL/glew.h>
-	#include <GL/wglext.h>
-	#include <GL/glext.h>
+	//#include <GL/wglext.h>
+	//#include <GL/glext.h>
 
 	//#define CRITICAL_SECTION 
 	#define CRITICAL_SECTION_INIT(cs) InitializeCriticalSection(&cs);
