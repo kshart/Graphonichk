@@ -593,25 +593,30 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 #elif defined(X11)
-Windows::Windows(short x, short y, short width, short height) {
-	printf("Windows start X11\n");
-	if (Windows::window!=NULL) return;
-	Windows::window = this;
-	this->visible = false;
-	this->renderComplete = false;
-	this->root = new ShapeGroupRect();
-	this->x = x;
-	this->y = y;
-	this->width = width;
-	this->height = height;
+Windows::Windows(short x, short y, short width, short height) :
+		x(x), 
+		y(y), 
+		width(width), 
+		height(height),
+		visible(false), 
+		renderComplete(false) {
+	if (Windows::window!=nullptr) return;
+	Windows::regFirstWin();
+	ProcessingThread::init();
 	
+	puts("<Windows message='start X11'/>");
+	Windows::window = this;
 	pthread_mutex_t mutex;
 	pthread_mutex_init(&mutex, NULL);
 	pthread_mutex_lock(&mutex);
 	pthread_create(&Windows::winThread, NULL, Windows::threadWindow, &mutex);
 	pthread_mutex_lock(&mutex);
 	pthread_mutex_destroy(&mutex);
-	printf("Windows end\n");
+	
+	FileLoad::init();
+	Font::init();
+	this->eachFrame.addTask(&ShapeRectTask::task);
+	puts("<Windows message='end'/>");
 }
 void Windows::close() {
 	pthread_exit(&this->renderThread);
@@ -621,19 +626,19 @@ void Windows::close() {
 	XDestroyWindow( this->x11display, this->x11window );
 	//XFreeColormap( this->x11display, cmap );
 	XCloseDisplay( this->x11display );
-	Windows::window = NULL;
-	printf("Windows close\n");
+	Windows::window = nullptr;
+	puts("<Windows message='close'/>");
 	delete this;
 }
 void Windows::resize(short width, short height) {
-    this->width = width;
-    this->height = height;
-    XResizeWindow(this->x11display, this->x11window, this->width, this->height);
-    OpenGL::setViewport(0, 0, this->width, this->height);
-    ViewMatrix vm = ViewMatrixOrtho(0, this->width, 0, this->height, -1, 1);
-    OpenGL::viewMatrixBuffer[0] = vm;
-    EventWindow *e = new EventWindow( EventWindow::WIN_SIZE, this );
-    this->callEvent(e);
+	this->width = width;
+	this->height = height;
+	XResizeWindow(this->x11display, this->x11window, this->width, this->height);
+
+	OpenGL::viewMatrixBuffer[0] = Matrix3D::ViewOrtho(0, this->width, 0, this->height, -1, 1);
+	this->root->setRect(this->width, this->height);
+	EventWindow *e = new EventWindow( EventWindow::WIN_SIZE, this );
+	this->callEvent(e);
 	delete e;
 }
 

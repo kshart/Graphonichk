@@ -144,9 +144,7 @@ namespace Graphonichk {
 		bool chengeRect = true;
 		bool cutTheRect = false;
 		unsigned int totalShape = 0, totalDir = 0;
-		#ifdef WIN32
-			HANDLE addChildLock;
-		#endif
+		MUTEX addChildLock;
 	};
 	
 	class ShapeMatrix2D :public ShapeBasic {

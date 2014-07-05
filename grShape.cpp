@@ -244,10 +244,18 @@ int ShapeRect::addEventHandler( int type, void(*fun)(const EventMouseShape*)) {
 }
 
 ShapeGroupRect::ShapeGroupRect() :ShapeRect(ShapeGroupRect::CRC32) {
-	this->addChildLock = CreateMutex(NULL, FALSE, NULL);
+	#if defined(WIN32)
+		this->addChildLock = CreateMutex(NULL, FALSE, NULL);
+	#else
+		pthread_mutex_init(&this->addChildLock, NULL);
+	#endif
 }
 ShapeGroupRect::ShapeGroupRect(int crc32) :ShapeRect(crc32) {
-	this->addChildLock = CreateMutex(NULL, FALSE, NULL);
+	#if defined(WIN32)
+		this->addChildLock = CreateMutex(NULL, FALSE, NULL);
+	#else
+		pthread_mutex_init(&this->addChildLock, NULL);
+	#endif
 }
 void ShapeGroupRect::trace() {
 	printf("<ShapeGroupRect mouseActive='%i' pos='%i, %i' gpos='%i, %i' rect='%i, %i, %i, %i'>\n", this->mouseEventActive, this->local.x, this->local.y, this->global.x, this->global.y, this->offset.x, this->offset.y, this->width, this->height);

@@ -4,6 +4,7 @@
 #include "grMain.h"
 using namespace std;
 using Graphonichk::Array;
+using Graphonichk::Screen;
 using Graphonichk::TransformMatrix;
 
 namespace SVG {

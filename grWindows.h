@@ -65,10 +65,10 @@ namespace Graphonichk {
 			static LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 			friend Device;
 		#else
-			Display *x11display;
-			Window x11window;
-			GLXContext x11context;
-			XEvent x11event;
+			X11lib::Display *x11display;
+			X11lib::Window x11window;
+			X11lib::GLXContext x11context;
+			X11lib::XEvent x11event;
 			static bool x11EventProc();
 		#endif
 	public:

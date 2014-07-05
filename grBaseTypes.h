@@ -27,25 +27,26 @@
 	#define THREAD_SUSPEND(thread) SuspendThread(thread);
 	#define THREAD_CLOSE(thread) CloseHandle(thread);
 #elif defined(X11)
-	#include<stdio.h>
-	#include<stdlib.h>
-	#include<X11/X.h>
-	#include<X11/Xlib.h>
-	#include<GL/glx.h>
+	#include <GL/glew.h>
+	namespace X11lib {
+		#include <X11/X.h>
+		#include <X11/Xlib.h>
+		#include <GL/glx.h>
+	}
 
 	#define CRITICAL_SECTION pthread_mutex_t
 	#define CRITICAL_SECTION_INIT(cs) cs = PTHREAD_MUTEX_INITIALIZER;
 	#define CRITICAL_SECTION_INTER(cs) pthread_mutex_lock(&cs);
 	#define CRITICAL_SECTION_LEAVE(cs) pthread_mutex_unlock(&cs);
 	
-	#define THREAD_H pthread_t
-	#define THREAD void*
+	typedef pthread_t THREAD_H;
+	typedef void* THREAD;
 	
 	#define THREAD_START(handle, thread, data) pthread_create(&handle, NULL, thread, data)
 	#define THREAD_SUSPEND(thread) SuspendThread(thread);
 	#define THREAD_CLOSE(thread) pthread_cancel(thread);
 	
-	#define MUTEX pthread_mutex_t
+	typedef pthread_mutex_t MUTEX;
 
 #endif
 
@@ -488,14 +489,15 @@ namespace Graphonichk {
 	} Metric;
 	void metricToPixels(Metric *m, int v1=0);
 	//template class EventDispatcher<EventFileLoad>;
-	#ifdef WIN32
+	
 	class System {
-	  public:
-		static HINSTANCE hInstance;
+	public:
+		#ifdef WIN32
+			static HINSTANCE hInstance;
+		#endif
 		static uint16_t countProcessors;
 		static void init();
 	};
-	#endif
 	
 	enum ASCII_SPEC:char {
 		NUL=0x00,//ignore
