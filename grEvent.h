@@ -1,10 +1,3 @@
-/* 
- * File:   grEvent.h
- * Author: Артём Каширин
- *
- * Created on 27 Август 2013 г., 19:53
- */
-
 #ifndef GREVENT_H
 #define	GREVENT_H
 #include "grMain.h"
@@ -105,7 +98,7 @@ namespace Graphonichk {
 			}
 			return true;
 		}
-		virtual int addEventHandler(int type, void(*fun)(const TEvent*), void* obj=NULL) {
+		virtual int addEventHandler(int type, void(*fun)(const TEvent*), void *obj=nullptr) {
 			EventLinc el;
 			el.obj = obj;
 			el.type = type;

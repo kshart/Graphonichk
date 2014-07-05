@@ -9,7 +9,7 @@ vector<FileLoad*> FileLoad::buffer;
 
 
 #ifdef WIN32
-DWORD WINAPI FileLoad::loaderThread (void* sys) {
+THREAD FileLoad::loaderThread (void* sys) {
 	FileLoad *fl = nullptr;
 	EventFileLoad *eventFile = nullptr;
 	ReleaseMutex(*(HANDLE*)sys);

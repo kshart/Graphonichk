@@ -73,11 +73,14 @@ namespace GraphonichkFileLibrary {
 }
 namespace Graphonichk {
 	class FileLibrary;
+	class FileLibraryTask {
+	public:
+		FileLibraryTask() {};
+		virtual int processExecute() {};
+		int info;
+	};
 	
-	class FileLibrary {
-		size_t *chunkBegin=nullptr, *chunkCount=nullptr;
-		size_t fileSize, fileBufferApply=0, chunkSize, chunkBufferSize, chunkBufferFullness = 0, skipBlock = 0;
-		uint8_t *chunkBuffer;
+	class FileLibrary :protected ProcessingQueue<FileLibraryTask> {
 	public:
 		enum STATUS:char {
 			ERROR_OUTMEM,
@@ -97,8 +100,6 @@ namespace Graphonichk {
 		void renameFIle();
 		void rewriteFIle();
 		
-		static THREAD FileLibraryProc(void*);
-		
 		time_t modificationTime;
 		
 		string libraryName;
@@ -107,11 +108,20 @@ namespace Graphonichk {
 		
 		GraphonichkFileLibrary::ResourceDirectory mainDirectory;
 	private:
+		size_t *chunkBegin=nullptr, *chunkCount=nullptr;
+		size_t fileSize, fileBufferApply=0, chunkSize, chunkBufferSize, chunkBufferFullness = 0, skipBlock = 0;
+		uint8_t *chunkBuffer;
+		
 		STATUS status = STATUS::UNABLE;
 		size_t readBlockHead(uint8_t *data, size_t *&chunkBegin, size_t *&chunkCount);//data = 512
 		size_t readBlocks(uint8_t *data, size_t count);
 		size_t readChunk(struct LZ_Decoder* decoder);
 		size_t writeBuffer(struct LZ_Decoder* decoder, uint8_t *data, size_t size);
+	
+		THREAD_H procHeader;
+	protected:
+		int performTasks();
+		static THREAD FileLibraryProc(void*);
 	};
 }
 

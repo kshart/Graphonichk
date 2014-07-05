@@ -365,3 +365,34 @@ size_t FileLibrary::readBlockHead(uint8_t* data, size_t *&chunkBegin, size_t *&c
 	
 	return resourceSize;
 }
+
+int FileLibrary::performTasks() {
+	//THREAD_START_H(, FileLibrary::FileLibraryProc, this);
+	return true;
+}
+THREAD FileLibrary::FileLibraryProc(void *data) {
+	FileLibrary *lib = (FileLibrary*)data;
+	lib->performTasks();
+	CRITICAL_SECTION_INTER(lib->_accessPush);
+	lib->_queueIsUse = !lib->_queueIsUse;
+	CRITICAL_SECTION_LEAVE(lib->_accessPush);
+	if (lib->_queueIsUse == 1) {
+		while ( !lib->_essentialTasks1.empty() ) {
+			if (  lib->_essentialTasks1.front()->processExecute()  ) {
+				delete lib->_essentialTasks1.front();
+			}else{
+				lib->addTask(lib->_essentialTasks1.front());
+			}
+			lib->_essentialTasks1.pop();
+		}
+	}else{
+		while ( !lib->_essentialTasks2.empty() ) {
+			if (  lib->_essentialTasks2.front()->processExecute()  ) {
+				delete lib->_essentialTasks2.front();
+			}else{
+				lib->addTask(lib->_essentialTasks2.front());
+			}
+			lib->_essentialTasks2.pop();
+		}
+	}
+}
