@@ -1,4 +1,6 @@
 #include "grWindows.h"
+#include <semaphore.h>
+
 using namespace std;
 using namespace Graphonichk;
 
@@ -11,7 +13,7 @@ EventDeviceMouse::EventDeviceMouse(int type) :Event(type) {
 }
 EventDeviceKeyboard::EventDeviceKeyboard(int type) :Event(type) {
 }
-THREAD Device::threadUpdateDevices (void* data) {
+void* Device::threadUpdateDevices (void* data) {
 	while (true) {
 		puts("Device::threadUpdateDevices");
 		Sleep(10);
@@ -27,10 +29,10 @@ Device::Device() :_dinput(nullptr), _mouseDI(nullptr), _keyboardDI(nullptr) {
 	if ( FAILED(DirectInput8Create(System::hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&this->_dinput, NULL)) ) TerminateProcess(System::hInstance, 1);
 	TerminateProcess(System::hInstance, 1);
 	this->_dinput->EnumDevices(DI8DEVCLASS_ALL, Device::DIEnumDevicesProc, this, DIEDFL_ATTACHEDONLY);
-	THREAD_START_H(this->updateDevicesThread, Windows::threadRender, nullptr);
+	pthread_create(&this->updateDevicesThread, NULL, Windows::threadRender, nullptr);
 }
 Device::~Device() {
-	THREAD_CLOSE(this->updateDevicesThread);
+	pthread_cancel(this->updateDevicesThread);
 	Device::device = nullptr;
 	if (this->_mouseDI!=nullptr) this->_mouseDI->Unacquire();
 	if (this->_keyboardDI!=nullptr) this->_keyboardDI->Unacquire();
@@ -79,49 +81,12 @@ void Windows::regFirstWin() {
 		return;
 	}
 }
-Windows::Windows(short x, short y, short width, short height) :
-		x(x), 
-		y(y), 
-		width(width), 
-		height(height),
-		visible(false), 
-		renderComplete(false) {
-	if (Windows::window!=nullptr) return;
-	Windows::regFirstWin();
-	ProcessingThread::init();
-	
-	puts("<Windows message='start WIN32'/>");
-	Windows::window = this;
-	HANDLE semaphore = CreateSemaphore(NULL, 0, 1, NULL);
-	THREAD_START_H(this->winThread, Windows::threadWindow, &semaphore);
-	WaitForSingleObject(semaphore, INFINITE);
-	CloseHandle(semaphore);
-	
-	FileLoad::init();
-	Font::init();
-	this->eachFrame.addTask(&ShapeRectTask::task);
-	puts("<Windows message='end'/>");
-	/*int attributes[] = {
-		WGL_CONTEXT_MAJOR_VERSION_ARB,	3,
-		WGL_CONTEXT_MINOR_VERSION_ARB,	3,
-		WGL_CONTEXT_FLAGS_ARB,			WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB, 0};
-	OPENGL_GET_PROC(PFNWGLCREATECONTEXTATTRIBSARBPROC, wglCreateContextAttribsARB);
-	if (!wglCreateContextAttribsARB) {
-		fprintf(stderr, "wglCreateContextAttribsARB fail (%d)\n", GetLastError());
-		return;
-	}
-	Windows::hRC = wglCreateContextAttribsARB(Windows::hDC, 0, attributes);
-	if (!Windows::hRC|| !wglMakeCurrent(Windows::hDC, Windows::hRC)) {// <editor-fold defaultstate="collapsed" desc="***">
-		fprintf(stderr, "Creating render context fail (%d)\n", GetLastError());
-		return;
-	}// </editor-fold>
-	wglDeleteContext(hRCTemp);*/
-}
 void Windows::show() {
 	puts("<Windows message='show'/>");
 	SetWindowPos(this->hWnd, HWND_TOP, this->x, this->y, this->width+this->x, this->height+this->y, SWP_SHOWWINDOW );
 	ShowWindow(this->hWnd, SW_SHOWNORMAL);
 	this->visible = true;
+	pthread_mutex_unlock(&this->renderThreadLock);
 	ResumeThread(this->renderThread);
 	SetForegroundWindow(this->hWnd);
 	SetFocus(this->hWnd);
@@ -133,15 +98,15 @@ void Windows::show() {
 void Windows::hide() {
 	puts("<Windows message='hide'/>");
 	ShowWindow(this->hWnd, SW_MINIMIZE);
-	THREAD_SUSPEND(this->renderThread);
+	pthread_mutex_lock(&this->renderThreadLock);
 	this->visible = false;
 	EventWindow *e = new EventWindow( EventWindow::WIN_HIDE, this );
 	this->callEvent(e);
 	delete e;
 }
 void Windows::close() {
-	THREAD_CLOSE(this->renderThread);
-	THREAD_CLOSE(this->winThread);
+	pthread_cancel(this->renderThread);
+	pthread_cancel(this->winThread);
 	delete Device::device;
 	delete Windows::window->root;
 	wglDeleteContext(this->hRC);
@@ -194,7 +159,7 @@ void Windows::fullScreen() {
 	delete e;
 }
 
-THREAD Windows::threadWindow (void* sys) {
+void* Windows::threadWindow (void* sys) {
 	Windows::regFirstWin();
 	Windows *win = Windows::window;
 	printf("windowThread\n");
@@ -208,16 +173,18 @@ THREAD Windows::threadWindow (void* sys) {
 		return 0;
 	}
 	
-	HANDLE semaphore = CreateSemaphore(NULL, 0, 1, NULL);
-	THREAD_START_H(win->renderThread, Windows::threadRender, &semaphore);
-	SetThreadPriority(win->renderThread, THREAD_PRIORITY_HIGHEST);
-	WaitForSingleObject(semaphore, INFINITE);
+	sem_t semaphore;
+	sem_init(&semaphore, 0, 0);
+	pthread_create(&win->renderThread, NULL, Windows::threadRender, &semaphore);
+	sem_wait(&semaphore);
+	sem_destroy(&semaphore);
+	
 	ShowWindow(win->hWnd, SW_SHOW);
 	SetForegroundWindow(win->hWnd);
 	UpdateWindow(win->hWnd);
 	SetFocus(win->hWnd);
-	ReleaseSemaphore(*(HANDLE*)sys, 1, NULL);
-	CloseHandle(semaphore);
+	sem_post((sem_t*)sys);
+	
 	
 	Device *device = new Device();
 	MSG msg;
@@ -228,7 +195,7 @@ THREAD Windows::threadWindow (void* sys) {
 	}
 	return 0;
 }
-THREAD Windows::threadRender (void* sys) {
+void* Windows::threadRender (void* sys) {
 	if (sys==nullptr) return 0;
 	int format;
 	PIXELFORMATDESCRIPTOR pfd;
@@ -341,14 +308,15 @@ THREAD Windows::threadRender (void* sys) {
 	win->root = new ShapeMain();
 	win->root->chengeRect = false;
 	win->resize(win->width, win->height);
-	ReleaseSemaphore(  *(HANDLE*)sys, 1, NULL);
+	sem_post((sem_t*)sys);
 	
 	LARGE_INTEGER frequencyStruct;
 	float frequency, time;
 	QueryPerformanceFrequency(&frequencyStruct);
 	frequency = (float)frequencyStruct.QuadPart;
 	while (IsWindow(win->hWnd)) {
-		//puts("Windows::threadRender");
+		pthread_mutex_lock(&win->renderThreadLock);
+		puts("Windows::threadRender");
 		LARGE_INTEGER time1, time2;
 		float lastTime, fps;
 		QueryPerformanceCounter(&time1);
@@ -371,6 +339,7 @@ THREAD Windows::threadRender (void* sys) {
 		if ( lastTime > 0 ) {
 			Sleep( (int)( 1000*lastTime ) );
 		}
+		pthread_mutex_unlock(&win->renderThreadLock);
 	}
 	return 0;
 }
@@ -593,31 +562,6 @@ LRESULT CALLBACK Windows::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lPa
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 #elif defined(X11)
-Windows::Windows(short x, short y, short width, short height) :
-		x(x), 
-		y(y), 
-		width(width), 
-		height(height),
-		visible(false), 
-		renderComplete(false) {
-	if (Windows::window!=nullptr) return;
-	Windows::regFirstWin();
-	ProcessingThread::init();
-	
-	puts("<Windows message='start X11'/>");
-	Windows::window = this;
-	pthread_mutex_t mutex;
-	pthread_mutex_init(&mutex, NULL);
-	pthread_mutex_lock(&mutex);
-	pthread_create(&Windows::winThread, NULL, Windows::threadWindow, &mutex);
-	pthread_mutex_lock(&mutex);
-	pthread_mutex_destroy(&mutex);
-	
-	FileLoad::init();
-	Font::init();
-	this->eachFrame.addTask(&ShapeRectTask::task);
-	puts("<Windows message='end'/>");
-}
 void Windows::close() {
 	pthread_exit(&this->renderThread);
 	pthread_exit(&this->winThread);
@@ -645,6 +589,46 @@ void Windows::resize(short width, short height) {
 #endif
 
 Windows *Windows::window = nullptr;
+Windows::Windows(short x, short y, short width, short height) :
+		x(x), 
+		y(y), 
+		width(width), 
+		height(height),
+		visible(false), 
+		renderComplete(false) {
+	if (Windows::window!=nullptr) return;
+	Windows::regFirstWin();
+	ProcessingThread::init();
+	
+	puts("<Windows message='start WIN32'/>");
+	Windows::window = this;
+	this->renderThreadLock = PTHREAD_MUTEX_INITIALIZER;
+	
+	sem_t semaphore;
+	sem_init(&semaphore, 0, 0);
+	pthread_create(&this->winThread, NULL, Windows::threadWindow, &semaphore);
+	sem_wait(&semaphore);
+	sem_destroy(&semaphore);
+	
+	Font::init();
+	this->eachFrame.addTask(&ShapeRectTask::task);
+	puts("<Windows message='end'/>");
+	/*int attributes[] = {
+		WGL_CONTEXT_MAJOR_VERSION_ARB,	3,
+		WGL_CONTEXT_MINOR_VERSION_ARB,	3,
+		WGL_CONTEXT_FLAGS_ARB,			WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB, 0};
+	OPENGL_GET_PROC(PFNWGLCREATECONTEXTATTRIBSARBPROC, wglCreateContextAttribsARB);
+	if (!wglCreateContextAttribsARB) {
+		fprintf(stderr, "wglCreateContextAttribsARB fail (%d)\n", GetLastError());
+		return;
+	}
+	Windows::hRC = wglCreateContextAttribsARB(Windows::hDC, 0, attributes);
+	if (!Windows::hRC|| !wglMakeCurrent(Windows::hDC, Windows::hRC)) {// <editor-fold defaultstate="collapsed" desc="***">
+		fprintf(stderr, "Creating render context fail (%d)\n", GetLastError());
+		return;
+	}// </editor-fold>
+	wglDeleteContext(hRCTemp);*/
+}
 void Windows::redraw() {
 	OpenGL::clearViewMatrix();
 	switch (OpenGL::ver) {

@@ -2,11 +2,7 @@
 #define	GRPROCESSINGQUEUE_H
 #include <stack>
 #include <queue>
-#include <string.h>
-#include <string>
-#include <stdio.h>
-#include <stdlib.h>
-#include <GL/glew.h>
+#include <pthread.h>
 #include "grMain.h"
 using namespace std;
 extern FILE *iovir;
@@ -25,7 +21,7 @@ namespace Graphonichk {
 	};
 	class SupSuspendTask {
 	public:
-		virtual int processExecute(MUTEX *sect) {
+		virtual int processExecute(pthread_mutex_t *sect) {
 			fputs("SupSuspendTask::processExecute\n", iovir);
 			return false;
 		}
@@ -64,19 +60,22 @@ namespace Graphonichk {
 		queue<TTask*> _essentialTasks1;
 		queue<TTask*> _essentialTasks2;
 		char _queueIsUse;
-		CRITICAL_SECTION _accessPush;
+		pthread_mutex_t _accessPush;
 	public:
 		ProcessingQueue() :_queueIsUse(0) {
-			CRITICAL_SECTION_INIT(this->_accessPush);
+			this->_accessPush = PTHREAD_MUTEX_INITIALIZER;
+		}
+		~ProcessingQueue() {
+			pthread_mutex_destroy(&this->_accessPush);
 		}
 		virtual int addTask(TTask *task, int type=0) {
-			CRITICAL_SECTION_INTER(this->_accessPush);
+			pthread_mutex_lock(&this->_accessPush);
 			if (this->_queueIsUse == 1) {
 				this->_essentialTasks2.push(task);
 			}else{
 				this->_essentialTasks1.push(task);
 			}
-			CRITICAL_SECTION_LEAVE(this->_accessPush);
+			pthread_mutex_unlock(&this->_accessPush);
 			return true;
 		}
 		virtual int performTasks() {fputs("ERROR 3", stderr);return false;}
@@ -85,27 +84,29 @@ namespace Graphonichk {
 		queue<TTask*> _essentialTasks1;
 		queue<TTask*> _essentialTasks2;
 		char _queueIsUse;
-		CRITICAL_SECTION _accessPush;
+		pthread_mutex_t _accessPush;
 	public:
 		ProcessingQueueTimeLimited() :_queueIsUse(0) {
-			CRITICAL_SECTION_INIT(this->_accessPush);
+			this->_accessPush = PTHREAD_MUTEX_INITIALIZER;
+		}
+		~ProcessingQueueTimeLimited() {
+			pthread_mutex_destroy(&this->_accessPush);
 		}
 		int addTask(TTask *task, int type) {
-			CRITICAL_SECTION_INTER(this->_accessPush);
+			pthread_mutex_lock(&this->_accessPush);
 			if (this->_queueIsUse == 1) {
 				this->_essentialTasks2.push(task);
 			}else{
 				this->_essentialTasks1.push(task);
 			}
-			CRITICAL_SECTION_LEAVE(this->_accessPush);
+			pthread_mutex_unlock(&this->_accessPush);
 			return true;
 		}
 		int performTasks() {
-			CRITICAL_SECTION_INTER(this->_accessPush);
+			pthread_mutex_lock(&this->_accessPush);
 			this->_queueIsUse = !this->_queueIsUse;
-			CRITICAL_SECTION_LEAVE(this->_accessPush);
+			pthread_mutex_unlock(&this->_accessPush);
 			if (this->_queueIsUse == 1) {
-				//printf("performTasks %i\n", this->essentialTasks1.size());
 				while ( !this->_essentialTasks1.empty() ) {
 					if (  this->_essentialTasks1.front()->processExecute()  ) {
 						delete this->_essentialTasks1.front();
@@ -115,7 +116,6 @@ namespace Graphonichk {
 					this->_essentialTasks1.pop();
 				}
 			}else{
-				//printf("performTasks %i\n", this->essentialTasks2.size());
 				while ( !this->_essentialTasks2.empty() ) {
 					if (  this->_essentialTasks2.front()->processExecute()  ) {
 						delete this->_essentialTasks2.front();
@@ -132,11 +132,10 @@ namespace Graphonichk {
 	public:
 		//ProcessingEachFrame() {}
 		int performTasks() {
-			CRITICAL_SECTION_INTER(this->_accessPush);
+			pthread_mutex_lock(&this->_accessPush);
 			this->_queueIsUse = !this->_queueIsUse;
-			CRITICAL_SECTION_LEAVE(this->_accessPush);
+			pthread_mutex_unlock(&this->_accessPush);
 			if (this->_queueIsUse == 1) {
-				//printf("performTasks %i\n", this->essentialTasks1.size());
 				while ( !this->_essentialTasks1.empty() ) {
 					if (  this->_essentialTasks1.front()->processExecute()  ) {
 						delete this->_essentialTasks1.front();
@@ -146,7 +145,6 @@ namespace Graphonichk {
 					this->_essentialTasks1.pop();
 				}
 			}else{
-				//printf("performTasks %i\n", this->essentialTasks2.size());
 				while ( !this->_essentialTasks2.empty() ) {
 					if (  this->_essentialTasks2.front()->processExecute()  ) {
 						delete this->_essentialTasks2.front();
@@ -160,34 +158,42 @@ namespace Graphonichk {
 		}
 	};
 	class ProcessingSupSuspend :public ProcessingQueue<SupSuspendTask> {
-		MUTEX _suspendHandle;
-		THREAD_H _threadHandle;
+		pthread_mutex_t _suspendHandle;
+		pthread_t _threadHandle;
 		float _time;
 	public:
 		typedef struct {
-			MUTEX *sush;
+			pthread_mutex_t *sush;
 			SupSuspendTask *task;
 		} ThreadData;
-		ProcessingSupSuspend();
+		ProcessingSupSuspend() :_threadHandle(nullptr) {
+			this->_suspendHandle = PTHREAD_MUTEX_INITIALIZER;
+		}
+		~ProcessingSupSuspend() {
+			pthread_mutex_destroy(&this->_accessPush);
+		}
 		
 		void setTime(float time);
 		float getTime();
 		
 		int performTasks();
 		
-		static THREAD threadFunction (void* dataArg);
+		static void* threadFunction (void* dataArg);
 	};
-	class ProcessingThread :public ProcessingQueue<ThreadTask> {
+	class ProcessingThread :private ProcessingQueue<ThreadTask> {
 	private:
-		static Array<ProcessingThread*> threads;
-		static THREAD threadProcess(void* sys);
-		
-		THREAD_H thread;
-	public:
-		static void init();
 		ProcessingThread();
 		~ProcessingThread();
 		int performTasks();
+		static Array<ProcessingThread*> threads;
+		static void* threadProcess(void* sys);
+		pthread_t thread;
+	public:
+		static void init();
+		static int addThreadTask(ThreadTask *task, int type=0) {
+			ProcessingThread::threads[0]->addTask(task);
+			return true;
+		}
 	};
 };
 #endif	/* GRPROCESSINGQUEUE_H */

@@ -31,8 +31,8 @@ namespace Graphonichk {
 	};
 	class Device {
 	private:
-		THREAD_H updateDevicesThread;
-		static THREAD threadUpdateDevices(void* data);
+		pthread_t updateDevicesThread;
+		static void* threadUpdateDevices(void* data);
 		#ifdef WIN32
 			static BOOL CALLBACK DIEnumDevicesProc(LPCDIDEVICEINSTANCE inst, LPVOID data);
 			IDirectInput8 *_dinput;
@@ -55,9 +55,10 @@ namespace Graphonichk {
 	
 	class Windows :public EventDispatcher<EventWindow> {
 	private:
-		THREAD_H winThread, renderThread;
-		static THREAD threadRender (void* data_args);
-		static THREAD threadWindow (void* data_args);
+		pthread_t winThread, renderThread;
+		pthread_mutex_t renderThreadLock;
+		static void* threadRender (void* data_args);
+		static void* threadWindow (void* data_args);
 		#ifdef WIN32
 			HWND hWnd;
 			HGLRC hRC;

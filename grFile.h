@@ -5,9 +5,10 @@
 using namespace std;
 
 namespace Graphonichk {
-	class FileLoad;
 	class EventFileLoad;
-	template class EventDispatcher<EventFileLoad>;
+	class FileLoad;
+	class FileLoadThreadTask;
+	
 	class EventFileLoad :public Event {
 	  public:
 		enum :int {
@@ -20,11 +21,13 @@ namespace Graphonichk {
 	};
 	class FileLoad:public EventDispatcher<EventFileLoad> {
 	private:
-		static THREAD loaderThread(void*);
-		#ifdef WIN32
-		HANDLE fileHandle;
-		OVERLAPPED  ovl;
+		#if defined(WIN32)
+			HANDLE fileHandle;
+			OVERLAPPED  ovl;
+		#else
+			FILE *fileHandle;
 		#endif
+		friend FileLoadThreadTask;
 	public:
 		FileLoad(const string path);
 		~FileLoad();
@@ -36,12 +39,9 @@ namespace Graphonichk {
 			READ_FILE_ERROR
 		};
 		STATUS status;
-		unsigned long int size, progres;
-		void *data;
+		long unsigned int size, progres;
+		uint8_t *data = nullptr;
 		string name, path;
-		static vector<FileLoad*> buffer;
-		static void init();
-		static void trace();
 	};
 	
 	class FileResource {
@@ -52,6 +52,13 @@ namespace Graphonichk {
 		size_t size;
 		string name;
 		
+	};
+	
+	class FileLoadThreadTask :public ThreadTask {
+	public:
+		FileLoadThreadTask(FileLoad *file) :file(file) {};
+		int processExecute();
+		FileLoad *file;
 	};
 }
 

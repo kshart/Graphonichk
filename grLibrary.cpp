@@ -370,12 +370,12 @@ int FileLibrary::performTasks() {
 	//THREAD_START_H(, FileLibrary::FileLibraryProc, this);
 	return true;
 }
-THREAD FileLibrary::FileLibraryProc(void *data) {
+void* FileLibrary::FileLibraryProc(void *data) {
 	FileLibrary *lib = (FileLibrary*)data;
 	lib->performTasks();
-	CRITICAL_SECTION_INTER(lib->_accessPush);
+	pthread_mutex_lock(&lib->_accessPush);
 	lib->_queueIsUse = !lib->_queueIsUse;
-	CRITICAL_SECTION_LEAVE(lib->_accessPush);
+	pthread_mutex_unlock(&lib->_accessPush);
 	if (lib->_queueIsUse == 1) {
 		while ( !lib->_essentialTasks1.empty() ) {
 			if (  lib->_essentialTasks1.front()->processExecute()  ) {

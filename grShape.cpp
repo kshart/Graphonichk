@@ -244,18 +244,10 @@ int ShapeRect::addEventHandler( int type, void(*fun)(const EventMouseShape*)) {
 }
 
 ShapeGroupRect::ShapeGroupRect() :ShapeRect(ShapeGroupRect::CRC32) {
-	#if defined(WIN32)
-		this->addChildLock = CreateMutex(NULL, FALSE, NULL);
-	#else
-		pthread_mutex_init(&this->addChildLock, NULL);
-	#endif
+	pthread_mutex_init(&this->addChildLock, NULL);
 }
 ShapeGroupRect::ShapeGroupRect(int crc32) :ShapeRect(crc32) {
-	#if defined(WIN32)
-		this->addChildLock = CreateMutex(NULL, FALSE, NULL);
-	#else
-		pthread_mutex_init(&this->addChildLock, NULL);
-	#endif
+	pthread_mutex_init(&this->addChildLock, NULL);
 }
 void ShapeGroupRect::trace() {
 	printf("<ShapeGroupRect mouseActive='%i' pos='%i, %i' gpos='%i, %i' rect='%i, %i, %i, %i'>\n", this->mouseEventActive, this->local.x, this->local.y, this->global.x, this->global.y, this->offset.x, this->offset.y, this->width, this->height);
@@ -632,9 +624,9 @@ int ShapeRectTask::processExecute() {
 	return false;
 }
 int ProcessingShapeRect::performTasks() {
-	CRITICAL_SECTION_INTER(this->_accessPush);
+	pthread_mutex_lock(&this->_accessPush);
 	this->_queueIsUse = !this->_queueIsUse;
-	CRITICAL_SECTION_LEAVE(this->_accessPush);
+	pthread_mutex_unlock(&this->_accessPush);
 	if (this->_queueIsUse == 1) {
 		while ( !this->_essentialTasks1.empty() ) {
 			ShapeRect *shr = this->_essentialTasks1.front();

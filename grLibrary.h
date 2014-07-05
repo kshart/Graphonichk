@@ -118,10 +118,10 @@ namespace Graphonichk {
 		size_t readChunk(struct LZ_Decoder* decoder);
 		size_t writeBuffer(struct LZ_Decoder* decoder, uint8_t *data, size_t size);
 	
-		THREAD_H procHeader;
+		pthread_t procHeader;
 	protected:
 		int performTasks();
-		static THREAD FileLibraryProc(void*);
+		static void* FileLibraryProc(void*);
 	};
 }
 

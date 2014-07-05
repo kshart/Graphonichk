@@ -46,9 +46,6 @@ int Model3DLoadTask::processExecute() {
 	return false;
 }
 
-ProcessingSupSuspend::ProcessingSupSuspend() :_threadHandle(nullptr) {
-	this->_suspendHandle = CreateSemaphore(NULL, 1, 1, NULL);
-}
 void ProcessingSupSuspend::setTime(float time) {
 	this->_time = time;
 }
@@ -64,16 +61,16 @@ int ProcessingSupSuspend::performTasks() {
 	QueryPerformanceFrequency(&frequencyStruct);
 	frequency = (float)frequencyStruct.QuadPart;
 	
-	CRITICAL_SECTION_INTER(this->_accessPush);
+	pthread_mutex_lock(&this->_accessPush);
 	this->_queueIsUse = !this->_queueIsUse;
-	CRITICAL_SECTION_LEAVE(this->_accessPush);
+	pthread_mutex_unlock(&this->_accessPush);
 	if (this->_queueIsUse == 1) {
 		while ( !this->_essentialTasks1.empty() ) {
 			QueryPerformanceCounter(&time1);
 			if (this->_threadHandle==nullptr) {
 				data.sush = &this->_suspendHandle;
 				data.task = this->_essentialTasks1.front();
-				THREAD_START_H(this->_threadHandle, ProcessingSupSuspend::threadFunction, &data);
+				pthread_create(&_threadHandle, NULL, ProcessingSupSuspend::threadFunction, &data);
 			}
 			GetExitCodeThread(this->_threadHandle, &exitCode);
 			while (exitCode == STILL_ACTIVE ) {
@@ -93,7 +90,7 @@ int ProcessingSupSuspend::performTasks() {
 				GetExitCodeThread(this->_threadHandle, &exitCode);
 			}
 			puts("CLOSE");
-			THREAD_CLOSE(this->_threadHandle);
+			pthread_cancel(_threadHandle);
 			this->_threadHandle = nullptr;
 			delete this->_essentialTasks1.front();
 			this->_essentialTasks1.pop();
@@ -107,7 +104,7 @@ int ProcessingSupSuspend::performTasks() {
 			if (this->_threadHandle==nullptr) {
 				data.sush = &this->_suspendHandle;
 				data.task = this->_essentialTasks2.front();
-				THREAD_START_H(this->_threadHandle, ProcessingSupSuspend::threadFunction, &data);
+				pthread_create(&_threadHandle, NULL, ProcessingSupSuspend::threadFunction, &data);
 			}
 			GetExitCodeThread(this->_threadHandle, &exitCode);
 			while (exitCode == STILL_ACTIVE ) {
@@ -127,7 +124,7 @@ int ProcessingSupSuspend::performTasks() {
 				GetExitCodeThread(this->_threadHandle, &exitCode);
 			}
 			puts("CLOSE");
-			THREAD_CLOSE(this->_threadHandle);
+			pthread_cancel(_threadHandle);
 			this->_threadHandle = nullptr;
 			delete this->_essentialTasks2.front();
 			this->_essentialTasks2.pop();
@@ -138,10 +135,10 @@ int ProcessingSupSuspend::performTasks() {
 	}
 	return true;
 };
-THREAD ProcessingSupSuspend::threadFunction (void* dataArg) {
+void* ProcessingSupSuspend::threadFunction (void* dataArg) {
 	//puts("ProcessingSupSuspend::threadFunction");
 	((ThreadData*)dataArg)->task->processExecute(((ThreadData*)dataArg)->sush);
-	return 0;
+	return 0; 
 }
 
 
@@ -153,15 +150,15 @@ void ProcessingThread::init() {
 	}
 }
 ProcessingThread::ProcessingThread() {
-	THREAD_START_H(this->thread, ProcessingThread::threadProcess, this);
+	pthread_create(&thread, NULL, ProcessingThread::threadProcess, this);
 }
 ProcessingThread::~ProcessingThread() {
-	THREAD_CLOSE(this->thread);
+	pthread_cancel(thread);
 }
 int ProcessingThread::performTasks() {
-	CRITICAL_SECTION_INTER(this->_accessPush);
+	pthread_mutex_lock(&this->_accessPush);
 	this->_queueIsUse = !this->_queueIsUse;
-	CRITICAL_SECTION_LEAVE(this->_accessPush);
+	pthread_mutex_unlock(&this->_accessPush);
 	if (this->_queueIsUse == 1) {
 		//printf("performTasks %i\n", this->essentialTasks1.size());
 		while ( !this->_essentialTasks1.empty() ) {
@@ -185,11 +182,10 @@ int ProcessingThread::performTasks() {
 	}
 	return true;
 }
-THREAD ProcessingThread::threadProcess(void* sys) {
+void* ProcessingThread::threadProcess(void* sys) {
 	ProcessingThread *thread = (ProcessingThread*)sys;
 	
 	while(true) {
-		//puts("ProcessingThread::threadProcess");
 		thread->performTasks();
 		Sleep(100);
 	}

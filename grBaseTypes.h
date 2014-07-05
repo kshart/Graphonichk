@@ -4,28 +4,27 @@
 #ifndef GRBASETYPES_H
 #define	GRBASETYPES_H
 
+#include <pthread.h>
 #if defined(WIN32)
 	#include <GL/glew.h>
 	#include <dinput.h>
 	#include <windows.h>
 	#include <windowsx.h>
+
 	//#include <GL/wglext.h>
 	//#include <GL/glext.h>
-
 	//#define CRITICAL_SECTION 
-	#define CRITICAL_SECTION_INIT(cs) InitializeCriticalSection(&cs);
-	#define CRITICAL_SECTION_INTER(cs) EnterCriticalSection(&cs);
-	#define CRITICAL_SECTION_LEAVE(cs) LeaveCriticalSection(&cs);
-	
-	#define MUTEX HANDLE
-	
-	#define THREAD_H HANDLE
-	#define THREAD DWORD WINAPI
-	
-	#define THREAD_START_H(handle, thread, data) handle = CreateThread(NULL, 0, thread, data, 0, 0);
-	#define THREAD_START(thread, data) CreateThread(NULL, 0, thread, data, 0, 0);
-	#define THREAD_SUSPEND(thread) SuspendThread(thread);
-	#define THREAD_CLOSE(thread) CloseHandle(thread);
+	//#define CRITICAL_SECTION_INIT(cs) InitializeCriticalSection(&cs);
+	//#define CRITICAL_SECTION_INTER(cs) EnterCriticalSection(&cs);
+	//#define CRITICAL_SECTION_LEAVE(cs) LeaveCriticalSection(&cs);
+	//#define MUTEX HANDLE
+	//#define THREAD_H HANDLE
+	//#define THREAD DWORD WINAPI
+	//#define THREAD_START_H(handle, thread, data) handle = CreateThread(NULL, 0, thread, data, 0, 0);
+	//#define THREAD_START(thread, data) CreateThread(NULL, 0, thread, data, 0, 0);
+	///#define THREAD_SUSPEND(thread) SuspendThread(thread);
+	//#define THREAD_CLOSE(thread) CloseHandle(thread);
+
 #elif defined(X11)
 	#include <GL/glew.h>
 	namespace X11lib {
@@ -34,7 +33,7 @@
 		#include <GL/glx.h>
 	}
 
-	#define CRITICAL_SECTION pthread_mutex_t
+	/*#define CRITICAL_SECTION pthread_mutex_t
 	#define CRITICAL_SECTION_INIT(cs) cs = PTHREAD_MUTEX_INITIALIZER;
 	#define CRITICAL_SECTION_INTER(cs) pthread_mutex_lock(&cs);
 	#define CRITICAL_SECTION_LEAVE(cs) pthread_mutex_unlock(&cs);
@@ -46,7 +45,7 @@
 	#define THREAD_SUSPEND(thread) SuspendThread(thread);
 	#define THREAD_CLOSE(thread) pthread_cancel(thread);
 	
-	typedef pthread_mutex_t MUTEX;
+	typedef pthread_mutex_t MUTEX;*/
 
 #endif
 
