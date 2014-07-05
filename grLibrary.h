@@ -75,7 +75,8 @@ namespace Graphonichk {
 	class FileLibrary;
 	
 	class FileLibrary {
-		size_t chunkSize, chunkBufferSize, chunkBufferFullness = 0;
+		size_t *chunkBegin=nullptr, *chunkCount=nullptr;
+		size_t fileSize, fileBufferApply=0, chunkSize, chunkBufferSize, chunkBufferFullness = 0, skipBlock = 0;
 		uint8_t *chunkBuffer;
 	public:
 		enum STATUS:char {
@@ -101,16 +102,16 @@ namespace Graphonichk {
 		time_t modificationTime;
 		
 		string libraryName;
-		size_t filesCount;
-		size_t filesSize;
+		size_t filesCount = 0;
+		size_t filesSize = 0;
 		
 		GraphonichkFileLibrary::ResourceDirectory mainDirectory;
 	private:
 		STATUS status = STATUS::UNABLE;
 		size_t readBlockHead(uint8_t *data, size_t *&chunkBegin, size_t *&chunkCount);//data = 512
 		size_t readBlocks(uint8_t *data, size_t count);
-		size_t readChunk(struct LZ_Decoder* decoder, size_t size);
-		size_t readBuffer(struct LZ_Decoder* decoder, uint8_t *data, size_t size);
+		size_t readChunk(struct LZ_Decoder* decoder);
+		size_t writeBuffer(struct LZ_Decoder* decoder, uint8_t *data, size_t size);
 	};
 }
 

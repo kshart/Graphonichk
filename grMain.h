@@ -5,11 +5,11 @@
 #include <stack>
 #include <queue>
 #include <vector>
-#include <string.h>
 #include <string>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
