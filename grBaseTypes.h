@@ -375,9 +375,9 @@ namespace Graphonichk {
 	template<typename Type> class Array {
 	public:
 		Type *data;
-		unsigned int size;
+		size_t size;
 		
-		Array(unsigned int size) {
+		Array(size_t size) {
 			this->data = (Type*)malloc( size*sizeof(Type) );
 			if (this->data==NULL) {
 				this->size = 0;

@@ -95,6 +95,8 @@ namespace Graphonichk {
 			EventDispatcher<EventMouse> mouse;
 		} events;
 		
+		FileLibrary *mainFileLibrary;
+		
 		ProcessingEachFrame eachFrame;
 		ProcessingSupSuspend suspendProcess;
 

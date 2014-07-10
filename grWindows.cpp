@@ -316,7 +316,6 @@ void* Windows::threadRender (void* sys) {
 	frequency = (float)frequencyStruct.QuadPart;
 	while (IsWindow(win->hWnd)) {
 		pthread_mutex_lock(&win->renderThreadLock);
-		puts("Windows::threadRender");
 		LARGE_INTEGER time1, time2;
 		float lastTime, fps;
 		QueryPerformanceCounter(&time1);
@@ -599,6 +598,8 @@ Windows::Windows(short x, short y, short width, short height) :
 	if (Windows::window!=nullptr) return;
 	Windows::regFirstWin();
 	ProcessingThread::init();
+	
+	this->mainFileLibrary = new FileLibrary("shader330.tar.lz");
 	
 	puts("<Windows message='start WIN32'/>");
 	Windows::window = this;

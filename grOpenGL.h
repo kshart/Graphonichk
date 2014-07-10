@@ -44,6 +44,7 @@ namespace Graphonichk {
 		GLint fsLength = 0, vsLength = 0, gsLength = 0;
 	public:
 		GLShaderLoad(GLShader *sh, string vs, string gs, string fs);
+		GLShaderLoad(GLShader *sh, FileLibrary *lib, string vs, string gs, string fs);
 		static void loading(const EventFileLoad* e);
 	};
 	class ShaderShRect :public GLShader {

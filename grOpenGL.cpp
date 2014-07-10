@@ -28,6 +28,7 @@ int OpenGL::init(OPENGL_VER ver) {
 	if (GLEW_VERSION_4_0) {
 		puts("GLEW_VERSION_4_0");
 	}
+	Windows *win = Windows::window;
 	OpenGL::ver = ver;
 	viewport vp;
 	vp.x = 0;
@@ -78,14 +79,14 @@ int OpenGL::init(OPENGL_VER ver) {
 		ShaderF3D::prog = new ShaderF3D();
 		ShaderPartRect::prog = new ShaderPartRect();
 		GLShaderLoad *shLoad;
-		shLoad = new GLShaderLoad(ShaderBitmap::prog, "shader330/vs/Bitmap.vs", "shader330/gs/Bitmap.gs", "shader330/fs/Bitmap.fs");
-		shLoad = new GLShaderLoad(ShaderBitmapAtlas::prog, "shader330/vs/BitmapAtlas.vs", "shader330/gs/BitmapAtlas.gs", "shader330/fs/BitmapAtlas.fs");
-		shLoad = new GLShaderLoad(ShaderTextFieldBuffer::prog, "shader330/vs/TextFieldBuffer.vs", "shader330/gs/TextFieldBuffer.gs", "shader330/fs/TextFieldBuffer.fs");
-		shLoad = new GLShaderLoad(ShaderSVGmain::prog, "shader330/vs/SVGmain.vs", "", "shader330/fs/SVGmain.fs");
-		shLoad = new GLShaderLoad(ShaderFPrimitiv::prog, "shader330/vs/FPrimitiv.vs", "shader330/gs/FPrimitiv.gs", "shader330/fs/FPrimitiv.fs");
-		shLoad = new GLShaderLoad(ShaderPost::prog, "shader330/vs/Post.vs", "shader330/gs/Post.gs", "shader330/fs/Post.fs");
-		shLoad = new GLShaderLoad(ShaderF3D::prog, "shader330/vs/F3D.vs", "", "shader330/fs/F3D.fs");
-		shLoad = new GLShaderLoad(ShaderPartRect::prog, "shader330/vs/PartRect.vs", "shader330/gs/PartRect.gs", "shader330/fs/PartRect.fs");
+		shLoad = new GLShaderLoad(ShaderBitmap::prog,			win->mainFileLibrary, "Bitmap.vs", "Bitmap.gs", "Bitmap.fs");
+		shLoad = new GLShaderLoad(ShaderBitmapAtlas::prog,		win->mainFileLibrary, "BitmapAtlas.vs", "BitmapAtlas.gs", "BitmapAtlas.fs");
+		shLoad = new GLShaderLoad(ShaderTextFieldBuffer::prog,	win->mainFileLibrary, "TextFieldBuffer.vs", "TextFieldBuffer.gs", "TextFieldBuffer.fs");
+		shLoad = new GLShaderLoad(ShaderSVGmain::prog,			win->mainFileLibrary, "SVGmain.vs", "", "SVGmain.fs");
+		shLoad = new GLShaderLoad(ShaderFPrimitiv::prog,		win->mainFileLibrary, "FPrimitiv.vs", "FPrimitiv.gs", "FPrimitiv.fs");
+		shLoad = new GLShaderLoad(ShaderPost::prog,				win->mainFileLibrary, "Post.vs", "Post.gs", "Post.fs");
+		shLoad = new GLShaderLoad(ShaderF3D::prog,				win->mainFileLibrary, "F3D.vs", "", "F3D.fs");
+		shLoad = new GLShaderLoad(ShaderPartRect::prog,			win->mainFileLibrary, "PartRect.vs", "PartRect.gs", "PartRect.fs");
 		
 		ShaderBW::init33();
 		
@@ -407,7 +408,6 @@ GLShaderLoadTask::GLShaderLoadTask(GLShader* sh, const GLchar *vs, const GLchar 
 	shader(sh), 
 	vs(vs), gs(gs), fs(fs),
 	vsLength(vsLength), fsLength(fsLength), gsLength(gsLength) {
-	
 }
 int GLShaderLoadTask::processExecute() {
 	if (OpenGL::ver==OpenGL::VER_CORE_100) return true;
@@ -433,7 +433,7 @@ int GLShaderLoadTask::processExecute() {
 	if (!success) {
 		GLchar InfoLog[1024];
 		glGetShaderInfoLog(this->shader->vertexShader, sizeof(InfoLog), NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\"%s\"\n", this->shader->vertexShader, InfoLog, this->vs);
+		fprintf(stderr, "VS Error compiling shader type %d: ' %s '\n%s\n", this->shader->vertexShader, InfoLog, this->vs);
 		return false;
 	}
 
@@ -444,7 +444,7 @@ int GLShaderLoadTask::processExecute() {
 	if (!success) {
 		GLchar InfoLog[1024];
 		glGetShaderInfoLog(this->shader->fragmentShader, sizeof(InfoLog), NULL, InfoLog);
-		fprintf(stderr, "Error compiling shader type %d: '%s'\n\"%s\"", this->shader->fragmentShader, InfoLog, this->fs);
+		fprintf(stderr, "FS Error compiling shader type %d: ' %s '\n%s\n", this->shader->fragmentShader, InfoLog, this->fs);
 		return false;
 	}
 	
@@ -456,7 +456,7 @@ int GLShaderLoadTask::processExecute() {
 		if (!success) {
 			GLchar InfoLog[1024];
 			glGetShaderInfoLog(this->shader->geometryShader, sizeof(InfoLog), NULL, InfoLog);
-			fprintf(stderr, "Error compiling shader type %d: '%s'\n\"%s\"", this->shader->geometryShader, InfoLog, this->gs);
+			fprintf(stderr, "GS Error compiling shader type %d: ' %s '\n%s\n", this->shader->geometryShader, InfoLog, this->gs);
 			return false;
 		}
 	}
@@ -489,6 +489,31 @@ GLShaderLoad::GLShaderLoad(GLShader* sh, const string vs, const string gs, const
 	if (fsLoad) {
 		file = new FileLoad(fs);
 		file->addEventHandler(FileLoad::SUCCESS, loading, this);
+	}
+}
+GLShaderLoad::GLShaderLoad(GLShader* sh, FileLibrary *lib, const string vs, const string gs, const string fs) :shader(sh) {
+	using Graphonichk::FileLibrary;
+	this->vsLoad = !vs.empty();
+	this->gsLoad = !gs.empty();
+	this->fsLoad = !fs.empty();
+	FileLibrary::Resource *resVS=nullptr, *resGS=nullptr, *resFS=nullptr;
+	if (vsLoad) resVS = lib->getResource(vs);
+	if (gsLoad) resGS = lib->getResource(gs);
+	if (fsLoad) resFS = lib->getResource(fs);
+	if (gsLoad) {
+		if (resVS!=nullptr && resGS!=nullptr && resFS!=nullptr &&
+			resVS->size>0 && resGS->size>0 && resFS->size>0) {
+			Windows::window->eachFrame.addTask( new GLShaderLoadTask(sh, (GLchar*)resVS->data, (GLchar*)resFS->data, (GLchar*)resGS->data, 
+					resVS->size, resFS->size, resGS->size) );
+			delete this;
+		}
+	}else{
+		if (resVS!=nullptr && resFS!=nullptr &&
+			resVS->size>0 && resFS->size>0) {
+			Windows::window->eachFrame.addTask( new GLShaderLoadTask(sh, (GLchar*)resVS->data, (GLchar*)resFS->data, nullptr,
+					resVS->size, resFS->size, 0) );
+			delete this;
+		}
 	}
 }
 void GLShaderLoad::loading(const EventFileLoad* e) {

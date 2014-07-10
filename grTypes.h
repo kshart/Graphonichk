@@ -10,6 +10,7 @@
 #include "enTexture.h"
 #include "grShape.h"
 #include "grShape3D.h"
+#include "grAnimation.h"
 #include "grWindows.h"
 #include "enText.h"
 
