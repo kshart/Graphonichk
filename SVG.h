@@ -2,11 +2,16 @@
 #define	SVG_H
 
 #include "grMain.h"
+#include "grDOM.h"
+#include <memory>
 using namespace std;
+using namespace DOM;
 using Graphonichk::Array;
 using Graphonichk::Screen;
 using Graphonichk::TransformMatrix;
 
+/* ContainerElement: a, defs, glyph, g, marker, mask, missingGlyph, pattern, svg, switch, symbol */
+/* GraphicsElement: circle, ellipse, image, line, path, polygon, polyline, rect, text, use */
 namespace SVG {
 	class Group;
 	class Symbol;
@@ -81,7 +86,60 @@ namespace SVG {
 		void* fontStyle;
 		void* fontVariant;
 		void* fontWeight;
-	} ;
+	};
+	
+	class OtherPropertiesForVisualMedia {
+		void* lip;
+		void* color;
+		void* cursor;
+		void* display;
+		void* overflow;
+		void* visibility;
+	};
+	class ClippingProperties {
+		void* clipPath;
+		void* clipRule;
+		void* mask;
+		void* opacity;
+	};
+	class FilterEffectsProperties {
+		void* enableBackground;
+		void* filter;
+		void* floodColor;
+		void* floodOpacity;
+		void* lightingColor;
+	};
+	class GradientProperties {
+		void* stopColor;
+		void* stopOpacity;
+	};
+	class InteractivityProperties {
+		void* pointerEvents;
+	};
+	class ColorProperties {
+		void* colorInterpolation;
+		void* colorInterpolationFilters;
+		void* colorProfile;
+		void* colorRendering;
+		void* fill;
+		void* fillOpacity;
+		void* fillRule;
+		void* imageRendering;
+		void* marker;
+		void* markerEnd;
+		void* markerMid;
+		void* markerStart;
+		void* shapeRendering;
+		void* stroke;
+		void* strokeDasharray;
+		void* strokeDashoffset;
+		void* strokeLinecap;
+		void* strokeLinejoin;
+		void* strokeMiterlimit;
+		void* strokeOpacity;
+		void* strokeWidth;
+		void* textRendering;
+	};
 	class TextProperties {
 		struct {
 			enum :char { 
@@ -140,7 +198,7 @@ namespace SVG {
 		void* kerning;
 		void* textAnchor;
 		void* writingMode;
-	} ;
+	};
 	typedef struct {
 		void* clip;
 		void* color;
@@ -203,19 +261,183 @@ namespace SVG {
 		static TransformMatrix	getTransformMatrix(const char *str);
 	};
 	
+	/*class SVGStringList:protected vector<string*> {
+	protected:
+		
+	public:
+		size_t numberOfItems;
+
+		void clear();																// raises(DOMException);
+		DOMString initialize(DOMString newItem);									// raises(DOMException);
+		DOMString getItem(size_t index);									// raises(DOMException);
+		DOMString insertItemBefore(DOMString newItem, size_t index);	// raises(DOMException);
+		DOMString replaceItem(DOMString newItem, size_t index);		// raises(DOMException);
+		DOMString removeItem(size_t index);								// raises(DOMException);
+		DOMString appendItem(DOMString newItem);									// raises(DOMException);
+	};
+
+	class SVGElement;
+	class SVGAnimatedBoolean;
+	class SVGAnimatedString;
+	class SVGStringList;
+	class SVGAnimatedEnumeration;
+	class SVGAnimatedInteger;
+	class SVGNumber;
+	class SVGAnimatedNumber;
+	class SVGNumberList;
+	class SVGAnimatedNumberList;
+	class SVGLength;
+	class SVGAnimatedLength;
+	class SVGLengthList;
+	class SVGAnimatedLengthList;
+	class SVGAngle;
+	class SVGAnimatedAngle;
+	class SVGColor;
+	class SVGICCColor;
+	class SVGRect;
+	class SVGAnimatedRect;
+	class SVGUnitTypes;
+	class SVGStylable;
+	class SVGLocatable;
+	class SVGTransformable;
+	class SVGTests;
+	class SVGLangSpace;
+	class SVGExternalResourcesRequired;
+	class SVGFitToViewBox;
+	class SVGZoomAndPan;
+	class SVGViewSpec;
+	class SVGURIReference;
+	class SVGCSSRule;
+	class SVGRenderingIntent;*/
+	/*class SVGAnimatedRect {
+	public:
+		SVGRect baseVal;
+		SVGRect animVal;
+	};
+	class SVGFitToViewBox {
+	public:
+		SVGAnimatedRect viewBox;
+		SVGAnimatedPreserveAspectRatio preserveAspectRatio;
+	};
 	
+	class SVGElement :public Element {
+	protected:
+		SVGSVGElement* _rootSVG = nullptr;
+	public:
+		DOMString id;// setraises(DOMException);
+		DOMString xmlbase;// setraises(DOMException);
+		inline const SVGSVGElement* ownerSVGElement() noexcept {
+			return _rootSVG;
+		}
+		SVGElement* viewportElement() noexcept;
+	};
+	class SVGRect {
+	public:
+		SVGRect() :x(0), y(0), width(0), height(0) {};
+		SVGRect(float x, float y, float width, float height) :x(x), y(y), width(width), height(height) {};
+		float x;		// setraises(DOMException);
+		float y;		// setraises(DOMException);
+		float width;	// setraises(DOMException);
+		float height;	// setraises(DOMException);
+	};
+	class SVGPoint {
+	public:
+		SVGPoint() :x(0), y(0) {};
+		SVGPoint(float x, float y) :x(x), y(y) {};
+		float x;// setraises(DOMException);
+		float y;// setraises(DOMException);
+		SVGPoint matrixTransform(SVGMatrix matrix);
+	};
+	class SVGMatrix {
+	public:
+		float a;// setraises(DOMException);
+		float b;// setraises(DOMException);
+		float c;// setraises(DOMException);
+		float d;// setraises(DOMException);
+		float e;// setraises(DOMException);
+		float f;// setraises(DOMException);
+
+		SVGMatrix multiply(SVGMatrix secondMatrix);
+		SVGMatrix inverse();// raises(SVGException);
+		SVGMatrix translate(float x, float y);
+		SVGMatrix scale(float scaleFactor);
+		SVGMatrix scaleNonUniform(float scaleFactorX, float scaleFactorY);
+		SVGMatrix rotate(float angle);
+		SVGMatrix rotateFromVector(float x, float y);// raises(SVGException);
+		SVGMatrix flipX();
+		SVGMatrix flipY();
+		SVGMatrix skewX(float angle);
+		SVGMatrix skewY(float angle);
+	};
+	
+	class SVGSVGElement : SVGElement,
+                          SVGTests,
+                          SVGLangSpace,
+                          SVGExternalResourcesRequired,
+                          SVGStylable,
+                          SVGLocatable,
+                          SVGFitToViewBox,
+                          SVGZoomAndPan,
+                          DocumentEvent,
+                          ViewCSS,
+                          DocumentCSS {
+		SVGAnimatedLength x;
+		SVGAnimatedLength y;
+		SVGAnimatedLength width;
+		SVGAnimatedLength height;
+		DOMString contentScriptType;// setraises(DOMException);
+		DOMString contentStyleType;// setraises(DOMException);
+		SVGRect viewport;
+		float pixelUnitToMillimeterX;
+		float pixelUnitToMillimeterY;
+		float screenPixelToMillimeterX;
+		float screenPixelToMillimeterY;
+		boolean useCurrentView;
+		SVGViewSpec currentView;
+		float currentScale;
+		SVGPoint currentTranslate;
+
+		unsigned long suspendRedraw(unsigned long maxWaitMilliseconds);
+		void unsuspendRedraw(unsigned long suspendHandleID);
+		void unsuspendRedrawAll();
+		void forceRedraw();
+		void pauseAnimations();
+		void unpauseAnimations();
+		boolean animationsPaused();
+		float getCurrentTime();
+		void setCurrentTime(float seconds);
+		NodeList getIntersectionList(SVGRect rect, SVGElement referenceElement);
+		NodeList getEnclosureList(SVGRect rect, SVGElement referenceElement);
+		boolean checkIntersection(SVGElement element, SVGRect rect);
+		boolean checkEnclosure(SVGElement element, SVGRect rect);
+		void deselectAll();
+		SVGNumber createSVGNumber();
+		SVGLength createSVGLength();
+		SVGAngle createSVGAngle();
+		SVGPoint createSVGPoint();
+		SVGMatrix createSVGMatrix();
+		SVGRect createSVGRect();
+		SVGTransform createSVGTransform();
+		SVGTransform createSVGTransformFromMatrix(SVGMatrix matrix);
+		Element getElementById(DOMString elementId);
+	};
+	
+	*/
 	class Symbol {
 	public:
-		//SVGElement();
-		Symbol();
-		virtual int renderGL100();
-		virtual int renderGL330();
+		virtual int renderGL100() {
+			fputs("SVG::Symbol::renderGLComptAll\n", iovir);
+			return false;
+		}
+		virtual int renderGL330() {
+			fputs("SVG::Symbol::renderGL330\n", iovir);
+			return false;
+		}
 		
 		TransformMatrix matrix;
 	};
 	class Group :public Symbol {
 	public:
-		Group();
 		int renderGL100() override;
 		int renderGL330() override;
 		
@@ -309,6 +531,8 @@ namespace SVG {
 		unsigned int length;
 	};
 }
+
+
 #include "SVGPresentationAttributes.h"
 #endif	/* SVG_H */
 

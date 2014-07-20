@@ -436,20 +436,6 @@ TransformMatrix	DataTypes::getTransformMatrix(const char *str) {
 }
 
 
-Symbol::Symbol() :matrix() {
-}
-int Symbol::renderGL100() {
-	fputs("SVG::Symbol::renderGLComptAll\n", iovir);
-	return false;
-}
-int Symbol::renderGL330() {
-	fputs("SVG::Symbol::renderGL330\n", iovir);
-	return false;
-}
-
-Group::Group() {
-	
-}
 int Group::renderGL100() {
 	float mat[16] = {
 		this->matrix.a,	this->matrix.d,	0,	0,
@@ -458,16 +444,24 @@ int Group::renderGL100() {
 		0,	0,	0,	1};
 	glPushMatrix();
 	glMultMatrixf(mat);
-	for(int i=0; i<this->child.size(); i++) {
-		this->child[i]->renderGL100();
+	for (Symbol* &sm : this->child) {
+		sm->renderGL100();
 	}
 	glPopMatrix();
 	return true;
 }
 int Group::renderGL330() {
-	for(int i=0; i<this->child.size(); i++) {
-		this->child[i]->renderGL330();
+	float mat[16] = {
+		this->matrix.a,	this->matrix.d,	0,	0,
+		this->matrix.b,	this->matrix.e,	0,	0,
+		this->matrix.c,	this->matrix.f,	1,	0,
+		0,	0,	0,	1};
+	glPushMatrix();
+	glMultMatrixf(mat);
+	for (Symbol* &sm : this->child) {
+		sm->renderGL330();
 	}
+	glPopMatrix();
 	return true;
 }
 
@@ -867,3 +861,8 @@ int BasicShapePolygon::renderGL100() {
 int BasicShapePolygon::renderGL330() {
 	return false;
 }
+
+/*
+SVGElement* SVGElement::viewportElement() noexcept {
+	return dynamic_cast<SVGElement*>(this->_parentNode);
+}*/
